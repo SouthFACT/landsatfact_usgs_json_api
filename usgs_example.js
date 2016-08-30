@@ -46,10 +46,6 @@ const search_sortOrder = "ASC";
 //place holders this will passed in as arguments
 
 
-
-
-
-///download optionts
 //if promised resolved do task
 api_key
   .then( (data) => {

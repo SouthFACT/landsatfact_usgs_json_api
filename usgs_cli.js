@@ -27,15 +27,21 @@ var api_key = USGS_HELPER.get_api_key();
 //check json input
 var input_json;
 if (program.request_json){
+  //if -q is passed then use that even of both the file and and json is passed
   input_json = program.request_json;
 } else {
+  //make sure a file was passed in
+  if (program.request_file){
+    fs.readFile( program.request_file , (err, data) => {
 
-  fs.readFile( program.request_file , (err, data) => {
-  if (err) throw err;
+      if (err) throw err;
+
+      //if file is valid get the json data
       input_json = data;
-  });
 
+    });
 
+  }
 }
 
 //if promised resolved do task
@@ -74,7 +80,7 @@ api_key
   console.log(error);
 });
 
-
+//merge json objects. would use spread but not availabe in node yet
 function mergejson(a, b){
    for(var key in b)
        if(b.hasOwnProperty(key))

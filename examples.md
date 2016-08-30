@@ -51,7 +51,7 @@ api_key
     const datasetName = USGS_CONSTANT.LANDSAT_8;
     const entityIds =  ["LC80130292014100LGN00"];
 
-    //get the request body to send to usgs api
+    //get the request body to send to USGS api
     //   replace the usgsapi_metadata with the correct USGS request codes  in format usgsapi_requestcode all availabe are in the USGS_FUNCTIONs.js module check the api for required arguments
     var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
 

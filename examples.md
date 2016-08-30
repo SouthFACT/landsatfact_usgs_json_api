@@ -37,7 +37,6 @@ In this example we will login and get metadata for a scene
 ```javascript
 
 //this is using promises so you need resolve the promise to get the key which is in the "data" object in this example.
-s
 //   all supported USGS functions defined in usgs_functions.js
 api_key
   .then( data => {

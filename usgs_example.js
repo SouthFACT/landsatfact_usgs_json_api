@@ -62,6 +62,8 @@ api_key
     const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code(request_code);
 
     var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
+    console.log (request_body)
+
     var usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
 
     // usgs response

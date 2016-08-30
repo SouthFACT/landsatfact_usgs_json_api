@@ -4,6 +4,7 @@ var yaml = require('yamljs');
 
 //modules
 var USGS_CONSTANT = require("./usgs_constants.js");
+var USGS_FUNCTION = require("./usgs_functions.js");
 
 //config data
 const CONFIG_YAML = yaml.load("./config.yaml");
@@ -29,8 +30,10 @@ module.exports = {
       //format the login data for the post
       var request_body_login = this.create_PostBody(login_data);
 
+      const USGS_REQUEST_CODE_LOGIN = this.get_usgs_response_code('login' );
+
       //get request_code calling it action may change to make consistent with USGS api
-      var request_action = this.create_url_action(USGS_CONSTANT.USGS_REQUEST_CODE_LOGIN);
+      var request_action = this.create_url_action(USGS_REQUEST_CODE_LOGIN);
 
       //declare self so it's available
       var self = this;
@@ -153,5 +156,65 @@ module.exports = {
       });
   },
 
+  //must be one of these request codes
+  get_usgs_response_code: function(request_code){
+    valid_request_codes = ['clearbulkdownloadorder',
+                   'clearorder',
+                   'datasetfields',
+                   'datasets',
+                   'download',
+                   'downloadoptions',
+                   'getbulkdownloadproducts',
+                   'getorderproducts',
+                   'grid2ll',
+                   'itembasket',
+                   'login',
+                   'logout',
+                   'removebulkdownloadscene',
+                   'removeorderscene',
+                   'metadata',
+                   'search',
+                   'hits',
+                   'submitbulkdownloadorder',
+                   'submitorder',
+                   'updatebulkdownloadscene',
+                   'updateorderscene'
+                 ];
+
+    if (valid_request_codes.indexOf(request_code) >= 0) {
+       return request_code;
+    } else {
+      return  this.throw_error('request ' + request_code + ' is not available or is an invalude request code.  Check the USGS JSON api documentation @ http://earthexplorer.usgs.gov/inventory/documentation.  Maybe the request code is a new call that has been added to the api but not updated here.');;
+    }
+  },
+
+  //logout
+  usgs_logout: function (apiKey){
+
+    //get logout json request
+    request_body = USGS_FUNCTION.usgsapi_logout(apiKey);
+
+    //make sure this is a valid request code
+    const request_code = 'logout';
+    const USGS_REQUEST_CODE = this.get_usgs_response_code(request_code);
+    //send logout request to usgs api
+    var usgs_response = this.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
+    return usgs_response
+      .then( data => {
+
+        //check of data is null this usually means there is some kind
+        // of error in the returned from USGS JSON API
+        if (response_data == null){
+          var error =  self.get_response_error(response);
+          return  self.throw_error(error);
+        }
+
+        return data
+      })
+      //catch http errors
+      .catch( error => {
+        return  self.throw_error(error);;
+      });
+  }
 
 };

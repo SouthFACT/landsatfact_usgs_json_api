@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "^0.13.1",
+    "commander": "^2.9.0",
     "yamljs": "^0.2.8"
   }
 }

@@ -37,27 +37,3 @@ exports.RESPONSEHAPE_POLYGON = 'POLYGON';
 
 //down media default for us
 exports.OUTPUT_MEDIA_DWNLD = "DWNLD";
-
-//USGS request codes constants
-exports.USGS_REQUEST_CODE_CLEARBULKDOWNLOADORDER = 'clearbulkdownloadorder';
-exports.USGS_REQUEST_CODE_CLEARORDER = 'clearorder';
-exports.USGS_REQUEST_CODE_DATASETFIELDS = 'datasetfields';
-exports.USGS_REQUEST_CODE_DATASETS = 'datasets';
-exports.USGS_REQUEST_CODE_DOWNLOAD = 'download';
-exports.USGS_REQUEST_CODE_DOWNLOADOPTIONS = 'downloadoptions';
-exports.USGS_REQUEST_CODE_GETBULKDOWNLOADPRODUCTS = 'getbulkdownloadproducts';
-exports.USGS_REQUEST_CODE_GETORDERPRODUCTS = 'getorderproducts';
-exports.USGS_REQUEST_CODE_GRID2LL = 'grid2ll';
-exports.USGS_REQUEST_CODE_ITEMBASKET = 'itembasket';
-exports.USGS_REQUEST_CODE_LOGIN = 'login';
-exports.USGS_REQUEST_CODE_LOGOUT = 'logout';
-exports.USGS_REQUEST_CODE_REMOVEBULKDOWNLOADSCENE = 'removebulkdownloadscene';
-exports.USGS_REQUEST_CODE_REMOVEORDERSCENE = 'removeorderscene';
-exports.USGS_REQUEST_CODE_METADATA = 'metadata';
-exports.USGS_REQUEST_CODE_SEARCH = 'search';
-exports.USGS_REQUEST_CODE_HITS = 'hits';
-exports.USGS_REQUEST_CODE_STATUS = 'status';
-exports.USGS_REQUEST_CODE_SUBMITBULKDOWNLOADORDER = 'submitbulkdownloadorder';
-exports.USGS_REQUEST_CODE_SUBMITORDER = 'submitorder';
-exports.USGS_REQUEST_CODE_UPDATEBULKDOWNLOADSCENE = 'updatebulkdownloadscene';
-exports.USGS_REQUEST_CODE_UPDATEORDERSCENE = 'updateorderscene';

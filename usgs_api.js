@@ -6,8 +6,6 @@ var USGS_CONSTANT = require("./usgs_constants.js");
 var USGS_FUNCTION = require("./usgs_functions.js");
 var USGS_HELPER = require("./usgs_helpers.js");
 
-console.log(USGS_FUNCTION.usgsapi_clearorder('1','2','3'));
-
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
@@ -47,6 +45,9 @@ const search_sortOrder = "ASC";
 //place holders this will passed in as arguments
 
 
+
+
+
 ///download optionts
 //if promised resolved do task
 api_key
@@ -55,22 +56,32 @@ api_key
     const node = USGS_CONSTANT.NODE_EE;
     const datasetName = USGS_CONSTANT.LANDSAT_8;
 
-    var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
-    var usgs_response = USGS_HELPER.get_usgsapi_response(USGS_CONSTANT.USGS_REQUEST_CODE_METADATA, request_body);
-    
-    // usgs response
-    usgs_response.then( data => {console.log(data);
-  })
+    //get usgs request code
+    const request_code = 'metadata';
+    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code(request_code);
 
-  //catch http errors not return errors in response
-  .catch( error => {
-    return USGS_HELPER.throw_error(error);;
-  });
+    var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
+    var usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
+
+    // usgs response
+    usgs_response
+      .then( data => {
+        console.log(data);
+      })
+      //catch http errors not return errors in response
+      .catch( error => {
+        return USGS_HELPER.throw_error(error);;
+      });
+
 
 })
 .catch( error => {
   console.log(error);
 });
+
+
+
+
 
 
 //examples may need to adjust for changes in usgs_functions

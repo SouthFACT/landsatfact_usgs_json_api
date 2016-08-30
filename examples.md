@@ -39,29 +39,34 @@ In this example we will login and get metadata for a scene
 //this is using promises so you need resolve the promise to get the key which is in the "data" object in this example.
 s
 //   all supported USGS functions defined in usgs_functions.js
-api_key.then( data => {
+api_key
+  .then( data => {
 
-  //gets the correct JSON body for the request
-  //var request_body = USGS_FUNCTION.usgsapi_APIRequestCode(some arguments);
+    //gets the correct JSON body for the request
+    //var request_body = USGS_FUNCTION.usgsapi_APIRequestCode(some arguments);
 
-  //example for metadata
-  const apiKey = data;
-  const node = USGS_CONSTANT.NODE_EE;
-  const datasetName = USGS_CONSTANT.LANDSAT_8;
-  const entityIds =  ["LC80130292014100LGN00"];
+    //example for metadata
+    const apiKey = data;
+    const node = USGS_CONSTANT.NODE_EE;
+    const datasetName = USGS_CONSTANT.LANDSAT_8;
+    const entityIds =  ["LC80130292014100LGN00"];
 
-  //get the request body to send to usgs api
-  //   replace the usgsapi_metadata with the correct USGS request codes  in format usgsapi_requestcode all availabe are in the USGS_FUNCTIONs.js module check the api for required arguments
-  var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
+    //get the request body to send to usgs api
+    //   replace the usgsapi_metadata with the correct USGS request codes  in format usgsapi_requestcode all availabe are in the USGS_FUNCTIONs.js module check the api for required arguments
+    var request_body = USGS_FUNCTION.usgsapi_metadata(apiKey, node, datasetName, entityIds);
 
-  //ensure you have a valid request code for metadata if invalid will error out
-  const request_code = 'metadata';
-  const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code(request_code);
+    //ensure you have a valid request code for metadata if invalid will error out
+    const request_code = 'metadata';
+    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code(request_code);
 
-  //get the response from usgs this will also be a promise so you will have to deal with a promise to get data but the function will create an error when the response data has an error code from the USGS api.
-  var usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
+    //get the response from usgs this will also be a promise so you will have to deal with a promise to get data but the function will create an error when the response data has an error code from the USGS api.
+    var usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
 
 
 
-})
+  })
+  //deal with HTTP errors
+  .catch( error => {
+    console.log(error);
+  });
 ```

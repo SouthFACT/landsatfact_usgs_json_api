@@ -27,7 +27,8 @@ const upperRight = {
 const startDate = "2014-10-01";
 const endDate = "2014-10-01";
 
-const entityIds =  ["LC80130292014100LGN00"] //["LC80130292014100LGN00","LC80130282014100LGN00"]; //["LC80130292014100LGN00"];
+const entityIds =  ["LC80130292014100LGN00"]
+const multiple_entityIds = ["LC80130292014100LGN00","LC80130282014100LGN00"];
 const products = ["STANDARD"];
 
 const search_datasetName = "GLS2005";

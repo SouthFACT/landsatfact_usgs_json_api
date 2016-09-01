@@ -34,6 +34,7 @@ if (program.request_json){
   if (program.request_file){
     fs.readFile( program.request_file , (err, data) => {
 
+      //if not valid file throw an error
       if (err) throw err;
 
       //if file is valid get the json data
@@ -77,7 +78,7 @@ api_key
 
 })
 .catch( error => {
-  console.log(error);
+  return USGS_HELPER.throw_error(error);;
 });
 
 //merge json objects. would use spread but not availabe in node yet

@@ -1,0 +1,63 @@
+metadata_from_days_ago: 10
+metadata_datasets:
+- datasetName: LANDSAT_8
+  fieldId: fieldId
+  datasetFilterType: and
+  fields:
+  - fieldName: WRS Path
+    fieldFilterType: between
+    fieldValues:
+      - value: 13
+      - value: 33
+  - fieldName: WRS Row
+    fieldFilterType: between
+    fieldValues:
+      - value: 33
+      - value: 43
+- datasetName: LANDSAT_ETM
+  fieldId: fieldId
+  datasetFilterType: and
+  fields:
+  - fieldName: WRS Path
+    fieldFilterType: between
+    fieldValues:
+      - value: 13
+      - value: 33
+  - fieldName: WRS Row
+    fieldFilterType: between
+    fieldValues:
+      - value: 33
+      - value: 43
+- datasetName: LANDSAT_ETM_SLC_OFF
+  fieldId: fieldId
+  datasetFilterType: and
+  fields:
+  - fieldName: WRS Path
+    fieldFilterType: between
+    fieldValues:
+      - value: 13
+      - value: 33
+  - fieldName: WRS Row
+    fieldFilterType: between
+    fieldValues:
+      - value: 33
+      - value: 43
+- datasetName: LANDSAT_TM
+  fieldId: fieldId
+  datasetFilterType: and
+  fields:
+  - fieldName: WRS Path
+    fieldFilterType: between
+    fieldValues:
+      - value: 13
+      - value: 33
+  - fieldName: WRS Row
+    fieldFilterType: between
+    fieldValues:
+      - value: 33
+      - value: 43
+database:
+  - json_field: 
+    database_field:
+  - json_field:
+    database_field:

@@ -6,9 +6,6 @@ var yaml = require('yamljs');
 var USGS_CONSTANT = require("./usgs_constants.js");
 var USGS_FUNCTION = require("./usgs_functions.js");
 
-// var wait = false;
-var lastPromise;
-
 //config data
 const CONFIG_YAML = yaml.load("./config.yaml");
 
@@ -131,19 +128,6 @@ module.exports = {
 
   //generic axio request function using HTTP get
   get_usgsapi_response: function(action, body ){
-    // // console.log(wait)
-    // // //so in this case the USGS aqi is throttled to one request at time!
-    // // //  :( so we must limit calls as such
-    // // if(wait){
-    // //
-    // //
-    // //   console.log('waiting')
-    // //   return null
-    // //   //get_usgsapi_response(action, body );
-    // // }
-    // // wait = true;
-    // console.log(body)
-
 
     var request_action =  this.create_url_action(action);
     var request_body =  this.create_PostBody(body);

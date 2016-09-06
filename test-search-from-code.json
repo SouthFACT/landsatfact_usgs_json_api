@@ -1,0 +1,29 @@
+{
+	"node": "EE",
+	"datasetName": "LANDSAT_8",
+	"lowerLeft": {},
+	"upperRight": {},
+	"startDate": "2016-08-27T20:26:39.063Z",
+	"endDate": "2016-09-06T20:26:39.063Z",
+	"months": null,
+	"includeUnknownCloudCover": true,
+	"minCloudCover": 0,
+	"maxCloudCover": 100,
+	"additionalCriteria": {
+		"filterType": "and",
+		"childFilters": [{
+			"filterType": "between",
+			"fieldId": "10036",
+			"firstValue": 13,
+			"secondValue": 33
+		}, {
+			"filterType": "between",
+			"fieldId": "10038",
+			"firstValue": 33,
+			"secondValue": 43
+		}]
+	},
+	"maxResults": 20,
+	"startingNumber": 1,
+	"sortOrder": "ASC"
+}

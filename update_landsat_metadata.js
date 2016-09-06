@@ -1,7 +1,6 @@
 var axios = require('axios');
 var http = require('http');
 var yaml = require('yamljs');
-var async = require("async");
 
 //get modules
 var USGS_CONSTANT = require("./usgs_constants.js");
@@ -20,55 +19,209 @@ const datasets = METADATA_YAML.metadata_datasets;
 //login and get promise for api key
 var api_key = USGS_HELPER.get_api_key();
 
-var get_fieldID = function(apiKey,node,datasetName,fieldName){
+// var get_fieldID = function(apiKey,node,datasetName,fieldName){
+//
+//   //get the actaull filterid value from the request datasetfields
+//   const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
+//   const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
+//
+//   //make call to USGS api
+//   usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
+//   return usgs_response.then( result => {
+//           console.log("finised successful");
+//           return result;
+//         })
+//         .catch( error => {
+//           console.log(error);
+//           return error;
+//         })
+// }
 
-  //get the actaull filterid value from the request datasetfields
-  const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
-  const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
-
-  //make call to USGS api
-  return usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
+var check_promise = function(results){
+  console.log(results.done)
 }
+const node = USGS_CONSTANT.NODE_EE;
+const datasetNames = ["LANDSAT_8","LANDSAT_ETM"]
+const fieldNames = ["WRS Path","WRS Path"]
 
-promises = [];
 
-api_key
-  .then( (apiKey) => {
+// get_usgsapi_response
+// promise_limit = function(promise){
+//   // console.log(wait)
+//   if(wait){
+//     wait = false;
+//     promise.then( result => {
+//       console.log(result);
+//       console.log("finised successful")
+//       wait = true;
+//       return result
+//     })
+//     .catch( (error) => {
+//       console.log("test: " + error);
+//       wait = true;
+//       return error
+//     })
+//   }else{
+//     promise_limit(promise)
+//   }
+// }
 
-    const node = USGS_CONSTANT.NODE_EE;
-    const datasetName = ["LANDSAT_8","LANDSAT_ETM"]
-    const fieldName = "WRS Path"
-    var prom;
+// Create an array and append your functions to them
+var queued_calls = [];
 
-    datasetName.map( (dataset) => {
-      const promise = get_fieldID(apiKey,node,dataset,fieldName)
 
-      promise.then( result => {
-        // console.log(result);
-        console.log("finised successful")
-        // console.log(result)
-      })
-      .catch( error => {
-        console.log(result);
+// Function wrapping code.
+// fn - reference to function.
+// context - what you want "this" to be.
+// params - array of parameters to pass to function.
+var wrapFunction = function(fn, context, params) {
+    return function() {
+        fn.apply(context, params);
+    };
+};
+
+
+var lastPromise = Promise.resolve();;
+
+datasetNames.map( datasetName => {
+  fieldNames.map (fieldName => {
+    console.log(datasetName);
+    console.log(fieldName);
+
+    var api_key = USGS_HELPER.get_api_key();
+
+    api_key
+    .then( (apiKey) => {
+
+      const node = USGS_CONSTANT.NODE_EE;
+
+      //get the actaull filterid value from the request datasetfields
+      const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
+      const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
+
+      //make call to USGS api.  Make sure last promise is resolved first
+      //  becuase USGS api is throttled for one request at a time
+      return lastPromise = lastPromise.then( () => {
+        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+          .then( response => {
+            console.log(response)
+          }).catch(function(error) {
+            console.log(error);
+          });
+      }).catch(function(error) {
         console.log(error);
-      })
+      });
+
 
     })
-
-    // console.log(promises)
-    // axios.all( promises )
-    //   .then( results => {
-    //     results.map( response => {
-    //       console.log(response);
-    //     })
-    //   })
-    //   .catch( error => {
-    //     console.log(error);
-    //   })
-
-
-
   })
+})
+
+      // console.log(lastPromise)
+      //
+      // if(lastPromise){
+      //   lastPromise
+      //     .then( donothing => {
+      //       usgs_response
+      //       .then( result => {
+      //         console.log(result.fieldId);
+      //         console.log("finised successful")
+      //         lastPromise = usgs_response;
+      //       })
+      //       .catch( error => {
+      //         console.log(error);
+      //         lastPromise = usgs_response;
+      //       })
+      //     })
+      //
+      // } else {
+      //   usgs_response
+      //   .then( result => {
+      //     console.log(result.fieldId);
+      //     console.log("finised successful")
+      //     wait = false;
+      //   })
+      //   .catch( error => {
+      //     console.log(error);
+      //     wait = false;
+      //   })
+      // }
+      // var queued_call = wrapFunction(USGS_HELPER.get_usgsapi_response, this, [USGS_REQUEST_CODE, request_body]);
+      // queued_calls.eventPush(queued_call,handler)
+
+        //
+        // usgs_response
+        // .then( result => {
+        //   console.log(result.fieldId);
+        //   console.log("finised successful")
+        //   wait = false;
+        // })
+        // .catch( error => {
+        //   console.log(error);
+        //   wait = false;
+        // })
+
+
+
+//     })
+//
+//   })
+// })
+//
+// Array.prototype.eventPush = function(item, callback) {
+//   this.push(item);
+//   callback(this);
+// }
+//
+// handler = function(array) {
+//     console.log(array.length)
+// }
+//
+// // Remove and execute all items in the array
+// while (queued_calls.length > 0) {
+//   console.log('here')
+//     var d = (queued_calls.shift())();
+//     console.log(d)
+// }
+
+//
+//
+//
+// api_key
+//   .then( (apiKey) => {
+//
+//     var prom;
+//
+//     datasetName.map( (dataset) => {
+//       console.log(dataset)
+//       const promise = get_fieldID(apiKey,node,dataset,fieldName)
+//
+//       promise.then( result => {
+//         // console.log(result);
+//         console.log("finised successful")
+//         // console.log(result)
+//       })
+//       .catch( error => {
+//         console.log(result);
+//         console.log(error);
+//       })
+//
+//     })
+//
+//     // console.log(promises)
+//     // axios.all( promises )
+//     //   .then( results => {
+//     //     results.map( response => {
+//     //       console.log(response);
+//     //     })
+//     //   })
+//     //   .catch( error => {
+//     //     console.log(error);
+//     //   })
+//
+//
+//
+//   })
 
 
 // then get make metadata request for each datasetname

@@ -35,263 +35,285 @@ var additionalCriteria = "";
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();;
 
-//due to usgs api control limits of one request at time..
-var metadata_body = [];
+//limit data
+var limit_json = function(json, limit_index, limit_value){
+  return json.filter( data => {
+    return data[limit_index] === limit_value;
+  })
+};
+
+//make child filter json object
+var make_child_filter = function(filterType, fieldId, firstValue, secondValue){
+  return {
+    filterType,
+    fieldId,
+    firstValue,
+    secondValue
+  }
+};
+
+//make additionalCriteria filter json object
+var make_additionalCriteria_filter = function(filterType, childFilters){
+  return {
+    filterType,
+    childFilters
+  };
+};
+
+//get a date from n (days_ago) days
+var get_start_date = function(days_ago){
+  return new Date(new Date().setDate(new Date().getDate() - days_ago));
+};
+
 
 datasets.map( dataset => {
-  // fieldNames.map (fieldName => {
   const datasetName = dataset.datasetName
 
-    api_key
-    .then( (apiKey) => {
+  api_key
+  .then( (apiKey) => {
 
-      const node = USGS_CONSTANT.NODE_EE;
+    const node = USGS_CONSTANT.NODE_EE;
 
-      //get the actaull filterid value from the request datasetfields
-      const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
-      const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
+    //get the actaull filterid value from the request datasetfields
+    const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
+    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
 
-      //make call to USGS api.  Make sure last promise is resolved first
-      //  becuase USGS api is throttled for one request at a time
-      return lastPromise = lastPromise.then( () => {
+    //make call to USGS api.  Make sure last promise is resolved first
+    //  becuase USGS api is throttled for one request at a time
+    return lastPromise = lastPromise.then( () => {
 
-        //actual request after the last promise has been resolved
-        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-          .then( datasetfields => {
+      //actual request after the last promise has been resolved
+      return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+      .then( datasetfields => {
 
-            childFilters = [];
-            const fields = dataset.fields;
+        childFilters = [];
+        const fields = dataset.fields;
 
-            fields.map (field => {
+        fields.map (field => {
 
-              const fieldName = field.fieldName;
+          const fieldName = field.fieldName;
 
-                //limit based on fieldName
-                var limited = datasetfields.filter( fld => {
-                  return fld.name === fieldName;
-                })
+          //limit based on fieldName
+          const limited = limit_json(datasetfields,'name',fieldName)
 
-                //get the id of the field from the api
-                const fieldId = limited[0].fieldId
+          //get the id of the field from the api
+          const fieldId = limited[0].fieldId
 
-                //get the values to pass for criteria
-                //   this is for searching for the metadata
-                const fieldValues = field.fieldValues
+          //get the values to pass for criteria
+          //   this is for searching for the metadata
+          const fieldValues = field.fieldValues
 
+          //get filters (child) for additionalCriteria array
+          const childFilter =  make_child_filter("between", fieldId, fieldValues[0].value, fieldValues[1].value)
 
-                const childFilter =  {
-                			"filterType": "between",
-                			fieldId,
-                      "firstValue": fieldValues[0].value,
-                			"secondValue": fieldValues[1].value
-                    }
+          //add to the childFilters array
+          childFilters.push(childFilter);
 
-                childFilters.push(childFilter);
+        })
 
-            })
+        //get start and end date
+        var endDate = new Date();
 
-            //get start and end date
-            var endDate = new Date();
-            var start = new Date().setDate(endDate.getDate() - metadata_from_days_ago);
-            var startDate = new Date(start)
+        //get start date
+        const startDate = get_start_date(metadata_from_days_ago)
 
-            var lowerLeft;
-            var upperRight;
-            var months;
-            var includeUnknownCloudCover;
-            var minCloudCover;
-            var maxCloudCover;
+        //instiate search varriables.  this allows to pass undefined varriables
+        //  for optional elements
+        var lowerLeft;
+        var upperRight;
+        var months;
+        var includeUnknownCloudCover;
+        var minCloudCover;
+        var maxCloudCover;
 
-            var additionalCriteria = {
-              "filterType": "and",
-              childFilters
-            };
+        //make additionalCriteria filter
+        var additionalCriteria = make_additionalCriteria_filter("and", childFilters);
 
-            var maxResults = 20;
-            var startingNumber = 1 ;
-            var sortOrder = "ASC";
+        //defaults will move to config yaml
+        var maxResults = 20;
+        var startingNumber = 1 ;
+        var sortOrder = "ASC";
 
-            var search_body = USGS_FUNCTION.usgsapi_search(apiKey, node, datasetName, lowerLeft, upperRight , startDate, endDate,
-                                          months, includeUnknownCloudCover, minCloudCover,
-                                           maxCloudCover, additionalCriteria, maxResults, startingNumber,
-                                           sortOrder);
-            console.log(search_body)
-            const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
-            metadata_body.push(search_body)
-
-            //OKAY blocked again by other calls to api.  so have to return all promises to make sure
-            //  they finsih
-            return  USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
-                  .then( re => {
-
-                    re.results.map(entity => {
-                      console.log(entity.summary)
-                      console.log(entity.metadataUrl)
-                      //at last not throttled so we can get all of this! yeah!
-                      axios.get(entity.metadataUrl)
-                        .then( metadata => {
-                          // console.log(metadata.data)
-                          const xml = metadata.data;
-                          // console.log(xml)
-
-                          //parse xml to json.... but its messy
-                          var parser = new xml2js.Parser();
-
-                          //parse xml to json remove prefixes because it would be near impossible
-                          //  to walk the JSON data with prefixes
-                          //  change the key from '$' to 'data' $ would be a pain to walk also.
-                          //  change the charkey from '_' to value _ would be a pain to walk also and
-                          //   need this is what happens att the metadata value
-                          parseString(xml,
-                            { tagNameProcessors: [stripPrefix],
-                              attrkey:'data',
-                              charkey:'value' },
-                              function(err, js) {
-                              //make sure there are no errors
-                              if(err) throw err;
-
-                              //convert to js array
-                              const metadata_json = [js];
-
-                              //walk the json and get the metadata
-                              // also need to get browse links
+        //create search body
+        var search_body = USGS_FUNCTION.usgsapi_search(apiKey, node, datasetName, lowerLeft, upperRight , startDate, endDate,
+          months, includeUnknownCloudCover, minCloudCover,
+          maxCloudCover, additionalCriteria, maxResults, startingNumber,
+          sortOrder);
 
 
-                              metadata_json.map( metadata => {
-                                const json_string = JSON.stringify(metadata.scene.metadataFields)
-                                const fields_json = metadata.scene.metadataFields
-                                const browse_json = metadata.scene.browseLinks
+          console.log(search_body)
+
+          //create request code
+          const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
 
 
-                                //walk all the fields in the metadata file
-                                fields_json.map( fields => {
-                                    const field_json = fields.metadataField;
+          //blocking by other calls to api 1 call limit imposed by USGS.
+          //  so have to return all promises to make sure they finish.
+          return  USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
+          .then( search_response => {
 
-                                    var fieldvalue;
-                                    var fieldName;
-                                    var databaseFieldName;
+            //walk the search_response and start to collect the
+            //  info for inserting into db
+            search_response.results.map(entity => {
 
-                                    const metdataFields = dataset.metdataFields;
+              console.log(entity.summary)
+              console.log(entity.metadataUrl)
 
-                                    metdataFields.map( meta => {
+              //metadata is not throttled so we can get all of this with normal patterns! yeah!
+              axios.get(entity.metadataUrl)
+              .then( metadata => {
 
-                                      databaseFieldName = meta.field[0].databaseFieldName
-                                      const method = meta.field[0].method;
+                //get xml from USGS api
+                const xml = metadata.data;
 
-                                      if( method === 'api_browse'){
+                //parse xml to json.... a bit messy needs some fixes which can be done with parser
+                var parser = new xml2js.Parser();
 
-                                        //walk all the fields in the metadata file
-                                        browse_json.map( browse => {
+                //parse xml to json remove prefixes because it would be near impossible
+                //  to walk the JSON data with prefixes
+                //  change the key from '$' to 'data' $ would be a pain to walk also.
+                //  change the charkey from '_' to value _ would be a pain to walk also and
+                parseString(xml,
+                  { tagNameProcessors: [stripPrefix],
+                    attrkey:'data',
+                    charkey:'value' },
+                    function(err, js) {
+
+                      //make sure there are no errors
+                      if(err) throw err;
+
+                      //convert to js array
+                      const metadata_json = [js];
+
+                      //walk the json and get the metadata
+                      // also need to get browse links
+                      metadata_json.map( metadata => {
+
+                        //get the fields metadata from usgs xml
+                        const fields_json = metadata.scene.metadataFields
+
+                        //get the image url's for thumbnails metadata from usgs xml
+                        const browse_json = metadata.scene.browseLinks
+
+                        //walk all the fields in the metadata file
+                        fields_json.map( fields => {
+
+                          //get the json for each field, yes lots of nesting
+                          const field_json = fields.metadataField;
+
+                          //insitate some varriables we need no matter what.
+                          // might be better to put this into an array?s
+                          var fieldvalue;
+                          var fieldName;
+                          var databaseFieldName;
+
+                          //get the CONFIG_YAML metadata definitions
+                          //  this will tell us what and how to get metadata for the database.
+                          const metdataFields = dataset.metdataFields;
+
+                          //walk each definition from the CONFIG_YAML
+                          metdataFields.map( meta => {
+
+                            //get the database field name from the CONFIG_YAML
+                            databaseFieldName = meta.field[0].databaseFieldName
+
+                            //get the method to use for the metadata 3 types
+                            //  api use a field from the USGS metadata xml
+                            //  api_browse use a field from the USGS metadata browse (thumbnails) xml
+                            //  constant use a defined value.  the value to use will be in the fieldName
+                            const method = meta.field[0].method;
+
+                            //if the method is api_browse then get the thumbnail for
+                            if( method === 'api_browse'){
+
+                              //walk all the fields in the metadata file
+                              browse_json.map( browse => {
+
+                                //get all the browse thumbnail images
+                                const browse_urls_json = browse.browse;
+
+                                //walk the browse url data and get the browselink
+                                browse_urls_json.map( url => {
+                                  //get the caption for the images
+                                  const caption = url.data.caption;
+
+                                  //only interested in the human readable image no sensor
+                                  if('LandsatLook "Natural Color" Preview Image' === caption){
+
+                                    //set the field name
+                                    fieldName = meta.field[0].fieldName;
+
+                                    //set the field value
+                                    fieldvalue = url.browseLink[0];
+                                  } // natural color caption
+
+                                }) //browse_urls_json.map
+                              }) // browse_json.map
+                            } // api_browse method
+
+                            if( method === 'api'){
+
+                              //filter the field using the CONFIG_YAML fieldName
+                              //  lots of nesting in the USGS xml so data.name
+                              const filteredField = field_json.filter( field => {
+                                return field.data.name === meta.field[0].fieldName;
+                              })
+
+                              //set the field name
+                              fieldName = meta.field[0].fieldName;
+
+                              //set the field value
+                              fieldvalue = filteredField[0].metadataValue[0].value;
+
+                              //not sure how to handle this in config.
+                              // maybe the db field definition needs to change so it accepts longer text
+                              // so we do not mutate the data.
+                              if (databaseFieldName === "data_type_l1" &&
+                              filteredField[0].metadataValue[0].value.indexOf("+") > 0){
+                                fieldvalue = filteredField[0].metadataValue[0].value.split(/\s+/)[1];
+                              }//data type fix
+
+                            }//api method
+
+                            if( method === 'constant'){
+                              //set the field name
+                              fieldName = databaseFieldName;
+
+                              //set the field value
+                              fieldvalue = meta.field[0].fieldName;
+                            }//constant method
+
+                            //field name
+                            console.log(fieldName);
+                            console.log(databaseFieldName);
+                            console.log(fieldvalue);
+
+                          })//metdataFields.map
+                        })//fields_json.map
+                      })//metadata_json.map
+                    })//parseString parse xml into JSON
 
 
-                                          const browse_urls_json = browse.browse;
 
-                                          //walk the browse url data and get the browselink
-                                          browse_urls_json.map( url => {
-                                            const caption = url.data.caption;
-                                            if('LandsatLook "Natural Color" Preview Image' === caption){
-                                              fieldName = meta.field[0].fieldName;
-                                              fieldvalue = url.browseLink[0];
-                                            }
+                  }).catch( (error) => {
+                    console.log(error);
+                  })//axios.get(entity.metadataUrl)
 
-                                            // console.log(url);
-                                            // console.log('');
-                                          })
+                }); //search_response.results.map
+              }).catch(function(error) {
+                console.log('search: ' + error);
+              }); //search USGS API call
 
-                                        })
 
-                                      }
+              //errror for current promise
+            }).catch(function(error) {
+              console.log('datasetfields' + error);
+            }); //datasetfields from USGS API call
 
-                                      if( method === 'api'){
-
-                                          const filteredField = field_json.filter( field => {
-                                            // console.log(meta.fieldName);
-                                            // console.log(field.data.name);
-
-                                            return field.data.name === meta.field[0].fieldName;
-                                          })
-
-                                          fieldName = meta.field[0].fieldName;
-                                          fieldvalue = filteredField[0].metadataValue[0].value;
-
-                                          //not sure how to handle this in config.  maybe the db needs to change?
-                                          // so we do not mutate the data.
-                                          if (databaseFieldName === "data_type_l1" &&
-                                              filteredField[0].metadataValue[0].value.indexOf("+") > 0){
-
-                                            fieldvalue = filteredField[0].metadataValue[0].value.split(/\s+/)[1];
-                                          }
-
-                                       }
-
-                                       if( method === 'constant'){
-                                         fieldName = databaseFieldName;
-                                         fieldvalue = meta.field[0].fieldName;
-
-                                       }
-
-                                      //field name
-                                      console.log(fieldName);
-                                      console.log(databaseFieldName);
-                                      console.log(fieldvalue);
-
-                                    })
-
-                                    console.log('');
-                                    console.log('');
-                                    // //walk each field and get its value
-                                    // //  need to just pul the ones I care about..
-                                    // field_json.map( field => {
-                                    //   // console.log(field.data.name);
-                                    //   // console.log(field.metadataValue[0].value);
-                                    //   //
-                                    //   // console.log('');
-                                    //
-                                    // })
-                                })
-                                // console.log(json_string);
-                                // console.log('');
-
-                            })
-                          })
-
-                          // parser.parseString(metadata.data, {   tagNameProcessors: [stripPrefix] },(err, result) => {
-                          //
-                          //       // const metadataJSON = JSON.parse(result)
-                          //         // metadataJSON.map( xmlwalker => {
-                          //         //   console.log("walk")
-                          //         //   console.log(xmlwalker);
-                          //       // })
-                          //       //console.log(result);
-                          //       console.log(JSON.stringify(result));
-                          //       console.log('Done');
-                          //     });
-                          // console.log('');
-                          // console.log('');
-
-                        }).catch( (error) => {
-                          console.log(error);
-                        })
-
-                    })
-                  }).catch(function(error) {
-                    console.log('search: ' + error);
-                  });
-
-            console.log('')
-            console.log('')
-            console.log('----')
-
-            //errror for current promise
+            //error for last promise
           }).catch(function(error) {
-            console.log('datasetfields' + error);
-          });
-      //error for last promise
-      }).catch(function(error) {
-        console.log(error);
-      });
-
-
-    })
-  // })
-})
+            console.log(error);
+          }); //last promise not real used to make sure the last promise has completed
+          //  since USGS limits api calls to one at a time
+        })
+      })

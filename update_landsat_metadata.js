@@ -1,6 +1,10 @@
 var axios = require('axios');
 var http = require('http');
 var yaml = require('yamljs');
+var xml2js = require('xml2js');
+var parseString = require('xml2js').parseString;
+var stripPrefix = require('xml2js').processors.stripPrefix;
+
 
 //get modules
 var USGS_CONSTANT = require("./usgs_constants.js");
@@ -29,6 +33,9 @@ const node = USGS_CONSTANT.NODE_EE;
 var additionalCriteria = "";
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();;
+
+//due to usgs api control limits of one request at time..
+var metadata_body = [];
 
 datasets.map( dataset => {
   // fieldNames.map (fieldName => {
@@ -86,36 +93,18 @@ datasets.map( dataset => {
             var start = new Date().setDate(endDate.getDate() - metadata_from_days_ago);
             var startDate = new Date(start)
 
-
-            //searchrequest test
-            //needs refactoring
-            // var searchrequest = 	{
-            //   "datasetName": datasetName,
-            // 	startDate,
-            // 	endDate,
-            // 	"lowerLeft": null,
-            // 	"upperRight": null,
-            //   "additionalCriteria": {
-            //     "filterType": "and",
-            //     childFilters
-            //   },
-            //   node,
-            // 	"maxResults": 20,
-            // 	"startingNumber": 1,
-            // 	"sortOrder": "ASC"
-            // };
             var lowerLeft;
             var upperRight;
-            // var startDate;
-            // var endDate;
             var months;
             var includeUnknownCloudCover;
             var minCloudCover;
             var maxCloudCover;
+
             var additionalCriteria = {
               "filterType": "and",
               childFilters
             };
+
             var maxResults = 20;
             var startingNumber = 1 ;
             var sortOrder = "ASC";
@@ -124,26 +113,70 @@ datasets.map( dataset => {
                                           months, includeUnknownCloudCover, minCloudCover,
                                            maxCloudCover, additionalCriteria, maxResults, startingNumber,
                                            sortOrder);
-
+            console.log(search_body)
             const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
-            // return lastPromise = lastPromise.then( () => {
-            //
-            //
-            // })
-                //OKAY blocked again by other calls to api.  why only one
-                  USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
-                      .then( re => {
-                        console.log(re)
-                        console.log('')
-                        console.log('')
-                      }).catch(function(error) {
-                        console.log('search: ' + error);
-                      });
+            metadata_body.push(search_body)
 
+            //OKAY blocked again by other calls to api.  so have to return all promises to make sure
+            //  they finsih
+            return  USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
+                  .then( re => {
 
+                    re.results.map(entity => {
+                      console.log(entity.summary)
+                      console.log(entity.metadataUrl)
+                      //at last not throttled so we can get all of this! yeah!
+                      axios.get(entity.metadataUrl)
+                        .then( metadata => {
+                          // console.log(metadata.data)
+                          const xml = metadata.data;
+                          // console.log(xml)
 
-            // console.log(search_body);
-            console.log(JSON.stringify(search_body))
+                          //parse xml to json.... but its messy
+                          var parser = new xml2js.Parser();
+
+                          //parse xml to json remove prefixes because it would be near impossible
+                          //  to walk the JSON data with prefixes
+                          //  chnge the key from '$' to 'data' $ would be a pain to walk also.
+                          parseString(xml,  {   tagNameProcessors: [stripPrefix], attrkey:'data' }, function(err, js) {
+                              //make sure there are no errors
+                              if(err) throw err;
+
+                              //convert to js array
+                              const metadata_json = [js];
+
+                              //walk the json and get the metadata
+                              metadata_json.map( metadata => {
+                                const json_string = JSON.stringify(metadata.scene.metadataFields)
+                                console.log(json_string);
+                                console.log('');
+
+                            })
+                          })
+
+                          // parser.parseString(metadata.data, {   tagNameProcessors: [stripPrefix] },(err, result) => {
+                          //
+                          //       // const metadataJSON = JSON.parse(result)
+                          //         // metadataJSON.map( xmlwalker => {
+                          //         //   console.log("walk")
+                          //         //   console.log(xmlwalker);
+                          //       // })
+                          //       //console.log(result);
+                          //       console.log(JSON.stringify(result));
+                          //       console.log('Done');
+                          //     });
+                          // console.log('');
+                          // console.log('');
+
+                        }).catch( (error) => {
+                          console.log(error);
+                        })
+
+                    })
+                  }).catch(function(error) {
+                    console.log('search: ' + error);
+                  });
+
             console.log('')
             console.log('')
             console.log('----')

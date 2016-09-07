@@ -19,26 +19,40 @@ const METADATA_YAML = yaml.load("./metadata.yaml");
 
 //get the array of datasetnames for use in USGS API calls
 const datasets = METADATA_YAML.metadata_datasets;
-const metadata_from_days_ago = METADATA_YAML.metadata_from_days_ago;
 
+//get the CONFIG_YAML defined days ago
+// tells how may days to go back.
+const metadata_from_days_ago = METADATA_YAML.metadata_from_days_ago;
 
 //login and get promise for api key
 var api_key = USGS_HELPER.get_api_key();
 
+//set default node
 const node = USGS_CONSTANT.NODE_EE;
-// const datasetNames = ["LANDSAT_8","LANDSAT_ETM_SLC_OFF"]
-// const fieldNames = ["WRS Path","WRS Row"]
-// const path = [13,33]
-// const row = [33,43]
 
 var additionalCriteria = "";
-//captures lastpromise first one is resolved
-var lastPromise = Promise.resolve();;
 
-//limit data
-var limit_json = function(json, limit_index, limit_value){
+//captures lastpromise first one is resolved
+var lastPromise = Promise.resolve();
+
+//limit data from json object
+var limit_json = function(json, limit_indexs, limit_value){
+  //get count of indexes.  deal with nested data...
+  const count = limit_indexs.length;
+
   return json.filter( data => {
-    return data[limit_index] === limit_value;
+    switch (count) {
+      case 1:
+        return data[limit_indexs[0]] === limit_value;
+        break;
+      case 2:
+        return data[limit_indexs[0]][limit_indexs[1]] === limit_value;
+        break;
+      case 3:
+        return data[limit_indexs[0]][limit_indexs[1]][limit_indexs[2]] === limit_value;
+        break;
+      default:
+    }
   })
 };
 
@@ -65,13 +79,139 @@ var get_start_date = function(days_ago){
   return new Date(new Date().setDate(new Date().getDate() - days_ago));
 };
 
+//return child filter aray
+var get_child_filters = function(fields_json, datasetfields){
 
+  var array = [];
+
+  //walk through all te
+  fields_json.map( (field) => {
+
+    //get field name from fields json in CONFIG_YAML
+    const fieldName = field.fieldName;
+
+    const limit_indexs = ['name'];
+
+    //limit json in datasetfields (from USGS api) based on fieldName in CONFIG_YAML
+    //   this will allow the usgs API to dynamicall figure out the currect fieldid
+    const limited = limit_json(datasetfields, limit_indexs, fieldName)
+
+    //get the id of the field from the api
+    const fieldId = limited[0].fieldId
+
+    //get the values to pass for criteria
+    //   this is for searching for the metadata
+    const fieldValues = field.fieldValues
+
+    const filterType = "between";
+    const firstValue = fieldValues[0].value;
+    const secondValue = fieldValues[1].value;
+
+    //get filters (child) for additionalCriteria array
+    const childFilter = make_child_filter(filterType, fieldId, firstValue, secondValue)
+
+    //add to the childFilters array
+    array.push(childFilter);
+
+  })
+
+  return array
+};
+
+
+var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFieldName){
+
+  var fieldValue;
+
+  //walk all the fields in the metadata file
+  browse_json.map( browse => {
+
+    //get all the browse thumbnail images
+    const browse_urls_json = browse.browse;
+
+    //walk the browse url data and get the browselink
+    browse_urls_json.map( url => {
+
+      //get the caption for the images
+      const caption = url.data.caption;
+
+      //only interested in the human readable image no sensor
+      if('LandsatLook "Natural Color" Preview Image' === caption){
+
+        //set the field value
+        fieldvalue = url.browseLink[0];
+      } // natural color caption
+
+    }) //browse_urls_json.map
+  }) // browse_json.map
+
+    return {
+      configFieldName,
+      databaseFieldName,
+      fieldvalue
+    };
+
+};
+
+//fix data_type_l1
+var fix_data_type_l1_vals = function(databaseFieldName, fieldvalue){
+
+  //not sure how to handle this in config.
+  // maybe the db field definition needs to change so it accepts longer text
+  // so we do not mutate the data.
+  if (databaseFieldName === "data_type_l1" &&
+      fieldvalue.indexOf("+") > 0){
+
+    //set the field value when there is too many chartacters for db some extra wierd chartacters
+    //  returned from api so we strip it out
+    return fieldvalue.split(/\s+/)[1];
+
+  };//data type fix
+
+  //if not data_type_l1 then just return value
+  return fieldvalue
+};
+
+var get_api_fieldset = function(field_json, configFieldName, databaseFieldName){
+
+  //set limit_indexs
+  const limit_indexs = ['data','name'];
+
+  //filter the field using the CONFIG_YAML fieldName
+  const filteredField = limit_json(field_json, limit_indexs, configFieldName)
+
+  const rawFieldValue = filteredField[0].metadataValue[0].value;
+
+  //set the field value
+  fieldvalue = fix_data_type_l1_vals(databaseFieldName, rawFieldValue);
+
+
+  return {
+    configFieldName,
+    databaseFieldName,
+    fieldvalue
+  };
+};
+
+var get_constant_fieldset = function(configFieldName, databaseFieldName){
+
+  //set the field value
+  fieldvalue = configFieldName;
+
+  return {
+    configFieldName,
+    databaseFieldName,
+    fieldvalue
+  };
+}
+//walk the datasets from the CONFIG_YAML
 datasets.map( dataset => {
   const datasetName = dataset.datasetName
 
   api_key
   .then( (apiKey) => {
 
+    //get constant for node "EE"
     const node = USGS_CONSTANT.NODE_EE;
 
     //get the actaull filterid value from the request datasetfields
@@ -87,29 +227,13 @@ datasets.map( dataset => {
       .then( datasetfields => {
 
         childFilters = [];
+
+        //get the fields object from CONFIG_YAML
+        //  so we can translate the USGS field to a field id from USGS api
         const fields = dataset.fields;
 
-        fields.map (field => {
-
-          const fieldName = field.fieldName;
-
-          //limit based on fieldName
-          const limited = limit_json(datasetfields,'name',fieldName)
-
-          //get the id of the field from the api
-          const fieldId = limited[0].fieldId
-
-          //get the values to pass for criteria
-          //   this is for searching for the metadata
-          const fieldValues = field.fieldValues
-
-          //get filters (child) for additionalCriteria array
-          const childFilter =  make_child_filter("between", fieldId, fieldValues[0].value, fieldValues[1].value)
-
-          //add to the childFilters array
-          childFilters.push(childFilter);
-
-        })
+        //create the childFilters object
+        const childFilters = get_child_filters (fields, datasetfields);
 
         //get start and end date
         var endDate = new Date();
@@ -126,31 +250,45 @@ datasets.map( dataset => {
         var minCloudCover;
         var maxCloudCover;
 
+        //set filter type for additionalCriteria json
+        const filterType = "and";
+
         //make additionalCriteria filter
-        var additionalCriteria = make_additionalCriteria_filter("and", childFilters);
+        var additionalCriteria = make_additionalCriteria_filter(filterType, childFilters);
 
         //defaults will move to config yaml
         var maxResults = 20;
         var startingNumber = 1 ;
         var sortOrder = "ASC";
 
-        //create search body
-        var search_body = USGS_FUNCTION.usgsapi_search(apiKey, node, datasetName, lowerLeft, upperRight , startDate, endDate,
-          months, includeUnknownCloudCover, minCloudCover,
-          maxCloudCover, additionalCriteria, maxResults, startingNumber,
+        //create search body json
+        var search_body = USGS_FUNCTION.usgsapi_search(
+          apiKey,
+          node,
+          datasetName,
+          lowerLeft,
+          upperRight,
+          startDate,
+          endDate,
+          months,
+          includeUnknownCloudCover,
+          minCloudCover,
+          maxCloudCover,
+          additionalCriteria,
+          maxResults,
+          startingNumber,
           sortOrder);
-
 
           console.log(search_body)
 
-          //create request code
+          //create request code for searching for available scenes
           const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
 
-
-          //blocking by other calls to api 1 call limit imposed by USGS.
+          //blocking by other calls to USGS api. there is a 1 call limit imposed by USGS.
           //  so have to return all promises to make sure they finish.
-          return  USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
-          .then( search_response => {
+          // make the call to the usgs to get available data and the metadata url
+          return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
+            .then( search_response => {
 
             //walk the search_response and start to collect the
             //  info for inserting into db
@@ -215,78 +353,41 @@ datasets.map( dataset => {
                           metdataFields.map( meta => {
 
                             //get the database field name from the CONFIG_YAML
-                            databaseFieldName = meta.field[0].databaseFieldName
+                            databaseFieldName = meta.field[0].databaseFieldName;
+                            configFieldName = meta.field[0].fieldName;
 
                             //get the method to use for the metadata 3 types
                             //  api use a field from the USGS metadata xml
                             //  api_browse use a field from the USGS metadata browse (thumbnails) xml
                             //  constant use a defined value.  the value to use will be in the fieldName
                             const method = meta.field[0].method;
+                            var fieldSet;
 
                             //if the method is api_browse then get the thumbnail for
                             if( method === 'api_browse'){
-
-                              //walk all the fields in the metadata file
-                              browse_json.map( browse => {
-
-                                //get all the browse thumbnail images
-                                const browse_urls_json = browse.browse;
-
-                                //walk the browse url data and get the browselink
-                                browse_urls_json.map( url => {
-                                  //get the caption for the images
-                                  const caption = url.data.caption;
-
-                                  //only interested in the human readable image no sensor
-                                  if('LandsatLook "Natural Color" Preview Image' === caption){
-
-                                    //set the field name
-                                    fieldName = meta.field[0].fieldName;
-
-                                    //set the field value
-                                    fieldvalue = url.browseLink[0];
-                                  } // natural color caption
-
-                                }) //browse_urls_json.map
-                              }) // browse_json.map
-                            } // api_browse method
+                              fieldSet = get_browse_url_fieldset(browse_json, databaseFieldName, configFieldName);
+                              console.log(fieldSet);
+                            }; // api_browse method;
 
                             if( method === 'api'){
 
-                              //filter the field using the CONFIG_YAML fieldName
-                              //  lots of nesting in the USGS xml so data.name
-                              const filteredField = field_json.filter( field => {
-                                return field.data.name === meta.field[0].fieldName;
-                              })
+                              fieldSet = get_api_fieldset(field_json, configFieldName, databaseFieldName);
+                              console.log(fieldSet);
 
-                              //set the field name
-                              fieldName = meta.field[0].fieldName;
 
-                              //set the field value
-                              fieldvalue = filteredField[0].metadataValue[0].value;
+                            }; //api method
 
-                              //not sure how to handle this in config.
-                              // maybe the db field definition needs to change so it accepts longer text
-                              // so we do not mutate the data.
-                              if (databaseFieldName === "data_type_l1" &&
-                              filteredField[0].metadataValue[0].value.indexOf("+") > 0){
-                                fieldvalue = filteredField[0].metadataValue[0].value.split(/\s+/)[1];
-                              }//data type fix
-
-                            }//api method
-
+                            //method type constant
                             if( method === 'constant'){
-                              //set the field name
-                              fieldName = databaseFieldName;
+                              fieldSet = get_constant_fieldset(configFieldName, databaseFieldName);
+                              console.log(fieldSet);
 
-                              //set the field value
-                              fieldvalue = meta.field[0].fieldName;
-                            }//constant method
+                            }; //constant method
 
                             //field name
-                            console.log(fieldName);
-                            console.log(databaseFieldName);
-                            console.log(fieldvalue);
+                            // console.log(fieldName);
+                            // console.log(databaseFieldName);
+                            // console.log(fieldvalue);
 
                           })//metdataFields.map
                         })//fields_json.map
@@ -305,7 +406,7 @@ datasets.map( dataset => {
               }); //search USGS API call
 
 
-              //errror for current promise
+              //error for current promise
             }).catch(function(error) {
               console.log('datasetfields' + error);
             }); //datasetfields from USGS API call

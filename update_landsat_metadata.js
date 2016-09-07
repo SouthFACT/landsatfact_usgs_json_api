@@ -21,6 +21,7 @@ const METADATA_YAML = yaml.load("./metadata.yaml");
 const datasets = METADATA_YAML.metadata_datasets;
 const metadata_from_days_ago = METADATA_YAML.metadata_from_days_ago;
 
+
 //login and get promise for api key
 var api_key = USGS_HELPER.get_api_key();
 
@@ -60,6 +61,7 @@ datasets.map( dataset => {
 
             childFilters = [];
             const fields = dataset.fields;
+
             fields.map (field => {
 
               const fieldName = field.fieldName;
@@ -137,8 +139,14 @@ datasets.map( dataset => {
 
                           //parse xml to json remove prefixes because it would be near impossible
                           //  to walk the JSON data with prefixes
-                          //  chnge the key from '$' to 'data' $ would be a pain to walk also.
-                          parseString(xml,  {   tagNameProcessors: [stripPrefix], attrkey:'data' }, function(err, js) {
+                          //  change the key from '$' to 'data' $ would be a pain to walk also.
+                          //  change the charkey from '_' to value _ would be a pain to walk also and
+                          //   need this is what happens att the metadata value
+                          parseString(xml,
+                            { tagNameProcessors: [stripPrefix],
+                              attrkey:'data',
+                              charkey:'value' },
+                              function(err, js) {
                               //make sure there are no errors
                               if(err) throw err;
 
@@ -146,10 +154,103 @@ datasets.map( dataset => {
                               const metadata_json = [js];
 
                               //walk the json and get the metadata
+                              // also need to get browse links
+
+
                               metadata_json.map( metadata => {
                                 const json_string = JSON.stringify(metadata.scene.metadataFields)
-                                console.log(json_string);
-                                console.log('');
+                                const fields_json = metadata.scene.metadataFields
+                                const browse_json = metadata.scene.browseLinks
+
+
+                                //walk all the fields in the metadata file
+                                fields_json.map( fields => {
+                                    const field_json = fields.metadataField;
+
+                                    var fieldvalue;
+                                    var fieldName;
+                                    var databaseFieldName;
+
+                                    const metdataFields = dataset.metdataFields;
+
+                                    metdataFields.map( meta => {
+
+                                      databaseFieldName = meta.field[0].databaseFieldName
+                                      const method = meta.field[0].method;
+
+                                      if( method === 'api_browse'){
+
+                                        //walk all the fields in the metadata file
+                                        browse_json.map( browse => {
+
+
+                                          const browse_urls_json = browse.browse;
+
+                                          //walk the browse url data and get the browselink
+                                          browse_urls_json.map( url => {
+                                            const caption = url.data.caption;
+                                            if('LandsatLook "Natural Color" Preview Image' === caption){
+                                              fieldName = meta.field[0].fieldName;
+                                              fieldvalue = url.browseLink[0];
+                                            }
+
+                                            // console.log(url);
+                                            // console.log('');
+                                          })
+
+                                        })
+
+                                      }
+
+                                      if( method === 'api'){
+
+                                          const filteredField = field_json.filter( field => {
+                                            // console.log(meta.fieldName);
+                                            // console.log(field.data.name);
+
+                                            return field.data.name === meta.field[0].fieldName;
+                                          })
+
+                                          fieldName = meta.field[0].fieldName;
+                                          fieldvalue = filteredField[0].metadataValue[0].value;
+
+                                          //not sure how to handle this in config.  maybe the db needs to change?
+                                          // so we do not mutate the data.
+                                          if (databaseFieldName === "data_type_l1" &&
+                                              filteredField[0].metadataValue[0].value.indexOf("+") > 0){
+
+                                            fieldvalue = filteredField[0].metadataValue[0].value.split(/\s+/)[1];
+                                          }
+
+                                       }
+
+                                       if( method === 'constant'){
+                                         fieldName = databaseFieldName;
+                                         fieldvalue = meta.field[0].fieldName;
+
+                                       }
+
+                                      //field name
+                                      console.log(fieldName);
+                                      console.log(databaseFieldName);
+                                      console.log(fieldvalue);
+
+                                    })
+
+                                    console.log('');
+                                    console.log('');
+                                    // //walk each field and get its value
+                                    // //  need to just pul the ones I care about..
+                                    // field_json.map( field => {
+                                    //   // console.log(field.data.name);
+                                    //   // console.log(field.metadataValue[0].value);
+                                    //   //
+                                    //   // console.log('');
+                                    //
+                                    // })
+                                })
+                                // console.log(json_string);
+                                // console.log('');
 
                             })
                           })

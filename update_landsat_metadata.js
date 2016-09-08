@@ -443,7 +443,7 @@ datasets.map( dataset => {
 
                     console.log(metadata_recordset);
                     //do the insert here
-                    update_lsf_database.update_metadata(metadata_recordset);
+                    update_lsf_database.metadata_to_db(metadata_recordset);
 
                   }).catch( (error) => {
                     console.log('get metadata: ' + error);

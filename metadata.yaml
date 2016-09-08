@@ -63,6 +63,10 @@ metadata_datasets:
     - fieldName: Data Type Level 1
       databaseFieldName: data_type_l1
       method: api
+  - field:
+    - fieldName: 999999
+      databaseFieldName: l1_key
+      method: constant
 - datasetName: LANDSAT_ETM
   fieldId: fieldId
   datasetFilterType: and
@@ -126,6 +130,10 @@ metadata_datasets:
     - fieldName: Data Type Level 1
       databaseFieldName: data_type_l1
       method: api
+  - field:
+    - fieldName: 999999
+      databaseFieldName: l1_key
+      method: constant
 - datasetName: LANDSAT_ETM_SLC_OFF
   fieldId: fieldId
   datasetFilterType: and
@@ -189,6 +197,10 @@ metadata_datasets:
     - fieldName: Data Type Level 1
       databaseFieldName: data_type_l1
       method: api
+  - field:
+    - fieldName: 999999
+      databaseFieldName: l1_key
+      method: constant
 - datasetName: LANDSAT_TM
   fieldId: fieldId
   datasetFilterType: and
@@ -252,6 +264,10 @@ metadata_datasets:
     - fieldName: Data Type Level 1
       databaseFieldName: data_type_l1
       method: api
+  - field:
+    - fieldName: 999999
+      databaseFieldName: l1_key
+      method: constant
 database:
   - json_field:
     database_field:

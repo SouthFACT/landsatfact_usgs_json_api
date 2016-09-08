@@ -10,6 +10,7 @@ var stripPrefix = require('xml2js').processors.stripPrefix;
 var USGS_CONSTANT = require("./usgs_constants.js");
 var USGS_FUNCTION = require("./usgs_functions.js");
 var USGS_HELPER = require("./usgs_helpers.js");
+const update_lsf_database = require("./update_lsf_database.js");
 
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
@@ -226,7 +227,7 @@ var get_api_fieldset = function(field_json, configFieldName, databaseFieldName){
 //  into the Landsat Fact Datbase
 //    this function is for creating a the field set when the value is a constant or
 //    needs be defined by the user rather then the USGS API or is a constant
-var get_constant_fieldset = function(databaseFieldName){
+var get_constant_fieldset = function(configFieldName, databaseFieldName){
 
   //set the field value
   const value = configFieldName;
@@ -426,7 +427,7 @@ datasets.map( dataset => {
 
                             //method type constant
                             if( method === 'constant'){
-                              fieldSet = get_constant_fieldset(configFieldName);
+                              fieldSet = get_constant_fieldset(configFieldName, databaseFieldName);
                               //  console.log(fieldSet);
 
                             }; //constant method
@@ -442,7 +443,7 @@ datasets.map( dataset => {
 
                     console.log(metadata_recordset);
                     //do the insert here
-
+                    update_lsf_database.update_metadata(metadata_recordset);
 
                   }).catch( (error) => {
                     console.log('get metadata: ' + error);

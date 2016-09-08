@@ -60,7 +60,7 @@ api_key
     const request_json = JSON.parse(input_json);
 
     //merge apikey json object and request json object into one json object to pass to USGS api
-    const request_body =  mergejson(request_json,apiKey_json);
+    const request_body =  USGS_HELPER.mergejson(request_json,apiKey_json);
 
     //make call to USGS api
     const usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
@@ -80,11 +80,3 @@ api_key
 .catch( error => {
   return USGS_HELPER.throw_error(error);;
 });
-
-//merge json objects. would use spread but not availabe in node yet
-function mergejson(a, b){
-   for(var key in b)
-       if(b.hasOwnProperty(key))
-           a[key] = b[key];
-   return a;
-}

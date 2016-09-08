@@ -193,6 +193,14 @@ module.exports = {
     }
   },
 
+  //merge json objects. would use spread but not availabe in node yet
+  mergejson: function(a, b){
+     for(var key in b)
+         if(b.hasOwnProperty(key))
+             a[key] = b[key];
+     return a;
+  },
+
   //logout
   usgs_logout: function (apiKey){
 

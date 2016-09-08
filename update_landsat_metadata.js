@@ -36,20 +36,21 @@ var additionalCriteria = "";
 var lastPromise = Promise.resolve();
 
 //limit data from json object
-var limit_json = function(json, limit_indexs, limit_value){
+var limit_json = function(json, limit_keys, limit_value){
   //get count of indexes.  deal with nested data...
-  const count = limit_indexs.length;
+  const count = limit_keys.length;
 
+  // only allow up to three nestings.
   return json.filter( data => {
     switch (count) {
-      case 1:
-        return data[limit_indexs[0]] === limit_value;
+      case 1:  //one nested keyu
+        return data[limit_keys[0]] === limit_value;
         break;
       case 2:
-        return data[limit_indexs[0]][limit_indexs[1]] === limit_value;
+        return data[limit_keys[0]][limit_keys[1]] === limit_value;
         break;
       case 3:
-        return data[limit_indexs[0]][limit_indexs[1]][limit_indexs[2]] === limit_value;
+        return data[limit_keys[0]][limit_keys[1]][limit_keys[2]] === limit_value;
         break;
       default:
     }
@@ -80,8 +81,12 @@ var get_start_date = function(days_ago){
 };
 
 //return child filter aray
+
+// needs an json object of fields to limit another json object of metadata fields returned from
+//  the USGS api
 var get_child_filters = function(fields_json, datasetfields){
 
+  // instiate a blank array
   var array = [];
 
   //walk through all te
@@ -90,11 +95,11 @@ var get_child_filters = function(fields_json, datasetfields){
     //get field name from fields json in CONFIG_YAML
     const fieldName = field.fieldName;
 
-    const limit_indexs = ['name'];
+    const limit_keys = ['name'];
 
     //limit json in datasetfields (from USGS api) based on fieldName in CONFIG_YAML
     //   this will allow the usgs API to dynamicall figure out the currect fieldid
-    const limited = limit_json(datasetfields, limit_indexs, fieldName)
+    const limited = limit_json(datasetfields, limit_keys, fieldName)
 
     //get the id of the field from the api
     const fieldId = limited[0].fieldId
@@ -115,13 +120,22 @@ var get_child_filters = function(fields_json, datasetfields){
 
   })
 
+  //return the metadata fields and values that contain only
+  //  the fields we want to insert into the landsat fact database
   return array
 };
 
 
+//returns a field name and field value object for a metadata field
+//  this field set will be combined to create a metada record for insertion
+//  into the Landsat Fact Datbase
+//    this function is for creating a the field set when the value is defined
+//    by the USGS API in the browse element.  this element holds all the thumbnail images
+//    of the scene
 var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFieldName){
 
   var fieldValue;
+  var name = databaseFieldName;
 
   //walk all the fields in the metadata file
   browse_json.map( browse => {
@@ -135,7 +149,7 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
       //get the caption for the images
       const caption = url.data.caption;
 
-      //only interested in the human readable image no sensor
+      //only interested in the human readable image or RGB image
       if('LandsatLook "Natural Color" Preview Image' === caption){
 
         //set the field value
@@ -145,15 +159,21 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
     }) //browse_urls_json.map
   }) // browse_json.map
 
-    return {
-      configFieldName,
-      databaseFieldName,
-      fieldvalue
-    };
+  const value = fieldvalue;
+
+  return {
+    name,
+    value
+  };
 
 };
 
 //fix data_type_l1
+//  the data_type_l1 metadata field has too many chartacters that are not used byt the
+//  Landsat fact datbase.  in these cases we must make sure the chartacter limit of 5
+//  characters will not fail to insert into the database so we strip out characters that are not needed.
+//  from visual inspeaction this happens when the + charater has text before it.  any charaters
+//    before the + character is not needed for our use case so we strip it out.
 var fix_data_type_l1_vals = function(databaseFieldName, fieldvalue){
 
   //not sure how to handle this in config.
@@ -172,38 +192,62 @@ var fix_data_type_l1_vals = function(databaseFieldName, fieldvalue){
   return fieldvalue
 };
 
+//returns a field name and field value object for a metadata field
+//  this field set will be combined to create a metada record for insertion
+//  into the Landsat Fact Datbase
+//    this function is for creating a the field set when the value is defined
+//    by the USGS API
 var get_api_fieldset = function(field_json, configFieldName, databaseFieldName){
 
-  //set limit_indexs
-  const limit_indexs = ['data','name'];
+  var name = databaseFieldName;
+
+  //set limit_keys
+  const limit_keys = ['data','name'];
 
   //filter the field using the CONFIG_YAML fieldName
-  const filteredField = limit_json(field_json, limit_indexs, configFieldName)
+  const filteredField = limit_json(field_json, limit_keys, configFieldName)
 
   const rawFieldValue = filteredField[0].metadataValue[0].value;
 
   //set the field value
-  fieldvalue = fix_data_type_l1_vals(databaseFieldName, rawFieldValue);
+  const fieldvalue = fix_data_type_l1_vals(databaseFieldName, rawFieldValue);
 
+  const value = fieldvalue;
 
   return {
-    configFieldName,
-    databaseFieldName,
-    fieldvalue
+    name,
+    value
+  };
+
+};
+
+//returns a field name and field value object for a metadata field
+//  this field set will be combined to create a metada record for insertion
+//  into the Landsat Fact Datbase
+//    this function is for creating a the field set when the value is a constant or
+//    needs be defined by the user rather then the USGS API or is a constant
+var get_constant_fieldset = function(databaseFieldName){
+
+  //set the field value
+  const value = configFieldName;
+  const name = databaseFieldName;
+
+  return {
+    name,
+    value
   };
 };
 
-var get_constant_fieldset = function(configFieldName, databaseFieldName){
 
-  //set the field value
-  fieldvalue = configFieldName;
+//create a json object of all the USGS metadata fieldnames and values
+//  for inserting into landsat FACT databaseFieldName
+var get_metadata_record_fieldset = function(record_set, field_set){
+   var new_array = record_set;
 
-  return {
-    configFieldName,
-    databaseFieldName,
-    fieldvalue
-  };
-}
+   new_array.push(field_set);
+   return new_array;
+};
+
 //walk the datasets from the CONFIG_YAML
 datasets.map( dataset => {
   const datasetName = dataset.datasetName
@@ -279,7 +323,8 @@ datasets.map( dataset => {
           startingNumber,
           sortOrder);
 
-          console.log(search_body)
+          console.log('--------------');
+          console.log(search_body);
 
           //create request code for searching for available scenes
           const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
@@ -293,9 +338,8 @@ datasets.map( dataset => {
             //walk the search_response and start to collect the
             //  info for inserting into db
             search_response.results.map(entity => {
-
-              console.log(entity.summary)
-              console.log(entity.metadataUrl)
+              // console.log(' ');
+              //console.log(entity.metadataUrl)
 
               //metadata is not throttled so we can get all of this with normal patterns! yeah!
               axios.get(entity.metadataUrl)
@@ -303,6 +347,8 @@ datasets.map( dataset => {
 
                 //get xml from USGS api
                 const xml = metadata.data;
+
+                var metadata_recordset = new Array();
 
                 //parse xml to json.... a bit messy needs some fixes which can be done with parser
                 var parser = new xml2js.Parser();
@@ -322,6 +368,8 @@ datasets.map( dataset => {
 
                       //convert to js array
                       const metadata_json = [js];
+                      console.log('');
+                      console.log('extracting metadata for: ' + entity.summary);
 
                       //walk the json and get the metadata
                       // also need to get browse links
@@ -366,38 +414,38 @@ datasets.map( dataset => {
                             //if the method is api_browse then get the thumbnail for
                             if( method === 'api_browse'){
                               fieldSet = get_browse_url_fieldset(browse_json, databaseFieldName, configFieldName);
-                              console.log(fieldSet);
+                              // console.log(fieldSet);
                             }; // api_browse method;
 
                             if( method === 'api'){
 
                               fieldSet = get_api_fieldset(field_json, configFieldName, databaseFieldName);
-                              console.log(fieldSet);
-
+                              // console.log(fieldSet);
 
                             }; //api method
 
                             //method type constant
                             if( method === 'constant'){
-                              fieldSet = get_constant_fieldset(configFieldName, databaseFieldName);
-                              console.log(fieldSet);
+                              fieldSet = get_constant_fieldset(configFieldName);
+                              //  console.log(fieldSet);
 
                             }; //constant method
 
-                            //field name
-                            // console.log(fieldName);
-                            // console.log(databaseFieldName);
-                            // console.log(fieldvalue);
+                            //merge the fieldset into the recordset
+                            const records = get_metadata_record_fieldset(metadata_recordset, fieldSet);
+                            metadata_recordset = records;
 
                           })//metdataFields.map
                         })//fields_json.map
                       })//metadata_json.map
                     })//parseString parse xml into JSON
 
+                    console.log(metadata_recordset);
+                    //do the insert here
 
 
                   }).catch( (error) => {
-                    console.log(error);
+                    console.log('get metadata: ' + error);
                   })//axios.get(entity.metadataUrl)
 
                 }); //search_response.results.map
@@ -413,8 +461,9 @@ datasets.map( dataset => {
 
             //error for last promise
           }).catch(function(error) {
-            console.log(error);
+            console.log('last promise: ' + error);
           }); //last promise not real used to make sure the last promise has completed
           //  since USGS limits api calls to one at a time
+          console.log('--------------');
         })
       })

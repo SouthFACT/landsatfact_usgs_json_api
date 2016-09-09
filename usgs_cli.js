@@ -1,5 +1,4 @@
 var axios = require('axios');
-var http = require('http');
 var program = require('commander');
 var fs = require('fs');
 

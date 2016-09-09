@@ -1,10 +1,17 @@
 var axios = require('axios');
-var http = require('http');
 var yaml = require('yamljs');
 var xml2js = require('xml2js');
 var parseString = require('xml2js').parseString;
 var stripPrefix = require('xml2js').processors.stripPrefix;
+var winston = require('winston');
 
+var logger = new (winston.Logger)({
+  transports: [
+    new (winston.transports.File)({ filename: 'logs/update_landsat_metadata.log'})
+  ]
+});
+
+logger.level = 'debug';
 
 //get modules
 var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
@@ -249,6 +256,8 @@ var get_metadata_record_fieldset = function(record_set, field_set){
    return new_array;
 };
 
+logger.log('info','update metadata start');
+
 //walk the datasets from the CONFIG_YAML
 datasets.map( dataset => {
   const datasetName = dataset.datasetName
@@ -261,6 +270,8 @@ datasets.map( dataset => {
 
     //get the actaull filterid value from the request datasetfields
     const request_body = USGS_FUNCTION.usgsapi_datasetfields(apiKey, node, datasetName);
+    logger.log('debug', 'dataset fields body' , request_body );
+
     const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('datasetfields');
 
     //make call to USGS api.  Make sure last promise is resolved first
@@ -324,8 +335,12 @@ datasets.map( dataset => {
           startingNumber,
           sortOrder);
 
-          console.log('--------------');
-          console.log(search_body);
+          //console.log('--------------');
+          //logger.log('info',search_body);
+
+          logger.log('info', 'search');
+          logger.log('debug', 'search body' , search_body );
+          //console.log(search_body);
 
           //create request code for searching for available scenes
           const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
@@ -343,6 +358,8 @@ datasets.map( dataset => {
               //console.log(entity.metadataUrl)
 
               //metadata is not throttled so we can get all of this with normal patterns! yeah!
+              logger.log('debug', 'metadata url' , entity.metadataUrl );
+
               axios.get(entity.metadataUrl)
               .then( metadata => {
 
@@ -369,8 +386,9 @@ datasets.map( dataset => {
 
                       //convert to js array
                       const metadata_json = [js];
-                      console.log('');
-                      console.log('extracting metadata for: ' + entity.summary);
+                      //console.log('');
+                      logger.log('info', 'extracting metadata for: ' + entity.summary);
+                      //console.log('extracting metadata for: ' + entity.summary);
 
                       //walk the json and get the metadata
                       // also need to get browse links
@@ -441,30 +459,43 @@ datasets.map( dataset => {
                       })//metadata_json.map
                     })//parseString parse xml into JSON
 
-                    console.log(metadata_recordset);
+                    // console.log(metadata_recordset);
+                    logger.log('debug', 'metadata data set' , metadata_recordset );
+
+                    //logger.log('info', metadata_recordset);
+
                     //do the insert here
                     update_lsf_database.metadata_to_db(metadata_recordset);
 
                   }).catch( (error) => {
-                    console.log('get metadata: ' + error);
+                    console.error('get metadata: ' + error);
+                    logger.log('error', 'metadata error: ' + error);
+
                   })//axios.get(entity.metadataUrl)
 
                 }); //search_response.results.map
               }).catch(function(error) {
-                console.log('search: ' + error);
+                console.error('search: ' + error);
+                logger.log('error', 'search error: ' + error);
+
               }); //search USGS API call
 
 
               //error for current promise
             }).catch(function(error) {
-              console.log('datasetfields' + error);
+              console.error('datasetfields' + error);
+              logger.log('error', 'datasetfields error: ' + error);
+
             }); //datasetfields from USGS API call
 
             //error for last promise
           }).catch(function(error) {
-            console.log('last promise: ' + error);
+            console.error('last promise: ' + error);
+            logger.log('error', 'last promise error: ' + error);
+
           }); //last promise not real used to make sure the last promise has completed
           //  since USGS limits api calls to one at a time
-          console.log('--------------');
+          //console.log('--------------');
         })
       })
+      logger.log('info','update metadata end');

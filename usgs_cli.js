@@ -4,9 +4,9 @@ var program = require('commander');
 var fs = require('fs');
 
 //get modules
-var USGS_CONSTANT = require("./usgs_constants.js");
-var USGS_FUNCTION = require("./usgs_functions.js");
-var USGS_HELPER = require("./usgs_helpers.js");
+var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
+var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
+var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 
 //args
 program

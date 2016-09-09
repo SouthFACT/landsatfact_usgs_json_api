@@ -20,9 +20,9 @@ var axios = require('axios');
 var http = require('http');
 
 //get modules
-var USGS_CONSTANT = require("./usgs_constants.js");
-var USGS_FUNCTION = require("./usgs_functions.js");
-var USGS_HELPER = require("./usgs_helpers.js");
+var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
+var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
+var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;

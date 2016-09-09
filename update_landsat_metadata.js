@@ -468,14 +468,14 @@ datasets.map( dataset => {
                     update_lsf_database.metadata_to_db(metadata_recordset);
 
                   }).catch( (error) => {
-                    console.error('get metadata: ' + error);
+                    // console.error('get metadata: ' + error);
                     logger.log('error', 'metadata error: ' + error);
 
                   })//axios.get(entity.metadataUrl)
 
                 }); //search_response.results.map
               }).catch(function(error) {
-                console.error('search: ' + error);
+                // console.error('search: ' + error);
                 logger.log('error', 'search error: ' + error);
 
               }); //search USGS API call
@@ -483,14 +483,14 @@ datasets.map( dataset => {
 
               //error for current promise
             }).catch(function(error) {
-              console.error('datasetfields' + error);
+              // console.error('datasetfields' + error);
               logger.log('error', 'datasetfields error: ' + error);
 
             }); //datasetfields from USGS API call
 
             //error for last promise
           }).catch(function(error) {
-            console.error('last promise: ' + error);
+            // console.error('last promise: ' + error);
             logger.log('error', 'last promise error: ' + error);
 
           }); //last promise not real used to make sure the last promise has completed

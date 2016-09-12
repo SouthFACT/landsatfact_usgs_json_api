@@ -3,6 +3,11 @@ logs
 *.log
 npm-debug.log*
 
+#ingore all downloads
+downloads
+*.tar
+*.tar.gz
+
 # Runtime data
 pids
 *.pid

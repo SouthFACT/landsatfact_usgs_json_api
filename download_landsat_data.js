@@ -1,6 +1,7 @@
 var axios = require('axios');
 var http = require('http');
 var request = require('request');
+var rp = require('request-promise');
 var async = require('async');
 
 var url = require('url');
@@ -21,100 +22,227 @@ var logger = new (winston.Logger)({
   ]
 });
 
-
-
-function promiseDebounce(fn, delay, count) {
-  var working = 0, queue = [];
-  function work() {
-    if ((queue.length === 0) || (working === count)) return;
-    working++;
-    Promise.delay(delay).tap(function () { working--; }).then(work);
-    var next = queue.shift();
-    next[2](fn.apply(next[0], next[1]));
-  }
-  return function debounced() {
-    var args = arguments;
-    return new Promise(function(resolve){
-      queue.push([this, args, resolve]);
-      if (working < count) work();
-    }.bind(this));
-  }
-
-  
 const DOWNLOAD_DIR = './downloads/';
-const MAX_DOWNLOADS_AT_A_TIME = 1;
 
-var q = async.queue(function(task, cb) {
-  console.log(task.tarFile);
-  if(task.tarFile){
+const getContent = function(url, dest) {
+  // return new pending promise
+  return new Promise((resolve, reject) => {
+    // select http or https module, depending on reqested url
+    const lib = url.startsWith('https') ? require('https') : require('http');
+    const request = lib.get(url, (response) => {
+      // handle http errors
+      if (response.statusCode < 200 || response.statusCode > 299) {
+         reject(new Error('Failed to load page, status code: ' + response.statusCode));
+       }
+      // temporary data holder
+      var file = fs.createWriteStream(dest);
 
-    request
-      .get(task.tarFile)
-      .on('response', function(response) {
-        // console.log(task.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
-        // console.log(task);
-        // the call to `cb` could instead be made on the file stream's `finish` event
-        // if you want to wait until it all gets flushed to disk before consuming the
-        // next task in the queue
-
-        var file = fs.createWriteStream(task.dest);
-
-        response
-          .on('data', function(data) {
-            file.write(data);
-          })
-          .on('end', function() {
-            file.end();
-            console.log(task.dest + ' downloaded to ' + DOWNLOAD_DIR);
-          })
-
-
-        cb();
-      })
-      .on('error', function(err) {
-        console.log(err);
-        cb(err);
-      })
-
-  }
-
-}, MAX_DOWNLOADS_AT_A_TIME);
-
-q.drain = function() {
-  console.log('Done.')
-};
-
-
-var requestApi = function(url, next){
-  console.log(url)
-  request(url, function (error, response, body) {
-    console.log(body);
-    next(error);
-  });
-};
-
-
-// Function to download file using HTTP.get
-var download_file_httpget = function(scene_id, file_url) {
-  var options = {
-    host: url.parse(file_url).host,
-    port: 80,
-    path: url.parse(file_url).pathname
-  };
-
-  const file_name = scene_id + '.tar.gz';
-  const file = fs.createWriteStream(DOWNLOAD_DIR + file_name);
-
-  http.get(options, function(res) {
-    console.log(res);
-    res.on('data', function(data) {
-      file.write(data);
-    }).on('end', function() {
-      file.end();
-      console.log(file_name + ' downloaded to ' + DOWNLOAD_DIR);
+      // on every content chunk, push it to the data array
+      response.on('data', (chunk) => file.write(chunk));
+      // we are done, resolve promise with those joined chunks
+      response.on('end', () => resolve(file.end()));
     });
-  });
+    // handle connection errors of the request
+    request.on('error', (err) => reject(err))
+    })
 };
+
+
+
+function promisified_pipe(response, file) {
+  var ended = false;
+
+  return new Promise(function(resolve, reject) {
+    response.pipe(file);
+
+    function nice_ending() {
+      if (!ended) {
+        ended = true;
+        resolve();
+      }
+    }
+
+    function error_ending() {
+      if (!ended) {
+        ended = true;
+        reject("file error");
+      }
+    }
+
+    file.on('finish', nice_ending);
+    file.on('end', nice_ending);
+    file.on('error', error_ending);
+    file.on('close', error_ending);
+  }).finally(() => file.close())
+}
+
+ var testit = function(download) {
+   return new Promise(function(resolve, reject) {
+
+     request
+       .get(download.tarFile)
+       .on('response', function(response) {
+         console.log(download.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
+         console.log(download);
+         // the call to `cb` could instead be made on the file stream's `finish` event
+         // if you want to wait until it all gets flushed to disk before consuming the
+         // next task in the queue
+
+         var file = fs.createWriteStream(download.dest);
+
+         response
+           .on('data', function(data) {
+             file.write(data);
+           })
+           .on('end', function() {
+             file.end();
+             console.log(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
+             resolve(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
+           })
+
+
+       })
+       .on('error', function(err) {
+         console.log(err);
+         reject(err);
+       })
+   }).then(resolve, reject)
+
+
+}
+
+//
+// var promisify = function(task, cb) {
+//   request
+//     .get(task.tarFile)
+//     .on('response', function(response) {
+//       console.log(task.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
+//       console.log(task);
+//       // the call to `cb` could instead be made on the file stream's `finish` event
+//       // if you want to wait until it all gets flushed to disk before consuming the
+//       // next task in the queue
+//
+//       var file = fs.createWriteStream(task.dest);
+//
+//       response
+//         .on('data', function(data) {
+//           file.write(data);
+//         })
+//         .on('end', function() {
+//           file.end();
+//           resolve();
+//           console.log(task.dest + ' downloaded to ' + DOWNLOAD_DIR);
+//         })
+//
+//
+//       cb();
+//     })
+//     .on('error', function(err) {
+//       console.log(err);
+//       reject(err)
+//       cb(err);
+//     })
+// };
+
+// q.drain = function() {
+//   console.log('Done.')
+// };
+
+// var
+// const MAX_DOWNLOADS_AT_A_TIME = 2;
+
+// var q = async.queue(function(task, cb) {
+//   request
+//     .get(task.tarFile)
+//     .on('response', function(response) {
+//       console.log(task.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
+//       console.log(task);
+//       // the call to `cb` could instead be made on the file stream's `finish` event
+//       // if you want to wait until it all gets flushed to disk before consuming the
+//       // next task in the queue
+//
+//       var file = fs.createWriteStream(task.dest);
+//
+//       response
+//         .on('data', function(data) {
+//           file.write(data);
+//         })
+//         .on('end', function() {
+//           file.end();
+//           console.log(task.dest + ' downloaded to ' + DOWNLOAD_DIR);
+//         })
+//
+//
+//       cb();
+//     })
+//     .on('error', function(err) {
+//       console.log(err);
+//       cb(err);
+//     })
+// }, MAX_DOWNLOADS_AT_A_TIME);
+//
+// q.drain = function() {
+//   console.log('Done.')
+// };
+
+//
+// var requestApi = function(url, next){
+//   console.log(url)
+//   request(url, function (error, response, body) {
+//     console.log(body);
+//     next(error);
+//   });
+// };
+
+//
+// // Function to download file using HTTP.get
+// var download_file_httpget = function(scene_id, file_url) {
+//   var options = {
+//     host: url.parse(file_url).host,
+//     port: 80,
+//     path: url.parse(file_url).pathname
+//   };
+//
+//   const file_name = scene_id + '.tar.gz';
+//   const file = fs.createWriteStream(DOWNLOAD_DIR + file_name);
+//
+//   http.get(options, function(res) {
+//     console.log(res);
+//     res.on('data', function(data) {
+//       file.write(data);
+//     }).on('end', function() {
+//       file.end();
+//       console.log(file_name + ' downloaded to ' + DOWNLOAD_DIR);
+//     });
+//   });
+// };
+
+// function download_promise(response, file, dest) {
+// let ended = false;
+//
+// return new Promise(function(resolve, reject) {
+//     response.pipe(dest);
+//
+//     function nice_ending() {
+//       if (!ended) {
+//         ended = true;
+//         resolve();
+//       }
+//     }
+//
+//     function error_ending() {
+//       if (!ended) {
+//         ended = true;
+//         reject("file error");
+//       }
+//     }
+//
+//     file.on('finish', nice_ending);
+//     file.on('end', nice_ending);
+//     file.on('error', error_ending);
+//     file.on('close', error_ending);
+//   }).finally(() => file.close())
+// }
 
 logger.level = 'debug';
 
@@ -194,21 +322,48 @@ query.on('row', function(row) {
 
             //actual request after the last promise has been resolved
             return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-            .then( downloads => {
+              .then( downloads => {
+
+                const tarFile = downloads[0];
+                const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
+                const download = {tarFile, dest};
+                console.log(download.tarFile)
+
+                return getContent(tarFile, dest)
+                  .then((data) => console.log(data))
+                  .catch((err) => console.error(err));
+
+                // testit(download)
+                //   .then( whatValue => {
+                //     console.log(whatValue);
+                //   });
+
+                // return rp(download.tarFile)
+                //   .then( whatValue => {
+                //     console.log(whatValue)
+                //   })
+                //   .catch( (error) => {
+                //     // console.error('last promise: ' + error);
+                //     console.log('download tar: ' + error);
+                //   });
 
 
-              //get tar file download
-              const tarFile = downloads[0];
-              const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
 
-              const download = {tarFile, dest};
+                // //get tar file download
+                // const tarFile = downloads[0];
+                // const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
+                // const download = {tarFile, dest};
+                // testit(download)
+                //   .then( whatValue => {
+                //     console.log(whatValue);
+                //   });
 
-              q.concurrency = 1;
-              q.push(download, function(err) {
-                if (err) {
-                  console.log(err);
-                }
-              });
+
+              // q.push(download, function(err) {
+              //   if (err) {
+              //     console.log(err);
+              //   }
+              // });
 
               // async.forEachLimit(tarFile, 2, requestApi, function(err){
               //   // err contains the first error or null

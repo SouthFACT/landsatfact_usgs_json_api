@@ -23,93 +23,144 @@ var logger = new (winston.Logger)({
 });
 
 const DOWNLOAD_DIR = './downloads/';
+var Counter = (function() {
+  var privateCounter = 0;
+  function changeBy(val) {
+    privateCounter += val;
+  }
+  return {
+    increment: function() {
+      changeBy(1);
+    },
+    decrement: function() {
+      changeBy(-1);
+    },
+    value: function() {
+      return privateCounter;
+    }
+  };
+})();
+
+const MAX_DOWNLOADS_AT_A_TIME = 4;
+
 
 const getContent = function(url, dest) {
+
+  const currentDownloads = Counter.value();
+
   // return new pending promise
   return new Promise((resolve, reject) => {
     // select http or https module, depending on reqested url
+    if(!url){
+      reject('url is blank, maybe you need to order the scene?');
+    };
     const lib = url.startsWith('https') ? require('https') : require('http');
     const request = lib.get(url, (response) => {
       // handle http errors
+      //in busy state keep sending until 503 resolved
+      // if (response.statusCode === 503){
+      //   getContent(url, dest)
+      // };
+
       if (response.statusCode < 200 || response.statusCode > 299) {
          reject(new Error('Failed to load page, status code: ' + response.statusCode));
        }
+
       // temporary data holder
       var file = fs.createWriteStream(dest);
+      console.log(currentDownloads);
+      console.log(MAX_DOWNLOADS_AT_A_TIME);
+
+      //on resolve when the #of files being downloaed is less than the
+      //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
+      //  been completely downloaded will a new one begin and not reach the limit
+      //  of 10 in to minutes not completed.  Also it seems that whnen more than
+      //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
+      if(currentDownloads < MAX_DOWNLOADS_AT_A_TIME){
+        resolve(dest)
+        Counter.increment();
+      }
 
       // on every content chunk, push it to the data array
       response.on('data', (chunk) => file.write(chunk));
       // we are done, resolve promise with those joined chunks
-      response.on('end', () => resolve(file.end()));
+      response.on('end', () =>  {
+        file.end()
+        resolve(dest);
+        Counter.decrement();
+      });
+
     });
     // handle connection errors of the request
-    request.on('error', (err) => reject(err))
+    request.on('error', (err) => {
+        reject(err)
+      })
     })
 };
 
 
-
-function promisified_pipe(response, file) {
-  var ended = false;
-
-  return new Promise(function(resolve, reject) {
-    response.pipe(file);
-
-    function nice_ending() {
-      if (!ended) {
-        ended = true;
-        resolve();
-      }
-    }
-
-    function error_ending() {
-      if (!ended) {
-        ended = true;
-        reject("file error");
-      }
-    }
-
-    file.on('finish', nice_ending);
-    file.on('end', nice_ending);
-    file.on('error', error_ending);
-    file.on('close', error_ending);
-  }).finally(() => file.close())
-}
-
- var testit = function(download) {
-   return new Promise(function(resolve, reject) {
-
-     request
-       .get(download.tarFile)
-       .on('response', function(response) {
-         console.log(download.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
-         console.log(download);
-         // the call to `cb` could instead be made on the file stream's `finish` event
-         // if you want to wait until it all gets flushed to disk before consuming the
-         // next task in the queue
-
-         var file = fs.createWriteStream(download.dest);
-
-         response
-           .on('data', function(data) {
-             file.write(data);
-           })
-           .on('end', function() {
-             file.end();
-             console.log(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
-             resolve(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
-           })
-
-
-       })
-       .on('error', function(err) {
-         console.log(err);
-         reject(err);
-       })
-   }).then(resolve, reject)
-
-
-}
+//
+// function promisified_pipe(response, file) {
+//   var ended = false;
+//
+//   return new Promise(function(resolve, reject) {
+//     response.pipe(file);
+//
+//     function nice_ending() {
+//       if (!ended) {
+//         ended = true;
+//         resolve();
+//       }
+//     }
+//
+//     function error_ending() {
+//       if (!ended) {
+//         ended = true;
+//         reject("file error");
+//       }
+//     }
+//
+//     file.on('finish', nice_ending);
+//     file.on('end', nice_ending);
+//     file.on('error', error_ending);
+//     file.on('close', error_ending);
+//   }).finally(() => file.close())
+// }
+//
+//  var testit = function(download) {
+//    return new Promise(function(resolve, reject) {
+//
+//      request
+//        .get(download.tarFile)
+//        .on('response', function(response) {
+//          console.log(download.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
+//          console.log(download);
+//          // the call to `cb` could instead be made on the file stream's `finish` event
+//          // if you want to wait until it all gets flushed to disk before consuming the
+//          // next task in the queue
+//
+//          var file = fs.createWriteStream(download.dest);
+//
+//          response
+//            .on('data', function(data) {
+//              file.write(data);
+//            })
+//            .on('end', function() {
+//              file.end();
+//              console.log(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
+//              resolve(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
+//            })
+//
+//
+//        })
+//        .on('error', function(err) {
+//          console.log(err);
+//          reject(err);
+//        })
+//    }).then(resolve, reject)
+//
+//
+// }
 
 //
 // var promisify = function(task, cb) {

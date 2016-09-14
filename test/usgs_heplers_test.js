@@ -55,32 +55,27 @@ describe('USGS Helpers TESTS', function() {
  })
 
 
- describe('get_response_error' ,function (){
+ describe('makeLoginData' ,function (){
 
 
-   it('should throw an error based on error in error key from a USGS response', function() {
-     var testerror = "test error"
-     var testobj = {
-       responsetest:"responsetest",
-       data:{
-         "errorCode": 123,
-         "error": null,
-         "data":"9ccf44a1c7e74d7f94769956b54cd889",
-         "api_version":"1.0"
-       }
-     }
+   it('should have two keys username and password', function() {
 
-    //  var result = USGS_HELPER.get_response_error(testobj);
-    // expect(model.get.bind(model, 'z')).to.throw('Property does not exist in model schema.');
-    // expect(USGS_HELPER.get_response_error(testobj)).to.throw();
-    // function() { boom(true); }, Error
-    // assert.throws(USGS_HELPER.get_response_error(testobj) , /reference error/)
-    assert.throws( function() { USGS_HELPER.get_response_error(testobj); }, Error );
-
-    // assert.throws( USGS_HELPER.get_response_error(testobj), Error);
+     const name = "test_name";
+     const pass = "test_pass";
+     const result = USGS_HELPER.makeLoginData(name, pass);
+     expect( result ).to.have.all.keys('username', 'password');
 
    })
 
+   it('should have two keys username and password with values', function() {
+
+     const name = "test_name";
+     const pass = "test_pass";
+     const result = USGS_HELPER.makeLoginData(name, pass);
+     assert.equal(result.username, name);
+     assert.equal(result.password, pass);
+
+   })
 
  })
 

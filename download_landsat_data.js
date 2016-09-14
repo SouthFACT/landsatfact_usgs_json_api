@@ -16,6 +16,12 @@ var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
 var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 
+//max amount concurent simultaneous downloads from the USGS api
+//  it is 10 in ten minutes but we are limiting to a 5 at a time so we are not
+//  overloading the server
+const MAX_DOWNLOADS_AT_A_TIME = 5;
+
+
 var logger = new (winston.Logger)({
   transports: [
     new (winston.transports.File)({ filename: 'download_landsat_data.log'})
@@ -23,8 +29,10 @@ var logger = new (winston.Logger)({
 });
 
 const DOWNLOAD_DIR = './downloads/';
-var Counter = (function() {
-  var privateCounter = 0;
+
+//generic counter for qeueing the # of concurent downloads
+var DownloadCounter = (function() {
+  var privateCounter = 1;
   function changeBy(val) {
     privateCounter += val;
   }
@@ -41,23 +49,28 @@ var Counter = (function() {
   };
 })();
 
-const MAX_DOWNLOADS_AT_A_TIME = 4;
 
+//function to get tar files from a passed url
+//  this also turns the download in to promise and Also
+//  limits the # simultaneous downloads to
+const get_tar = function(url, dest, simultaneous_donwloads ) {
 
-const getContent = function(url, dest) {
-
-  const currentDownloads = Counter.value();
+  const currentDownloads = DownloadCounter.value();
 
   // return new pending promise
   return new Promise((resolve, reject) => {
-    // select http or https module, depending on reqested url
+
+    //if url is blank that usually means it needs to ordered add order code
     if(!url){
       reject('url is blank, maybe you need to order the scene?');
     };
+
+    //define the correct http protocal to make download request
     const lib = url.startsWith('https') ? require('https') : require('http');
     const request = lib.get(url, (response) => {
       // handle http errors
       //in busy state keep sending until 503 resolved
+      /// not sure I want to do this yet
       // if (response.statusCode === 503){
       //   getContent(url, dest)
       // };
@@ -68,26 +81,29 @@ const getContent = function(url, dest) {
 
       // temporary data holder
       var file = fs.createWriteStream(dest);
-      console.log(currentDownloads);
-      console.log(MAX_DOWNLOADS_AT_A_TIME);
 
       //on resolve when the #of files being downloaed is less than the
       //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
       //  been completely downloaded will a new one begin and not reach the limit
       //  of 10 in to minutes not completed.  Also it seems that whnen more than
       //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
-      if(currentDownloads < MAX_DOWNLOADS_AT_A_TIME){
+      if(currentDownloads <= simultaneous_donwloads){
         resolve(dest)
-        Counter.increment();
+        //keep incrementing the # of concurent downloads to will reach the max allowed
+        //  (determined by the USGS api) and simultaneous_donwloads
+        DownloadCounter.increment();
       }
 
-      // on every content chunk, push it to the data array
-      response.on('data', (chunk) => file.write(chunk));
-      // we are done, resolve promise with those joined chunks
+      // on every content datachunk, push it to the file and write it.
+      response.on('data', (datachunk) => file.write(datachunk));
+
+      // we are done, resolve promise with and close the downliaded tar file
       response.on('end', () =>  {
         file.end()
         resolve(dest);
-        Counter.decrement();
+
+        //remove one from downoload counter so we can start a new download
+        DownloadCounter.decrement();
       });
 
     });
@@ -97,203 +113,6 @@ const getContent = function(url, dest) {
       })
     })
 };
-
-
-//
-// function promisified_pipe(response, file) {
-//   var ended = false;
-//
-//   return new Promise(function(resolve, reject) {
-//     response.pipe(file);
-//
-//     function nice_ending() {
-//       if (!ended) {
-//         ended = true;
-//         resolve();
-//       }
-//     }
-//
-//     function error_ending() {
-//       if (!ended) {
-//         ended = true;
-//         reject("file error");
-//       }
-//     }
-//
-//     file.on('finish', nice_ending);
-//     file.on('end', nice_ending);
-//     file.on('error', error_ending);
-//     file.on('close', error_ending);
-//   }).finally(() => file.close())
-// }
-//
-//  var testit = function(download) {
-//    return new Promise(function(resolve, reject) {
-//
-//      request
-//        .get(download.tarFile)
-//        .on('response', function(response) {
-//          console.log(download.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
-//          console.log(download);
-//          // the call to `cb` could instead be made on the file stream's `finish` event
-//          // if you want to wait until it all gets flushed to disk before consuming the
-//          // next task in the queue
-//
-//          var file = fs.createWriteStream(download.dest);
-//
-//          response
-//            .on('data', function(data) {
-//              file.write(data);
-//            })
-//            .on('end', function() {
-//              file.end();
-//              console.log(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
-//              resolve(download.dest + ' downloaded to ' + DOWNLOAD_DIR);
-//            })
-//
-//
-//        })
-//        .on('error', function(err) {
-//          console.log(err);
-//          reject(err);
-//        })
-//    }).then(resolve, reject)
-//
-//
-// }
-
-//
-// var promisify = function(task, cb) {
-//   request
-//     .get(task.tarFile)
-//     .on('response', function(response) {
-//       console.log(task.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
-//       console.log(task);
-//       // the call to `cb` could instead be made on the file stream's `finish` event
-//       // if you want to wait until it all gets flushed to disk before consuming the
-//       // next task in the queue
-//
-//       var file = fs.createWriteStream(task.dest);
-//
-//       response
-//         .on('data', function(data) {
-//           file.write(data);
-//         })
-//         .on('end', function() {
-//           file.end();
-//           resolve();
-//           console.log(task.dest + ' downloaded to ' + DOWNLOAD_DIR);
-//         })
-//
-//
-//       cb();
-//     })
-//     .on('error', function(err) {
-//       console.log(err);
-//       reject(err)
-//       cb(err);
-//     })
-// };
-
-// q.drain = function() {
-//   console.log('Done.')
-// };
-
-// var
-// const MAX_DOWNLOADS_AT_A_TIME = 2;
-
-// var q = async.queue(function(task, cb) {
-//   request
-//     .get(task.tarFile)
-//     .on('response', function(response) {
-//       console.log(task.tarFile + ' : ' + response.statusCode, response.headers['content-type']);
-//       console.log(task);
-//       // the call to `cb` could instead be made on the file stream's `finish` event
-//       // if you want to wait until it all gets flushed to disk before consuming the
-//       // next task in the queue
-//
-//       var file = fs.createWriteStream(task.dest);
-//
-//       response
-//         .on('data', function(data) {
-//           file.write(data);
-//         })
-//         .on('end', function() {
-//           file.end();
-//           console.log(task.dest + ' downloaded to ' + DOWNLOAD_DIR);
-//         })
-//
-//
-//       cb();
-//     })
-//     .on('error', function(err) {
-//       console.log(err);
-//       cb(err);
-//     })
-// }, MAX_DOWNLOADS_AT_A_TIME);
-//
-// q.drain = function() {
-//   console.log('Done.')
-// };
-
-//
-// var requestApi = function(url, next){
-//   console.log(url)
-//   request(url, function (error, response, body) {
-//     console.log(body);
-//     next(error);
-//   });
-// };
-
-//
-// // Function to download file using HTTP.get
-// var download_file_httpget = function(scene_id, file_url) {
-//   var options = {
-//     host: url.parse(file_url).host,
-//     port: 80,
-//     path: url.parse(file_url).pathname
-//   };
-//
-//   const file_name = scene_id + '.tar.gz';
-//   const file = fs.createWriteStream(DOWNLOAD_DIR + file_name);
-//
-//   http.get(options, function(res) {
-//     console.log(res);
-//     res.on('data', function(data) {
-//       file.write(data);
-//     }).on('end', function() {
-//       file.end();
-//       console.log(file_name + ' downloaded to ' + DOWNLOAD_DIR);
-//     });
-//   });
-// };
-
-// function download_promise(response, file, dest) {
-// let ended = false;
-//
-// return new Promise(function(resolve, reject) {
-//     response.pipe(dest);
-//
-//     function nice_ending() {
-//       if (!ended) {
-//         ended = true;
-//         resolve();
-//       }
-//     }
-//
-//     function error_ending() {
-//       if (!ended) {
-//         ended = true;
-//         reject("file error");
-//       }
-//     }
-//
-//     file.on('finish', nice_ending);
-//     file.on('end', nice_ending);
-//     file.on('error', error_ending);
-//     file.on('close', error_ending);
-//   }).finally(() => file.close())
-// }
 
 logger.level = 'debug';
 
@@ -328,12 +147,43 @@ var api_key = USGS_HELPER.get_api_key();
 const query = pg_client.query(last_day_scenes);
 
 
+var get_datasetName = function(scene_id, acquisition_date){
+
+  const onoff_date = new Date("2003-05-31");
+  const image_acquisition_date = new Date(acquisition_date);
+
+  //check of slc of off in not assume on
+  const slc_off = (onoff_date < image_acquisition_date);
+
+  //get product abbrevation. This identifes the imager product
+  proudctAbbrevation = scene_id.substring(0, 3);
+
+  //get the product abbrevation so we can determine the USGS
+  //  dataset name
+  switch (proudctAbbrevation) {
+    case "LC8": //LANDSAT 8
+      return datasetName = "LANDSAT_8";
+      break;
+    case "LE7" && slc_off: //LANDSAT 7 with slc off
+      return datasetName = "LANDSAT_ETM_SLC_OFF";
+      break;
+    case "LE7" && !slc_off: //LANDSAT 7 with slc on
+      return datasetName = "LANDSAT_ETM";
+      break;
+    case "LT5": //LANDSAT 5
+      return datasetName = "LANDSAT_TM";
+      break;
+    default:
+      return datasetName = "LANDSAT_8";
+      break;
+  }
+
+};
+
 //query to check for duplicate scenes
 query.on('row', function(row) {
     // console.log(row);
     //process rows here
-
-
 
       api_key
       .then( (apiKey) => {
@@ -342,25 +192,18 @@ query.on('row', function(row) {
         const node = USGS_CONSTANT.NODE_EE;
         const entityIds = [];
         const products;
-
-
         const scene_id = row.scene_id;
         const acquisition_date = row.acquisition_date;
-        // const landsat_7_cut_date = new Date("2003-05-31");
-        const datasetName = "LANDSAT_8";
 
-        //get product abbrevation. This identifes the imager product
-        proudctAbbrevation = scene_id.substring(0, 3);
-        // isLandsat8 = (proudctAbbrevation === "LC8");
-        // isLandsat7 = (proudctAbbrevation === "LE7");
-        // isLandsat5 = (proudctAbbrevation === "LT5");
+        //derive dataset name from the scene_id and acquisition_date
+        const datasetName = get_datasetName(scene_id, acquisition_date);
 
-        // console.log(proudctAbbrevation);
+        //add scene_id to entityIds array only one here,  api requires the scene_id(s) as an array
         entityIds.push(scene_id);
-
 
         //get the actaull filterid value from the request datasetfields
         const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
+
         // console.log(request_body );
 
         const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
@@ -370,78 +213,61 @@ query.on('row', function(row) {
         return lastPromise = lastPromise.then( () => {
           //yes USGS throttles downloads so lets wait a few seconds before next request;
 
-
             //actual request after the last promise has been resolved
             return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
               .then( downloads => {
 
+                //need to make order if the downloads is a blank string
+
                 const tarFile = downloads[0];
                 const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
                 const download = {tarFile, dest};
-                console.log(download.tarFile)
 
-                return getContent(tarFile, dest)
-                  .then((data) => console.log(data))
-                  .catch((err) => console.error(err));
+                //if the url is blank order the product
+                if(!tarFile){
+                  console.log('blank: ' + scene_id)
+                  //get order response body
+                  const response_body = usgsapi_getorderproducts(apiKey, node, datasetName, entityIds)
+                  const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
-                // testit(download)
-                //   .then( whatValue => {
-                //     console.log(whatValue);
-                //   });
+                  return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+                    .then( products_for_order => {
 
-                // return rp(download.tarFile)
-                //   .then( whatValue => {
-                //     console.log(whatValue)
-                //   })
-                //   .catch( (error) => {
-                //     // console.error('last promise: ' + error);
-                //     console.log('download tar: ' + error);
-                //   });
+                      //loop all potential products to get available products
+                      products_for_order.map( potential_product => {
+                        //loop the product available products array to get whatis available for each
+                        // proudut.
+                        potential_product.availableProducts.map( prod => {
+                          const productCode = prod.productCode;
+                          const price = prod.productCode;
 
+                          if (price === 0 && productCode.substring(0,1) != 'W' ){
+                            //order
+                            console.log(prod.outputMedias)
+                          }
 
+                        })
+                      })
 
-                // //get tar file download
-                // const tarFile = downloads[0];
-                // const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
-                // const download = {tarFile, dest};
-                // testit(download)
-                //   .then( whatValue => {
-                //     console.log(whatValue);
-                //   });
+                    })
+                    .catch((err) => console.error(err));
+                    //then updateOrderScene
+                    //then orderItemBasket
+                    //then  orderItem
+                    //then submitOrder
+                    //wait for download to become available and download
 
-
-              // q.push(download, function(err) {
-              //   if (err) {
-              //     console.log(err);
-              //   }
-              // });
-
-              // async.forEachLimit(tarFile, 2, requestApi, function(err){
-              //   // err contains the first error or null
-              //   if (err) throw err;
-              //   console.log('All requests processed!');
-              // });
-
-              // var request = require('request');
-              // request(tarFile, function (error, response, body) {
-              //   console.log(body);
-              //
-              //   if (!error && response.statusCode == 200) {
-              //     console.log('here')
-              //     console.log(body) // Show the HTML for the Google homepage.
-              //   }
-              // })
-
-              // download_file_httpget(scene_id, tarFile);
+                } else {
+                  //if we do have a URL attempt download
+                  return get_tar(tarFile, dest, MAX_DOWNLOADS_AT_A_TIME)
+                    .then((data) => console.log('downloading: ' + data))
+                    .catch((err) => console.error(err));
+                }
 
             }).catch( (error) => {
               // console.error('last promise: ' + error);
               console.log('dowload api: ' + error);
-
             });
-
-
-
 
 
         }).catch( (error) => {
@@ -459,8 +285,6 @@ query.on('row', function(row) {
 
 
 
-
-    //got to usgs api and download the the product
 
     //if product is not avaiablable order it usgs api
 

@@ -158,24 +158,24 @@ var get_datasetName = function(scene_id, acquisition_date){
 
   //get product abbrevation. This identifes the imager product
   proudctAbbrevation = scene_id.substring(0, 3);
-
+  console.log(proudctAbbrevation)
   //get the product abbrevation so we can determine the USGS
   //  dataset name
-  switch (proudctAbbrevation) {
-    case "LC8": //LANDSAT 8
-      return datasetName = "LANDSAT_8";
+  switch (true) {
+    case (proudctAbbrevation === "LC8"): //LANDSAT 8
+      return  "LANDSAT_8";
       break;
-    case "LE7" && slc_off: //LANDSAT 7 with slc off
-      return datasetName = "LANDSAT_ETM_SLC_OFF";
+    case (proudctAbbrevation === "LE7") && (slc_off): //LANDSAT 7 with slc off
+      return "LANDSAT_ETM_SLC_OFF";
       break;
-    case "LE7" && !slc_off: //LANDSAT 7 with slc on
-      return datasetName = "LANDSAT_ETM";
+    case (roudctAbbrevation === "LE7") && (!slc_off): //LANDSAT 7 with slc on
+      return "LANDSAT_ETM";
       break;
-    case "LT5": //LANDSAT 5
-      return datasetName = "LANDSAT_TM";
+    case (proudctAbbrevation === "LT5"): //LANDSAT 5
+      return "LANDSAT_TM";
       break;
     default:
-      return datasetName = "LANDSAT_8";
+      return "LANDSAT_8";
       break;
   }
 

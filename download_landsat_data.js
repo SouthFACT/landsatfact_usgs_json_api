@@ -135,7 +135,7 @@ const datasets = METADATA_YAML.metadata_datasets;
 
 
 //query db and get the last days scenes
-const last_day_scenes = "SELECT * FROM vw_last_days_scenes;";
+const last_day_scenes = "SELECT * FROM vw_last_days_scenes WHERE substr(scene_id,1,3) = 'LE7';";
 
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();
@@ -181,10 +181,10 @@ var get_datasetName = function(scene_id, acquisition_date){
 
 };
 
-//query to check for duplicate scenes
-// query.on('row', function(row) {
-    // console.log(row);
-    //process rows here
+query to check for duplicate scenes
+query.on('row', function(row) {
+    console.log(row);
+    process rows here
 
       api_key
       .then( (apiKey) => {
@@ -193,8 +193,8 @@ var get_datasetName = function(scene_id, acquisition_date){
         const node = USGS_CONSTANT.NODE_EE;
         const entityIds = [];
         const products;
-        const scene_id = "LE70220342016257EDC00" //row.scene_id;
-        const acquisition_date = "2016-09-13"//row.acquisition_date;
+        const scene_id = row.scene_id;
+        const acquisition_date = row.acquisition_date;
 
         //derive dataset name from the scene_id and acquisition_date
         const datasetName = get_datasetName(scene_id, acquisition_date);
@@ -204,11 +204,11 @@ var get_datasetName = function(scene_id, acquisition_date){
         entityIds.push(scene_id);
 
         //get the actaull filterid value from the request datasetfields
-        const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
+        const request_body = USGS_FUNCTION.usgsapi_downloadoptions(apiKey, node, datasetName, entityIds);
         console.log(request_body)
         // console.log(request_body );
 
-        const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
+        const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('downloadoptions');
 
         //make call to USGS api.  Make sure last promise is resolved first
         //  becuase USGS api is throttled for one request at a time
@@ -220,7 +220,7 @@ var get_datasetName = function(scene_id, acquisition_date){
               .then( downloads => {
                 console.log(downloads)
                 //need to make order if the downloads is a blank string
-
+                const standard_file
                 const tarFile = downloads[0];
                 const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
                 const download = {tarFile, dest};
@@ -304,16 +304,16 @@ var get_datasetName = function(scene_id, acquisition_date){
     // write downloaded scenes to download.txt
 
 
-//   });
-//
-// query.on('error', function(err) {
-//     console.log(err);
-//   });
-//
-// query.on('end', function(result) {
-//     // console.log(result);
-//     //do nothing
-//   });
+  });
+
+query.on('error', function(err) {
+    console.log(err);
+  });
+
+query.on('end', function(result) {
+    // console.log(result);
+    //do nothing
+  });
 
 
 

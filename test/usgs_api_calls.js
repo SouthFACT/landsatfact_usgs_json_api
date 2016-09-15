@@ -85,33 +85,6 @@ describe('USGS API TESTS', function() {
     })
 
   });
-
-
-
-    describe('USGS datasets', function() {
-
-      it('should be fullfilled', function(done) {
-        api_key.then( apiKey => {
-          const test_promise = test_api_call(apiKey, 'datasetfields', test_datasetfields_request_json)
-          test_promise.should.be.fulfilled.and.notify(done);
-        })
-      })
-
-      it('response json should match', function(done) {
-        api_key.then( apiKey => {
-          const test_promise = test_api_call(apiKey, 'datasetfields', test_datasetfields_request_json)
-          test_promise.then(function(result){
-            try {
-              expect(result).to.be.like(test_datasetfields_response_json);
-              done();
-            } catch(err) {
-              done(err);
-            }
-          }, done);
-        })
-      })
-
-    });
-
+ 
 
 });

@@ -490,7 +490,7 @@ datasets.map( dataset => {
 
             //error for last promise
           }).catch(function(error) {
-            // console.error('last promise: ' + error);
+            console.error('last promise: ' + error);
             logger.log('error', 'last promise error: ' + error);
 
           }); //last promise not real used to make sure the last promise has completed

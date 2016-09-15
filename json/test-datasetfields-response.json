@@ -1,0 +1,141 @@
+[{
+	"fieldId": "10034",
+	"name": "Landsat Scene Identifier",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#entity_id   ",
+	"valueList": []
+}, {
+	"fieldId": "10036",
+	"name": "WRS Path",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_path",
+	"valueList": []
+}, {
+	"fieldId": "10038",
+	"name": "WRS Row",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_row",
+	"valueList": []
+}, {
+	"fieldId": "10041",
+	"name": "Sensor ID",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#sensor_id        ",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "OLI",
+		"name": "OLI"
+	}, {
+		"value": "OLI_TIRS",
+		"name": "OLI_TIRS"
+	}, {
+		"value": "TIRS",
+		"name": "TIRS"
+	}]
+}, {
+	"fieldId": "10040",
+	"name": "Data Type Level 1",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#data_type_l1",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "L1GT",
+		"name": "Level 1GT"
+	}, {
+		"value": "L1T",
+		"name": "Level 1T"
+	}]
+}, {
+	"fieldId": "10037",
+	"name": "Cloud Cover",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#cloud_cover",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "0",
+		"name": "Less than 10%"
+	}, {
+		"value": "1",
+		"name": "Less than 20%"
+	}, {
+		"value": "2",
+		"name": "Less than 30%"
+	}, {
+		"value": "3",
+		"name": "Less than 40%"
+	}, {
+		"value": "4",
+		"name": "Less than 50%"
+	}, {
+		"value": "5",
+		"name": "Less than 60%"
+	}, {
+		"value": "6",
+		"name": "Less than 70%"
+	}, {
+		"value": "7",
+		"name": "Less than 80%"
+	}, {
+		"value": "8",
+		"name": "Less than 90%"
+	}, {
+		"value": "9",
+		"name": "Less than 100%"
+	}]
+}, {
+	"fieldId": "18615",
+	"name": "Date L1 Generated (Ex. YYYY/MM/DD)",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#date_l1_generated",
+	"valueList": []
+}, {
+	"fieldId": "10035",
+	"name": "Day/Night Indicator",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#day_or_night",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "DAY",
+		"name": "Day"
+	}, {
+		"value": "NIGHT",
+		"name": "Night"
+	}]
+}, {
+	"fieldId": "16067",
+	"name": "Nadir/Off Nadir",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#nadir_offnadir",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "NADIR",
+		"name": "Nadir"
+	}, {
+		"value": "OFFNADIR",
+		"name": "Off Nadir"
+	}, {
+		"value": "Test value",
+		"name": "TEST VALUE"
+	}]
+}, {
+	"fieldId": "17735",
+	"name": "Processing Software Version",
+	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#processing_software_version",
+	"valueList": [{
+		"value": null,
+		"name": "All"
+	}, {
+		"value": "LPGS_2.5.1",
+		"name": "LPGS_2.5.1"
+	}, {
+		"value": "LPGS_2.5.0",
+		"name": "LPGS_2.5.0"
+	}, {
+		"value": "LPGS_2.4.0",
+		"name": "LPGS_2.4.0"
+	}, {
+		"value": "LPGS_2.3.0",
+		"name": "LPGS_2.3.0"
+	}]
+}]

@@ -21,6 +21,7 @@ var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 //  overloading the server
 const MAX_DOWNLOADS_AT_A_TIME = 5;
 
+var failed_downloads = [];
 
 var logger = new (winston.Logger)({
   transports: [
@@ -181,7 +182,7 @@ var get_datasetName = function(scene_id, acquisition_date){
 };
 
 //query to check for duplicate scenes
-query.on('row', function(row) {
+// query.on('row', function(row) {
     // console.log(row);
     //process rows here
 
@@ -192,18 +193,19 @@ query.on('row', function(row) {
         const node = USGS_CONSTANT.NODE_EE;
         const entityIds = [];
         const products;
-        const scene_id = row.scene_id;
-        const acquisition_date = row.acquisition_date;
+        const scene_id = "LE70220342016257EDC00" //row.scene_id;
+        const acquisition_date = "2016-09-13"//row.acquisition_date;
 
         //derive dataset name from the scene_id and acquisition_date
         const datasetName = get_datasetName(scene_id, acquisition_date);
+        console.log(datasetName)
 
         //add scene_id to entityIds array only one here,  api requires the scene_id(s) as an array
         entityIds.push(scene_id);
 
         //get the actaull filterid value from the request datasetfields
         const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
-
+        console.log(request_body)
         // console.log(request_body );
 
         const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
@@ -216,7 +218,7 @@ query.on('row', function(row) {
             //actual request after the last promise has been resolved
             return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
               .then( downloads => {
-
+                console.log(downloads)
                 //need to make order if the downloads is a blank string
 
                 const tarFile = downloads[0];
@@ -226,8 +228,9 @@ query.on('row', function(row) {
                 //if the url is blank order the product
                 if(!tarFile){
                   console.log('blank: ' + scene_id)
+
                   //get order response body
-                  const response_body = usgsapi_getorderproducts(apiKey, node, datasetName, entityIds)
+                  const response_body = USGS_HELPER.usgsapi_getorderproducts(apiKey, node, datasetName, entityIds)
                   const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
                   return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
@@ -258,14 +261,19 @@ query.on('row', function(row) {
                     //wait for download to become available and download
 
                 } else {
-                  //if we do have a URL attempt download
+
+                  // if we do have a URL attempt download
                   return get_tar(tarFile, dest, MAX_DOWNLOADS_AT_A_TIME)
                     .then((data) => console.log('downloading: ' + data))
                     .catch((err) => console.error(err));
+
                 }
 
             }).catch( (error) => {
               // console.error('last promise: ' + error);
+
+              failed_downloads.push({scene_id});
+              console.log(failed_downloads)
               console.log('dowload api: ' + error);
             });
 
@@ -275,6 +283,7 @@ query.on('row', function(row) {
           console.log('last promise error: ' + error);
 
         });
+
 
       }).catch( (error) => {
         // console.error('last promise: ' + error);
@@ -295,16 +304,16 @@ query.on('row', function(row) {
     // write downloaded scenes to download.txt
 
 
-  });
-
-query.on('error', function(err) {
-    console.log(err);
-  });
-
-query.on('end', function(result) {
-    // console.log(result);
-    //do nothing
-  });
+//   });
+//
+// query.on('error', function(err) {
+//     console.log(err);
+//   });
+//
+// query.on('end', function(result) {
+//     // console.log(result);
+//     //do nothing
+//   });
 
 
 

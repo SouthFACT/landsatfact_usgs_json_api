@@ -67,7 +67,7 @@ api_key
     // usgs response
     usgs_response
       .then( data => {
-        console.log(data);
+        console.log(JSON.stringify(data));
       })
       //catch http errors not return errors in response
       .catch( error => {

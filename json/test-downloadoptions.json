@@ -1,5 +1,6 @@
 {
-	"datasetName": "LANDSAT_ETM_SLC_OFF",
 	"node": "EE",
-	"entityIds": ["LE70220342016257EDC00"]
+	"datasetName": "LANDSAT_ETM_SLC_OFF",
+	"machineOnly": true,
+	"entityIds": ["LE70210342016234EDC00"]
 }

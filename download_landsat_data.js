@@ -52,21 +52,25 @@ var DownloadCounter = (function() {
 })();
 
 var testdownload = function(body){
+
+
   //set base URL for axios
   axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
-  const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
 
-        //actual request after the last promise has been resolved
-        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, body)
-          .then( download_response => {})
-          .catch( (error) => {
-            failed_downloads.push({scene_id});
-            // console.log(failed_downloads)
-            console.log('dowload  api: ' + error);
-            DownloadScenes.add_failed(error, scene_id);
+    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
-          });
+      //actual request after the last promise has been resolved
+      return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, body)
+        .then( download_response => {})
+        .catch( (error) => {
+          failed_downloads.push({scene_id});
+          // console.log(failed_downloads)
+          console.log('dowload  api: ' + error);
+          DownloadScenes.add_failed(error, scene_id);
+
+        });
+
 
 
 }
@@ -74,7 +78,14 @@ var testdownload = function(body){
 //generic holder of downloads
 var DownloadScenes = (function() {
   var DownloadScenes = [];
+  var scenes_in_download = [];
+  var doit = true;
+  var add = true;
+
+  var downloaded_scenes = 0;
+  var total_scenes_for_download = 0;
   var OrderScenes = [];
+  var scenes_in_order = [];
   var FailedScenes = [];
 
   var total_count = 0;
@@ -89,7 +100,7 @@ var DownloadScenes = (function() {
   var start_download = false;
 
   function increment_count(count, val) {
-    const current_count = count
+    const current_count = count;
     return current_count += val;
   }
 
@@ -103,23 +114,125 @@ var DownloadScenes = (function() {
   }
 
   function order(){
+    var lastPromise = Promise.resolve();
+
     OrderScenes.map( order => {
-      console.log("order: " + JSON.stringify(order))
-      setTimeout(function(){},1000);
+
+      return lastPromise = lastPromise.then( () => {
+
+        // console.log("order: " + JSON.stringify(order))
+
+        const request_body = order;
+        const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
+
+        //actual request after the last promise has been resolved
+        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+          .then( getorderproducts_response => {
+            const orderobj = getorderproducts_response[0].availableProducts.filter( res => {
+              return res.price === 0 && res.productCode.substring(0,1) != 'W' && res.outputMedias[0] === "DWNLD"
+
+            })
+            console.log(JSON.stringify(orderobj))
+            if (orderobj){
+
+              const apiKey = order.apiKey
+              const node = order.node
+              const datasetName = order.datasetName
+              const orderingId = getorderproducts_response[0].orderingId
+              const productCode = orderobj[0].productCode
+              const option = 'None'
+              const outputMedia = 'DWNLD'
+
+              const request_body = {apiKey, node, datasetName, orderingId, productCode, option, outputMedia}
+              console.log(request_body)
+              const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('updateorderscene');
+              return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+                  .then( order_response => {
+                    console.log(order_response)
+                  })
+                  .catch( (error) => {
+                    console.log('updateorderscene api: ' + error);
+                  });
+
+
+            }
+
+
+          })
+          .catch( (error) => {
+            console.log('getorderproducts api: ' + error);
+          });
+
+      }).catch( (error) => {
+        console.log('last promise orders: ' + error);
+      })
+
     })
   }
 
-  function download(){
-    DownloadScenes.map( download => {
-      setTimeout(function(){},1000);
-      console.log("download: " + JSON.stringify(download))
-    })
+  function transfer_array_value(to_list, from_list){
+    var temp_to_list = to_list
+    const last_item = from_list.pop();
+    return temp_to_list.push(last_item)
   }
 
+
+  function downloadasynctest(callback){
+    setTimeout(function(){
+      if(scenes_in_download.length > 0){
+        const downlod_completed = scenes_in_download.pop()
+        // console.log('downloading... scene')
+        downloaded_scenes += 1;
+        console.log('downloaded scenes: ' + downloaded_scenes)
+      } else {
+        console.log('waiting...')
+      }
+      callback();
+    }, Math.floor(Math.random() * 5000) + 1 );
+  };
+
+  // function download(count){
+  //
+  //
+  //
+  //
+  //
+  //
+  // }
+
+  // registerListener(function(val) {
+  //   // console.log("Someone changed the value to " + val);
+  // });
+
+  // function
   return {
+
+
+      // if(this.iscomplete()){
+      //   console.log('completed checking for download')
+      //   if (total_scenes_for_download != downloaded_scenes){
+      //     this.whilebackground()
+      //   }
+      // } else {
+      //   this.whilebackground()
+      // }
+    // },
+    Listener: function(val) {},
+    registerListener: function(listener) {
+      this.Listener = listener;
+    },
+    download: function(){
+      if(add){
+        add = false;
+      }
+    },
     add_download: function(val) {
       count = increment_count(count, 1);
+      total_scenes_for_download = increment_count(total_scenes_for_download, 1);
       DownloadScenes.push(val);
+      // this.Listener(val);
+      this.download(count);
+
       // do_action('download', val);
       // if (count === 1){initiate_downloads();}
       return val;
@@ -127,7 +240,9 @@ var DownloadScenes = (function() {
     add_order: function(val) {
       count = increment_count(count, 1);
       OrderScenes.push(val);
-      // do_action('OrderScenes', val);
+      if(count === total_count){
+        doit = false;
+      }
       return val;
     },
     add_failed: function(msg,val) {
@@ -230,28 +345,28 @@ do_download = function(scene_downloads, counter){
   })
 
 };
-
-var asynct = function(DownloadCounter) {
-    var p = new Promise();
-    setTimeout(function() {
-        DownloadCounter.decrement()
-        const scene = scenes.pop();
-        console.log(scene)
-
-        p.resolve();
-    }, 2000);
-
-    return p.promise(); // Note we're not returning `p` directly
-}
-
-download_scene = function (scenes){
-
-  currentDownloads = DownloadCounter.value();
-  console.log(currentDownloads)
-  if(currentDownloads <= MAX_DOWNLOADS_AT_A_TIME){
-    asynct(DownloadCounter)
-  }
-}
+//
+// var asynct = function(DownloadCounter) {
+//     var p = new Promise();
+//     setTimeout(function() {
+//         DownloadCounter.decrement()
+//         const scene = scenes.pop();
+//         console.log(scene)
+//
+//         p.resolve();
+//     }, 2000);
+//
+//     return p.promise(); // Note we're not returning `p` directly
+// }
+//
+// download_scene = function (scenes){
+//
+//   currentDownloads = DownloadCounter.value();
+//   console.log(currentDownloads)
+//   if(currentDownloads <= MAX_DOWNLOADS_AT_A_TIME){
+//     asynct(DownloadCounter)
+//   }
+// }
 
 Array.observe(scene_downloads, function(changes) {
   //console.log(changes);
@@ -369,9 +484,13 @@ const datasets = METADATA_YAML.metadata_datasets;
 
 
 //query db and get the last days scenes
-const last_day_scenes = "SELECT * FROM landsat_metadata WHERE acquisition_date =  '2016-08-01'::date"
+const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 
-// "acquisition_date > '2016-08-01'::date AND acquisition_date < '2016-08-02'::date ORDER BY acquisition_date DESC"
+// "SELECT * FROM landsat_metadata WHERE acquisition_date > '2003-08-01'::date AND acquisition_date < '2003-08-31'::date ORDER BY acquisition_date DESC"
+
+// WHERE acquisition_date =  '2003-08-01'::date"
+
+// ""
 
 // "SELECT * FROM landsat_metadata WHERE  acquisition_date > '2003-08-01'::date AND acquisition_date < '2006-08-01'::date ORDER BY acquisition_date DESC" //"SELECT * FROM vw_last_days_scenes"; // WHERE substr(scene_id,1,3) = 'LC8';
 
@@ -419,6 +538,7 @@ var get_datasetName = function(scene_id, acquisition_date){
 
 };
 
+
 var get_download = function(scene_id){
   //see if scene needs to be downloaded or ordered by finding out about availablelty
   const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
@@ -451,6 +571,8 @@ var get_download = function(scene_id){
 
 }
 // DownloadScenes.initiate();
+
+
 
 // query to check for duplicate scenes
 query.on('row', function(row, result) {
@@ -516,6 +638,7 @@ query.on('row', function(row, result) {
                 const entityIds = [entityId]
 
                 if(standard_option_order.length > 0){
+                  console.log(standard_option_order)
                   const orders_obj = {apiKey,node,datasetName,entityIds};
                   orders.push(orders_obj);
                   DownloadScenes.add_order(orders_obj)
@@ -539,8 +662,9 @@ query.on('row', function(row, result) {
                 console.log('complete: ' + DownloadScenes.iscomplete())
 
                 if( DownloadScenes.iscomplete() ) {
+
                   DownloadScenes.start_order()
-                  DownloadScenes.start_download()
+                  // DownloadScenes.start_download()
                 }
 
                 // console.log(JSON.stringify(standard_option_dowload[0].url))

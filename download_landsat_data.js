@@ -25,7 +25,7 @@ var failed_downloads = [];
 
 var logger = new (winston.Logger)({
   transports: [
-    new (winston.transports.File)({ filename: 'download_landsat_data.log'})
+    new (winston.transports.File)({ filename: 'logs/download_landsat_data.log'})
   ]
 });
 
@@ -51,30 +51,6 @@ var DownloadCounter = (function() {
   };
 })();
 
-var testdownload = function(body){
-
-
-  //set base URL for axios
-  axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
-
-
-    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
-
-      //actual request after the last promise has been resolved
-      return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, body)
-        .then( download_response => {})
-        .catch( (error) => {
-          failed_downloads.push({scene_id});
-          // console.log(failed_downloads)
-          console.log('dowload  api: ' + error);
-          DownloadScenes.add_failed(error, scene_id);
-
-        });
-
-
-
-}
-
 //generic holder of downloads
 var DownloadScenes = (function() {
   var DownloadScenes = [];
@@ -93,7 +69,7 @@ var DownloadScenes = (function() {
   var count_api = 0;
 
   var current_download = 0;
-  var max_downloads = 5;
+  // var max_downloads = 5;
 
   var simultaneous = false;
   var start_order_complete = false;
@@ -109,18 +85,21 @@ var DownloadScenes = (function() {
     logger.log('error', msg + ': ' + val);
   }
 
-  function do_action(action, body){
-    console.log(action + ": " + JSON.stringify(body))
-  }
-
   function order(){
     var lastPromise = Promise.resolve();
+    var downloadPromise = Promise.resolve();
+    const totalorders = OrderScenes.length
+    var ordercount = 0;
+
+    //no orders then just download
+    if(OrderScenes.length === 0){
+      download();
+    }
 
     OrderScenes.map( order => {
 
       return lastPromise = lastPromise.then( () => {
-
-        // console.log("order: " + JSON.stringify(order))
+        ordercount += 1;
 
         const request_body = order;
         const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
@@ -132,9 +111,7 @@ var DownloadScenes = (function() {
               return res.price === 0 && res.productCode.substring(0,1) != 'W' && res.outputMedias[0] === "DWNLD"
 
             })
-            console.log(JSON.stringify(orderobj))
             if (orderobj){
-
               const apiKey = order.apiKey
               const node = order.node
               const datasetName = order.datasetName
@@ -144,79 +121,123 @@ var DownloadScenes = (function() {
               const outputMedia = 'DWNLD'
 
               const request_body = {apiKey, node, datasetName, orderingId, productCode, option, outputMedia}
-              console.log(request_body)
               const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('updateorderscene');
               return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
                   .then( order_response => {
-                    console.log(order_response)
+                    const ordered_scene = order.entityIds[0]
+
+                    const request_body = {apiKey, node}
+                    const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('submitorder');
+                    return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+                      .then ( order => {
+                        console.log('order submitted for: ' + ordered_scene)
+                        logger.log('info', 'order submitted for: ' + ordered_scene);
+
+                        const products = [ 'STANDARD' ]
+                        const entityIds = [ordered_scene]
+                        const download_body = {apiKey, node, datasetName, products, entityIds}
+
+                        DownloadScenes.push(download_body);
+                        total_scenes_for_download = increment_count(total_scenes_for_download, 1);
+                        //download
+                        //wait just in case still sending requests for order.
+                        //  only start download when finished to avoid simultaneous api calls :(
+                        if(totalorders === ordercount){
+                          setTimeout( download() , 5000 )
+                        }
+                      })
+                      .catch( (error) => {
+                        console.log('submitorder api: ' + error.message);
+                        logger.log('error', 'submitorder api: ' + error.message);
+                      });
                   })
                   .catch( (error) => {
-                    console.log('updateorderscene api: ' + error);
+                    console.log('updateorderscene api: ' + error.message);
+                    logger.log('error', 'updateorderscene api: ' + error.message);
+
                   });
 
 
+            } else {
+              //wait just in case still sending requests for order.
+               setTimeout( download() , 5000 )
             }
-
 
           })
           .catch( (error) => {
-            console.log('getorderproducts api: ' + error);
+            if(error.message.indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
+              console.log('retry?')
+            } else {
+              console.log('getorderproducts api: ' + error.message);
+              logger.log('error', 'getorderproducts api: ' + error.message);
+
+            }
           });
 
+
       }).catch( (error) => {
-        console.log('last promise orders: ' + error);
+        console.log('last promise orders: ' + error.message);
+        logger.log('error', 'last promise orders: ' + error.message);
+
       })
 
     })
   }
 
-  function transfer_array_value(to_list, from_list){
-    var temp_to_list = to_list
-    const last_item = from_list.pop();
-    return temp_to_list.push(last_item)
+  function download(count){
+
+    var lastPromise = Promise.resolve();
+
+    DownloadScenes.map( order => {
+      return lastPromise = lastPromise.then( () => {
+
+        const request_body = order;
+
+        const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
+
+        //actual request after the last promise has been resolved
+        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
+          .then( download_response => {
+
+            const scene_id = request_body.entityIds[0]
+            const tarFile = download_response[0];
+            const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
+            const download = {tarFile, dest};
+
+            // if we do have a URL attempt download
+            return get_tar(tarFile, dest, scene_id, MAX_DOWNLOADS_AT_A_TIME)
+              .then((data) => {
+                //do nothing
+              })
+              .catch((err) => console.error(err));
+
+        })
+        .catch( (error) => {
+          if(JSON.stringify(error).indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
+            console.log('retry?')
+          } else {
+            console.log('dowload api: ' + error.message);
+            logger.log('error', 'dowload api: ' + error.message);
+
+          }
+        })
+      })
+      .catch( (error) => {
+        console.log('last promise orders: ' + error.message);
+        logger.log('error', 'last promise orders: ' + error.message);
+
+      })
+    })
+
+
+
+
   }
 
 
-  function downloadasynctest(callback){
-    setTimeout(function(){
-      if(scenes_in_download.length > 0){
-        const downlod_completed = scenes_in_download.pop()
-        // console.log('downloading... scene')
-        downloaded_scenes += 1;
-        console.log('downloaded scenes: ' + downloaded_scenes)
-      } else {
-        console.log('waiting...')
-      }
-      callback();
-    }, Math.floor(Math.random() * 5000) + 1 );
-  };
-
-  // function download(count){
-  //
-  //
-  //
-  //
-  //
-  //
-  // }
-
-  // registerListener(function(val) {
-  //   // console.log("Someone changed the value to " + val);
-  // });
 
   // function
   return {
-
-
-      // if(this.iscomplete()){
-      //   console.log('completed checking for download')
-      //   if (total_scenes_for_download != downloaded_scenes){
-      //     this.whilebackground()
-      //   }
-      // } else {
-      //   this.whilebackground()
-      // }
-    // },
     Listener: function(val) {},
     registerListener: function(listener) {
       this.Listener = listener;
@@ -230,11 +251,9 @@ var DownloadScenes = (function() {
       count = increment_count(count, 1);
       total_scenes_for_download = increment_count(total_scenes_for_download, 1);
       DownloadScenes.push(val);
-      // this.Listener(val);
+
       this.download(count);
 
-      // do_action('download', val);
-      // if (count === 1){initiate_downloads();}
       return val;
     },
     add_order: function(val) {
@@ -282,133 +301,12 @@ var DownloadScenes = (function() {
 var scene_downloads = [];
 var orders = [];
 
-function asyncLoop(iterations, func, callback) {
-    var index = 0;
-    var done = false;
-    var loop = {
-        next: function() {
-            if (done) {
-                return;
-            }
-
-            if (index < iterations) {
-                index++;
-                func(loop);
-
-            } else {
-                done = true;
-                callback();
-            }
-        },
-
-        iteration: function() {
-            return index - 1;
-        },
-
-        break: function() {
-            done = true;
-            callback();
-        }
-    };
-    loop.next();
-    return loop;
-}
-
-do_download = function(scene_downloads, counter){
-  return new Promise((resolve, reject) => {
-    resolve(1)
-    DownloadCounter.increment();
-
-    var startTime = Date.now();
-    asyncLoop(100000, function(loop) {
-        someFunction(1, 2, function(result) {
-
-            // log the iteration
-            console.log(loop.iteration());
-
-            // Okay, for cycle could continue
-            loop.next();
-        })},
-        function(){
-          console.log('cycle ended')
-        }
-    );
-
-    console.log(counter.value())
-    counter.decrement();
-    const test = scene_downloads.pop()
-    console.log('send: ')
-    console.log(test)
-
-
-
-  })
-
-};
-//
-// var asynct = function(DownloadCounter) {
-//     var p = new Promise();
-//     setTimeout(function() {
-//         DownloadCounter.decrement()
-//         const scene = scenes.pop();
-//         console.log(scene)
-//
-//         p.resolve();
-//     }, 2000);
-//
-//     return p.promise(); // Note we're not returning `p` directly
-// }
-//
-// download_scene = function (scenes){
-//
-//   currentDownloads = DownloadCounter.value();
-//   console.log(currentDownloads)
-//   if(currentDownloads <= MAX_DOWNLOADS_AT_A_TIME){
-//     asynct(DownloadCounter)
-//   }
-// }
-
-Array.observe(scene_downloads, function(changes) {
-  //console.log(changes);
-});
-
-//
-// Array.observe(scene_downloads, (changes) => {
-//     const currentDownloads = DownloadCounter.value();
-//     console.log(currentDownloads)
-//
-//     if(currentDownloads <= MAX_DOWNLOADS_AT_A_TIME){
-//       console.log("download:")
-//       console.log(scene_downloads[scene_downloads.length-1])
-//       const prom = do_download(scene_downloads,DownloadCounter);
-//       prom
-//         .then( d => {
-//           console.log('then')
-//         })
-//       console.log("-------")
-//
-//     } else {
-//       console.log('waiting')
-//     }
-//     // console.log(changes)
-//     // console.log(scene_downloads)
-//     // scene = scene_downloads.pop();
-//     // console.log(scene)
-//     // get_tar(tarFile, dest, MAX_DOWNLOADS_AT_A_TIME)
-//    //   .then((data) => console.log('downloading: ' + data))
-//    //   .catch((err) => console.error(err));
-//     console.log('scene_downloads changed')
-//
-//
-// });
-
-
 
 
 //function to get tar files from a passed url
 //  this also turns the download in to promise and Also
 //  limits the # simultaneous downloads to
-const get_tar = function(url, dest, simultaneous_donwloads ) {
+const get_tar = function(url, dest, scene_id, simultaneous_donwloads ) {
 
   const currentDownloads = DownloadCounter.value();
 
@@ -417,7 +315,9 @@ const get_tar = function(url, dest, simultaneous_donwloads ) {
 
     //if url is blank that usually means it needs to ordered add order code
     if(!url){
-      reject('url is blank, maybe you need to order the scene?');
+      const msg = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?'
+      logger.log('error', msg + ': ' + scene_id);
+      reject('url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?');
     };
 
     //define the correct http protocal to make download request
@@ -432,12 +332,15 @@ const get_tar = function(url, dest, simultaneous_donwloads ) {
       // temporary data holder
       var file = fs.createWriteStream(dest);
 
+      console.log('downloading: ' + dest)
+      logger.log('info', 'downloading: ' + dest);
+
       //on resolve when the #of files being downloaed is less than the
       //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
       //  been completely downloaded will a new one begin and not reach the limit
       //  of 10 in to minutes not completed.  Also it seems that whnen more than
       //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
-      if(currentDownloads <= simultaneous_donwloads){
+      if(currentDownloads < simultaneous_donwloads){
         resolve(dest)
         //keep incrementing the # of concurent downloads to will reach the max allowed
         //  (determined by the USGS api) and simultaneous_donwloads
@@ -485,6 +388,10 @@ const datasets = METADATA_YAML.metadata_datasets;
 
 //query db and get the last days scenes
 const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
+
+//acquisition_date =  '2016-08-25'::date LIMIT 7"
+
+// acquisition_date =  '2003-08-25'::date LIMIT 9"
 
 // "SELECT * FROM landsat_metadata WHERE acquisition_date > '2003-08-01'::date AND acquisition_date < '2003-08-31'::date ORDER BY acquisition_date DESC"
 
@@ -538,45 +445,8 @@ var get_datasetName = function(scene_id, acquisition_date){
 
 };
 
-
-var get_download = function(scene_id){
-  //see if scene needs to be downloaded or ordered by finding out about availablelty
-  const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
-
-  const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
-
-        //actual request after the last promise has been resolved
-        return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-          .then( download_response => {
-
-            console.log(download_response)
-
-            const tarFile = standard_option[0].url //downloads[0];
-            const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
-            const download = {tarFile, dest};
-
-            // if we do have a URL attempt download
-            return get_tar(tarFile, dest, MAX_DOWNLOADS_AT_A_TIME)
-              .then((data) => console.log('downloading: ' + data))
-              .catch((err) => console.error(err));
-
-
-          }).catch( (error) => {
-            // console.error('last promise: ' + error);
-
-            failed_downloads.push({scene_id});
-            // console.log(failed_downloads)
-            console.log('dowload  api: ' + error);
-          });
-
-}
-// DownloadScenes.initiate();
-
-
-
 // query to check for duplicate scenes
 query.on('row', function(row, result) {
-    // console.log(row);
     // process rows here
       api_key
       .then( (apiKey) => {
@@ -596,7 +466,6 @@ query.on('row', function(row, result) {
 
         //see if scene needs to be downloaded or ordered by finding out about availablelty
         const request_body = USGS_FUNCTION.usgsapi_downloadoptions(apiKey, node, datasetName, entityIds);
-        // console.log(request_body );
 
         const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('downloadoptions');
 
@@ -609,14 +478,11 @@ query.on('row', function(row, result) {
             return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
               .then( downloads => {
 
-                // console.log(ROWS)
-
                 // nothing to return so write out failed????
                 if(!downloads[0]){
-                  console.log(scene_id)
-                  console.log(downloads[0])
-                  console.log(request_body)
                   DownloadScenes.add_failed('not able to download scene', scene_id);
+                  logger.log('error', 'not able to download scene: ' + scene_id);
+
                 }
 
                 //get the download option for the standard
@@ -629,16 +495,10 @@ query.on('row', function(row, result) {
                   return options.downloadCode === "STANDARD" && options.available
                 })
 
-
-                // console.log('order: ' + standard_option_order.length)
-                // console.log('download: ' + standard_option_dowload.length)
-                // console.log('entityId: ' + downloads[0].entityId)
-
                 const entityId = downloads[0].entityId;
                 const entityIds = [entityId]
 
                 if(standard_option_order.length > 0){
-                  console.log(standard_option_order)
                   const orders_obj = {apiKey,node,datasetName,entityIds};
                   orders.push(orders_obj);
                   DownloadScenes.add_order(orders_obj)
@@ -650,129 +510,38 @@ query.on('row', function(row, result) {
                   DownloadScenes.add_download(download_obj)
                 }
 
-                if(orders_obj){
-                  // console.log(download_obj)
-                  console.log(scene_id)
-                  console.log(orders_obj)
-                  console.log('')
-                }
-
                 console.log('total: ' + DownloadScenes.get_total_count())
+                logger.log('info', 'total: ' + DownloadScenes.get_total_count());
+
                 console.log('Current: ' + DownloadScenes.get_current_count())
+                logger.log('info', 'Current: ' + DownloadScenes.get_current_count());
+
                 console.log('complete: ' + DownloadScenes.iscomplete())
+                logger.log('info', 'Current: ' + DownloadScenes.iscomplete());
 
                 if( DownloadScenes.iscomplete() ) {
-
                   DownloadScenes.start_order()
-                  // DownloadScenes.start_download()
                 }
 
-                // console.log(JSON.stringify(standard_option_dowload[0].url))
-                //
-                // const url = standard_option_dowload[0].url
-                // const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
-                //
-                // return get_tar(url, dest, MAX_DOWNLOADS_AT_A_TIME)
-                //   .then((data) => console.log('downloading: ' + data))
-                //   .catch((err) => console.error(err));
-
-                // download_scene(scene_downloads);
-
-                // console.log(orders)
-                // console.log(scene_downloads)
-
-                //  const products;
-                //
-                // //see if scene needs to be downloaded or ordered by finding out about availablelty
-                // const request_body = USGS_FUNCTION.usgsapi_download(apiKey, node, datasetName, products, entityIds);
-                //
-                // const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('download');
-
-                      // //actual request after the last promise has been resolved
-                      // return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-                      //   .then( download_response => {
-                      //
-                      //     // console.log(download_response)
-                      //
-                      //     // const tarFile = standard_option[0].url //downloads[0];
-                      //     // const dest = DOWNLOAD_DIR + scene_id + '.tar.gz';
-                      //     // const download = {tarFile, dest};
-                      //
-                      //     // // if we do have a URL attempt download
-                      //     // return get_tar(tarFile, dest, MAX_DOWNLOADS_AT_A_TIME)
-                      //     //   .then((data) => console.log('downloading: ' + data))
-                      //     //   .catch((err) => console.error(err));
-                      //
-                      //
-                      //   }).catch( (error) => {
-                      //     // console.error('last promise: ' + error);
-                      //
-                      //     failed_downloads.push({scene_id});
-                      //     // console.log(failed_downloads)
-                      //     console.log('dowload  api: ' + error);
-                      //   });
-
-
-
-                // //if the url is blank order the product
-                // if(!tarFile){
-                //   console.log('blank: ' + scene_id)
-                //
-                //   //get order response body
-                //   // const response_body = USGS_HELPER.usgsapi_getorderproducts(apiKey, node, datasetName, entityIds)
-                //   // const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
-                //   //
-                //   // return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-                //   //   .then( products_for_order => {
-                //   //
-                //   //     //loop all potential products to get available products
-                //   //     products_for_order.map( potential_product => {
-                //   //       //loop the product available products array to get whatis available for each
-                //   //       // proudut.
-                //   //       potential_product.availableProducts.map( prod => {
-                //   //         const productCode = prod.productCode;
-                //   //         const price = prod.productCode;
-                //   //
-                //   //         if (price === 0 && productCode.substring(0,1) != 'W' ){
-                //   //           //order
-                //   //           console.log(prod.outputMedias)
-                //   //         }
-                //   //
-                //   //       })
-                //   //     })
-                //
-                //     // })
-                //     // .catch((err) => console.error(err));
-                //     //then updateOrderScene
-                //     //then orderItemBasket
-                //     //then  orderItem
-                //     //then submitOrder
-                //     //wait for download to become available and download
-                //
-                // } else {
-
-
-
-                // }
 
             }).catch( (error) => {
-              // console.error('last promise: ' + error);
 
               failed_downloads.push({scene_id});
+              console.log('dowload options api: ' + error.message);
+              logger.log('error', 'download failed for scene: ' + scene_id);
+              logger.log('error', 'dowload api: ' + error.message);
 
-              // console.log(failed_downloads)
-              console.log('dowload options api: ' + error);
             });
 
         }).catch( (error) => {
-          // console.error('last promise: ' + error);
-          console.log('last promise error: ' + error);
+          console.log('last promise error: ' + error.message);
+          logger.log('error', 'last promise error: ' + error.message);
 
         });
 
       }).catch( (error) => {
-        // console.error('last promise: ' + error);
-         console.log('api: ' + error);
+         console.log('api: ' + error.message);
+         logger.log('error', 'api: ' + error.message);
         });
 
 
@@ -793,25 +562,15 @@ query.on('row', function(row, result) {
 
 query.on('error', function(err) {
     console.log(err);
+    logger.log('error', 'query error: ' + err.message);
+
   });
 
 query.on('end', function(result) {
-    // console.log(result);
-    //do nothing
-    // console.log('end')
-    // console.log(result.rowCount);
-    // ROWS = result.rowCount;
-    // console.log(result.rows.length)
     DownloadScenes.set_total(result.rowCount);
   });
 
 
-      // // console.log(result);
-      // //do nothing
-      // console.log(orders)
-      // console.log(scene_downloads)
-
-//write progess to log date stamped
 
 // manage logs
 

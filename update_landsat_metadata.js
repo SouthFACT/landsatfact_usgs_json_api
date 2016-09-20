@@ -335,12 +335,9 @@ datasets.map( dataset => {
           startingNumber,
           sortOrder);
 
-          //console.log('--------------');
-          //logger.log('info',search_body);
 
           logger.log('info', 'search');
           logger.log('debug', 'search body' , search_body );
-          //console.log(search_body);
 
           //create request code for searching for available scenes
           const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
@@ -354,8 +351,6 @@ datasets.map( dataset => {
             //walk the search_response and start to collect the
             //  info for inserting into db
             search_response.results.map(entity => {
-              // console.log(' ');
-              //console.log(entity.metadataUrl)
 
               //metadata is not throttled so we can get all of this with normal patterns! yeah!
               logger.log('debug', 'metadata url' , entity.metadataUrl );
@@ -386,9 +381,7 @@ datasets.map( dataset => {
 
                       //convert to js array
                       const metadata_json = [js];
-                      //console.log('');
                       logger.log('info', 'extracting metadata for: ' + entity.summary);
-                      //console.log('extracting metadata for: ' + entity.summary);
 
                       //walk the json and get the metadata
                       // also need to get browse links
@@ -433,20 +426,17 @@ datasets.map( dataset => {
                             //if the method is api_browse then get the thumbnail for
                             if( method === 'api_browse'){
                               fieldSet = get_browse_url_fieldset(browse_json, databaseFieldName, configFieldName);
-                              // console.log(fieldSet);
                             }; // api_browse method;
 
                             if( method === 'api'){
 
                               fieldSet = get_api_fieldset(field_json, configFieldName, databaseFieldName);
-                              // console.log(fieldSet);
 
                             }; //api method
 
                             //method type constant
                             if( method === 'constant'){
                               fieldSet = get_constant_fieldset(configFieldName, databaseFieldName);
-                              //  console.log(fieldSet);
 
                             }; //constant method
 
@@ -459,7 +449,6 @@ datasets.map( dataset => {
                       })//metadata_json.map
                     })//parseString parse xml into JSON
 
-                    // console.log(metadata_recordset);
                     logger.log('debug', 'metadata data set' , metadata_recordset );
 
                     //logger.log('info', metadata_recordset);
@@ -495,7 +484,6 @@ datasets.map( dataset => {
 
           }); //last promise not real used to make sure the last promise has completed
           //  since USGS limits api calls to one at a time
-          //console.log('--------------');
         })
       })
       logger.log('info','update metadata end');

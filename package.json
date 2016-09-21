@@ -9,7 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "async": "^2.0.1",
     "axios": "^0.13.1",
     "commander": "^2.9.0",
     "pg": "^6.1.0",

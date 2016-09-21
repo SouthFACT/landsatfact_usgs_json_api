@@ -1,5 +1,4 @@
 var axios = require('axios');
-var async = require('async');
 
 var url = require('url');
 var yaml = require('yamljs');
@@ -100,6 +99,7 @@ var DownloadScenes = (function() {
   //write the file for failed and dowloaded scenes
   function write_file(file, list){
 
+
     //get file destination
     const dest = get_file_dest(file);
 
@@ -108,18 +108,17 @@ var DownloadScenes = (function() {
 
     //file originally written by php so need to mimic the output.
     //  will talk to everyone about how to change it.
-    file.write("Array")
-    file.write("(")
+    file.write("Array\n")
+    file.write("(\n")
 
     var count = 0;
 
     list.map( datachunk => {
-      file.write("[" + count + "] => " + datachunk)
+      file.write("    [" + count + "] => " + datachunk + "\n")
       count = increment_count(count,1)
     })
 
-    file.write("Array")
-    file.write(")")
+    file.write(")\n")
 
 
   }
@@ -207,7 +206,7 @@ var DownloadScenes = (function() {
                     return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
                       .then ( order => {
 
-                        const msg_header = 'order submitted for: ';
+                        const msg_header = 'order submitted for';
                         const msg = ordered_scene;
                         write_message(LOG_LEVEL_INFO, msg_header, msg)
 
@@ -234,7 +233,7 @@ var DownloadScenes = (function() {
                       })
                       //catch errors for the submitorder
                       .catch( (error) => {
-                        const msg_header = 'submitorder api: ';
+                        const msg_header = 'submitorder api';
                         const msg = error.message;
                         write_message(LOG_LEVEL_ERR, msg_header, msg)
                         Failed_Order.push(order.entityIds[0])
@@ -243,7 +242,7 @@ var DownloadScenes = (function() {
                   })
                   //catch errors for adding the order
                   .catch( (error) => {
-                    const msg_header = 'updateorderscene api: ';
+                    const msg_header = 'updateorderscene api';
                     const msg = error.message;
                     write_message(LOG_LEVEL_ERR, msg_header, msg)
                     Failed_Order.push(order.entityIds[0])
@@ -265,7 +264,7 @@ var DownloadScenes = (function() {
             if(error.message.indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
               console.log('retry?')
             } else {
-              const msg_header = 'getorderproducts api: ';
+              const msg_header = 'getorderproducts api';
               const msg = error.message;
               write_message(LOG_LEVEL_ERR, msg_header, msg)
               Failed_Order.push(order.entityIds[0])
@@ -275,7 +274,7 @@ var DownloadScenes = (function() {
 
       //catch all for all other errors with promises
       }).catch( (error) => {
-        const msg_header = 'last promise orders: ';
+        const msg_header = 'last promise orders';
         const msg = error.message;
         write_message(LOG_LEVEL_ERR, msg_header, msg)
       })
@@ -307,23 +306,19 @@ var DownloadScenes = (function() {
             const download = {tarFile, dest};
 
             // if we do have a URL attempt download
-            return get_tar(tarFile, dest, scene_id, MAX_DOWNLOADS_AT_A_TIME)
+            return get_tar(tarFile, dest, scene_id, MAX_DOWNLOADS_AT_A_TIME, total_downloads, download_count)
               .then((data) => {
                 //do nothing
               })
               .catch((err) => console.error(err));
 
-              //when all downloads have been completed write file
-              if(total_downloads === download_count){
-                write_file('downloaded', Succeed_Download);
-              }
 
         })
         .catch( (error) => {
           if(JSON.stringify(error).indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
             console.log('retry?')
           } else {
-            const msg_header = 'dowload api: ';
+            const msg_header = 'dowload api';
             const msg = error.message;
             write_message(LOG_LEVEL_ERR, msg_header, msg);
             Failed_Download.push(scene_id)
@@ -332,7 +327,7 @@ var DownloadScenes = (function() {
         })
       })
       .catch( (error) => {
-        const msg_header = 'last promise orders: ';
+        const msg_header = 'last promise orders';
         const msg = error.message;
         write_message(LOG_LEVEL_ERR, msg_header, msg);
         Failed_Download.push(scene_id)
@@ -344,7 +339,7 @@ var DownloadScenes = (function() {
   //function to get tar files from a passed url
   //  this also turns the download in to promise and Also
   //  limits the # simultaneous downloads to
-  const get_tar = function(url, dest, scene_id, simultaneous_donwloads ) {
+  const get_tar = function(url, dest, scene_id, simultaneous_donwloads, total_downloads, download_count ) {
     //add failed download.txt
     //add succeded download.txt
 
@@ -355,7 +350,7 @@ var DownloadScenes = (function() {
 
       //if url is blank that usually means it needs to ordered add order code
       if(!url){
-        const msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?: ';
+        const msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
         const msg = scene_id
         write_message(LOG_LEVEL_ERR, msg_header, msg);
 
@@ -377,7 +372,7 @@ var DownloadScenes = (function() {
         // temporary data holder
         var file = fs.createWriteStream(dest);
 
-        const msg_header = 'Downloading: ';
+        const msg_header = 'Downloading';
         const msg = dest;
         write_message(LOG_LEVEL_INFO, msg_header, msg);
 
@@ -403,6 +398,15 @@ var DownloadScenes = (function() {
           resolve(dest);
 
           Succeed_Download.push(dest);
+
+          //when all downloads have been completed write file
+          if(total_downloads === download_count){
+            write_file('downloaded', Succeed_Download);
+            const msg_header = 'update metadata end';
+            const msg = '';
+            write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+          }
 
           //add scene to download txt
           //remove one from downoload counter so we can start a new download
@@ -495,7 +499,9 @@ const datasets = METADATA_YAML.metadata_datasets;
 
 
 //query db and get the last days scenes
-const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
+const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 2"
+
+//WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 
 //acquisition_date =  '2016-08-25'::date LIMIT 7"
 
@@ -565,7 +571,7 @@ query.on('row', function(row, result) {
                   logger.log('error', 'not able to download scene: ' + scene_id);
                 }
 
-                //get the download option for the standard
+                //get the orders option for the standard
                 const standard_option_order = downloads[0].downloadOptions.filter( options => {
                   return options.downloadCode === "STANDARD" && !options.available
                 })
@@ -578,33 +584,39 @@ query.on('row', function(row, result) {
                 const entityId = downloads[0].entityId;
                 const entityIds = [entityId]
 
+                //create array to hold the request json for all orders
                 if(standard_option_order.length > 0){
                   const orders_obj = {apiKey,node,datasetName,entityIds};
                   orders.push(orders_obj);
                   DownloadScenes.add_order(orders_obj)
                 }
 
+                //create array to hold the request json for all downloads
                 if(standard_option_dowload.length > 0){
                   const download_obj = {apiKey,node,datasetName,products,entityIds};
                   scene_downloads.push(download_obj);
                   DownloadScenes.add_download(download_obj)
                 }
 
-                var msg_header = 'Total: ';
+                var msg_header = 'Total';
                 var msg = DownloadScenes.get_total_count();
                 DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
-                msg_header = 'Current: ';
+                msg_header = 'Current';
                 msg = DownloadScenes.get_current_count();
                 DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
-                msg_header = 'Complete: ';
+                msg_header = 'Complete';
                 msg = DownloadScenes.iscomplete();
                 DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
+                //once we have completed adding all the scenes to either ordering or downloading
+                //  start the process to actually order and download products
+                //  again we have to start after completion because we are limited to one API call at time.
                 if( DownloadScenes.iscomplete() ) {
                   DownloadScenes.start_order()
                 }
+
 
             }).catch( (error) => {
 
@@ -629,7 +641,7 @@ query.on('row', function(row, result) {
 
 
 
-    // wait for order to complete every n seconds via usgs apu
+    // wait for order to complete every n seconds via usgs api?  this may take tooo long no I have one in process for a few days.
 
     // downoload order usgs api
 
@@ -653,5 +665,3 @@ query.on('end', function(result) {
 // manage logs
 
 //send email failures
-
-logger.log('info','update metadata end');

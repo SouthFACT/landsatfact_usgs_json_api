@@ -3,10 +3,18 @@ logs
 *.log
 npm-debug.log*
 
+.DS_Store
+
 #ingore all downloads
 downloads
 *.tar
 *.tar.gz
+
+#ignore text files
+downloaded.txt
+ordered.txt
+ordered_failed.txt
+download_failed.txt
 
 # Runtime data
 pids

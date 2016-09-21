@@ -24,26 +24,37 @@ var logger = new (winston.Logger)({
 //  it is 10 in ten minutes but we are limiting to a 5 at a time so we are not
 //  overloading the server
 const MAX_DOWNLOADS_AT_A_TIME = 5;
-var failed_downloads = []; //need to check a better way to do this
+const LOG_LEVEL_ERR = 'error';
+const LOG_LEVEL_INFO = 'info';
+
+var failed_downloads = []; //need to check into a better way to do this other than global
 
 
 const DOWNLOAD_DIR = './downloads/';
+const DOWNLOAD_FILE_DIR = '';
 
 //generic counter for qeueing the # of concurent downloads
 var DownloadCounter = (function() {
+
+  //counter
   var privateCounter = 1;
 
+  //increment or decrment counter
   function changeBy(val) {
     privateCounter += val;
   }
 
+  //methods to do something to counter
   return {
+    //increment the counter by 1
     increment: function() {
       changeBy(1);
     },
+    //decrement the counter by 1
     decrement: function() {
       changeBy(-1);
     },
+    //return the current value of the counter
     value: function() {
       return privateCounter;
     }
@@ -58,22 +69,79 @@ var DownloadScenes = (function() {
   var total_scenes_for_download = 0;
   var OrderScenes = [];
   var scenes_in_order = [];
-  var FailedScenes = [];
+
+  var Failed_Download = [];
+  var Failed_Order = [];
+  var Succeed_Download= [];
+  var Succeed_Order = [];
 
   var total_count = 0;
   var count = 0;
 
+  function get_file_dest(file){
+    switch (file) {
+      case "dowloaded":
+        return DOWNLOAD_FILE_DIR + 'downloaded.txt'
+        break;
+      case "ordered":
+        return DOWNLOAD_FILE_DIR + 'ordered.txt'
+        break;
+      case "order failed":
+        return DOWNLOAD_FILE_DIR + 'ordered_failed.txt'
+        break;
+      case "download failed":
+        return DOWNLOAD_FILE_DIR + 'download_failed.txt'
+        break;
+      default:
+        return DOWNLOAD_FILE_DIR + 'downloaded.txt'
+    }
+  }
+
+  //write the file for failed and dowloaded scenes
+  function write_file(file, list){
+
+    //get file destination
+    const dest = get_file_dest(file);
+
+    // temporary data holder
+    var file = fs.createWriteStream(dest);
+
+    //file originally written by php so need to mimic the output.
+    //  will talk to everyone about how to change it.
+    file.write("Array")
+    file.write("(")
+
+    var count = 0;
+
+    list.map( datachunk => {
+      file.write("[" + count + "] => " + datachunk)
+      count = increment_count(count,1)
+    })
+
+    file.write("Array")
+    file.write(")")
+
+
+  }
+  //
   function increment_count(count, val) {
     const current_count = count;
     return current_count += val;
   }
 
-  //use generic error log for
-  function write_error(msg, val){
-    logger.log('error', msg + ': ' + val);
+  //generic message for logging and console writing
+  function write_message(level, msg, val){
+    console.error(msg + ': ' + val);
+    logger.log(level, msg + ': ' + val);
   }
 
   function order(){
+
+    //create a promise already resolved to catch all response.
+    //  becuase USGS api is throttled for one request at a time
+    //  wrap this in a resolve promoise so the there all requests are in promise and each one has
+    //  to be resolved befire the next promise is started.  This is due to only limitations of the USGS API- only allows one
+    //  api call at at time,
     var lastPromise = Promise.resolve();
     const totalorders = OrderScenes.length
     var ordercount = 0;
@@ -83,9 +151,16 @@ var DownloadScenes = (function() {
       download();
     }
 
+    //walk throug all the ordered scenes
     OrderScenes.map( order => {
 
+      //start with resolved promise
       return lastPromise = lastPromise.then( () => {
+
+        //count this as one order.  neeed to count each order
+        //  so we know when we have completed all orders. so once ordercount equals the length of all the orders in
+        //  OrderScenes then we will know all orders have been placed.  and then we can proceed with downloading...
+        //  only have to do this to make sure we do not send more than one api call at a time.
         ordercount += 1;
 
         //get the request JSON from the ordercenes array
@@ -95,10 +170,15 @@ var DownloadScenes = (function() {
         //actual request after the last promise has been resolved
         return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
           .then( getorderproducts_response => {
+
+            //filter possible products to downloadable level 1 datasets, with no cost.
             const orderobj = getorderproducts_response[0].availableProducts.filter( res => {
               return res.price === 0 && res.productCode.substring(0,1) != 'W' && res.outputMedias[0] === "DWNLD"
 
             })
+
+            //only order the product if it is level 1 and downloadable.
+            //  we need to get the product code and orderid
             if (orderobj){
 
               //make request json for updating an order
@@ -126,8 +206,11 @@ var DownloadScenes = (function() {
                     const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('submitorder');
                     return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
                       .then ( order => {
-                        console.log('order submitted for: ' + ordered_scene)
-                        logger.log('info', 'order submitted for: ' + ordered_scene);
+
+                        const msg_header = 'order submitted for: ';
+                        const msg = ordered_scene;
+                        write_message(LOG_LEVEL_INFO, msg_header, msg)
+
 
                         //create the download request json of course the the order will need to be completed before it can be downloaded
                         //  since their is no way via api to check and verify the status of the order we have to hope it is completed
@@ -151,21 +234,25 @@ var DownloadScenes = (function() {
                       })
                       //catch errors for the submitorder
                       .catch( (error) => {
-                        console.log('submitorder api: ' + error.message);
-                        logger.log('error', 'submitorder api: ' + error.message);
+                        const msg_header = 'submitorder api: ';
+                        const msg = error.message;
+                        write_message(LOG_LEVEL_ERR, msg_header, msg)
+                        Failed_Order.push(order.entityIds[0])
+
                       });
                   })
                   //catch errors for adding the order
                   .catch( (error) => {
-                    console.log('updateorderscene api: ' + error.message);
-                    logger.log('error', 'updateorderscene api: ' + error.message);
-
+                    const msg_header = 'updateorderscene api: ';
+                    const msg = error.message;
+                    write_message(LOG_LEVEL_ERR, msg_header, msg)
+                    Failed_Order.push(order.entityIds[0])
                   });
 
 
             } else {
-              //when all promises resloved attempt to start the download process just as final catch all
-              //wait just in case still sending requests for order.
+              //when there are no objects to dowload just jump to the dowload
+              //  add wait just in case still sending requests for order.
                setTimeout( download() , 5000 )
             }
 
@@ -178,29 +265,33 @@ var DownloadScenes = (function() {
             if(error.message.indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
               console.log('retry?')
             } else {
-              console.log('getorderproducts api: ' + error.message);
-              logger.log('error', 'getorderproducts api: ' + error.message);
-
+              const msg_header = 'getorderproducts api: ';
+              const msg = error.message;
+              write_message(LOG_LEVEL_ERR, msg_header, msg)
+              Failed_Order.push(order.entityIds[0])
             }
           });
 
 
       //catch all for all other errors with promises
       }).catch( (error) => {
-        console.log('last promise orders: ' + error.message);
-        logger.log('error', 'last promise orders: ' + error.message);
-
+        const msg_header = 'last promise orders: ';
+        const msg = error.message;
+        write_message(LOG_LEVEL_ERR, msg_header, msg)
       })
 
     })
   }
 
   function download(){
+    const total_downloads = DownloadScenes.length
+    var download_count = 0;
 
     var lastPromise = Promise.resolve();
 
     DownloadScenes.map( order => {
       return lastPromise = lastPromise.then( () => {
+        download_count += 1;
 
         const request_body = order;
 
@@ -222,26 +313,31 @@ var DownloadScenes = (function() {
               })
               .catch((err) => console.error(err));
 
+              //when all downloads have been completed write file
+              if(total_downloads === download_count){
+                write_file('downloaded', Succeed_Download);
+              }
+
         })
         .catch( (error) => {
           if(JSON.stringify(error).indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
             console.log('retry?')
           } else {
-            console.log('dowload api: ' + error.message);
-            logger.log('error', 'dowload api: ' + error.message);
+            const msg_header = 'dowload api: ';
+            const msg = error.message;
+            write_message(LOG_LEVEL_ERR, msg_header, msg);
+            Failed_Download.push(scene_id)
 
           }
         })
       })
       .catch( (error) => {
-        console.log('last promise orders: ' + error.message);
-        logger.log('error', 'last promise orders: ' + error.message);
-
+        const msg_header = 'last promise orders: ';
+        const msg = error.message;
+        write_message(LOG_LEVEL_ERR, msg_header, msg);
+        Failed_Download.push(scene_id)
       })
     })
-
-
-
 
   }
 
@@ -259,9 +355,11 @@ var DownloadScenes = (function() {
 
       //if url is blank that usually means it needs to ordered add order code
       if(!url){
-        const msg = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?'
-        logger.log('error', msg + ': ' + scene_id);
-        FailedScenes.push(scene_id)
+        const msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?: ';
+        const msg = scene_id
+        write_message(LOG_LEVEL_ERR, msg_header, msg);
+
+        Failed_Download.push(scene_id)
 
         //add scene to faileddownload txt
         reject('url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?');
@@ -279,8 +377,9 @@ var DownloadScenes = (function() {
         // temporary data holder
         var file = fs.createWriteStream(dest);
 
-        console.log('downloading: ' + dest)
-        logger.log('info', 'downloading: ' + dest);
+        const msg_header = 'Downloading: ';
+        const msg = dest;
+        write_message(LOG_LEVEL_INFO, msg_header, msg);
 
         //on resolve when the #of files being downloaed is less than the
         //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
@@ -289,6 +388,7 @@ var DownloadScenes = (function() {
         //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
         if(currentDownloads < simultaneous_donwloads){
           resolve(dest)
+
           //keep incrementing the # of concurent downloads to will reach the max allowed
           //  (determined by the USGS api) and simultaneous_donwloads
           DownloadCounter.increment();
@@ -301,6 +401,9 @@ var DownloadScenes = (function() {
         response.on('end', () =>  {
           file.end()
           resolve(dest);
+
+          Succeed_Download.push(dest);
+
           //add scene to download txt
           //remove one from downoload counter so we can start a new download
           DownloadCounter.decrement();
@@ -319,19 +422,10 @@ var DownloadScenes = (function() {
 
   // function
   return {
-    Listener: function(val) {},
-    registerListener: function(listener) {
-      this.Listener = listener;
-    },
-    download: function(){
-
-    },
     add_download: function(val) {
       count = increment_count(count, 1);
       total_scenes_for_download = increment_count(total_scenes_for_download, 1);
       DownloadScenes.push(val);
-
-      this.download(count);
 
       return val;
     },
@@ -341,10 +435,14 @@ var DownloadScenes = (function() {
 
       return val;
     },
+    write_message: function(level, msg, val){
+      write_message(level, msg, val);
+      return null
+    },
     add_failed: function(msg,val) {
       count = increment_count(count, 1);
-      FailedScenes.push(val);
-      write_error(msg, val)
+      Failed_Download.push(val);
+      write_message(LOG_LEVEL_ERR, msg, val)
       return val;
     },
     get_current_count: function(){
@@ -437,8 +535,8 @@ query.on('row', function(row, result) {
         const scene_id = row.scene_id;
         const acquisition_date = row.acquisition_date;
 
-        //derive dataset name from the scene_id and acquisition_date
-        const datasetName = get_datasetName(scene_id, acquisition_date);
+        //derieve dataset name from the scene_id and acquisition_date
+        const datasetName = USGS_HELPER.get_datasetName(scene_id, acquisition_date);
 
         //add scene_id to entityIds array only one here,  api requires the scene_id(s) as an array
         entityIds.push(scene_id);
@@ -451,6 +549,9 @@ query.on('row', function(row, result) {
 
         //make call to USGS api.  Make sure last promise is resolved first
         //  becuase USGS api is throttled for one request at a time
+        //  wrap this in a resolve promoise so the there all requests are in promise and each one has
+        //  to be resolved befire the next promise is started.  This is due to only limitations of the USGS API- only allows one
+        //  api call at at time,
         return lastPromise = lastPromise.then( () => {
           //yes USGS throttles downloads so lets wait a few seconds before next request;
 
@@ -462,7 +563,6 @@ query.on('row', function(row, result) {
                 if(!downloads[0]){
                   DownloadScenes.add_failed('not able to download scene', scene_id);
                   logger.log('error', 'not able to download scene: ' + scene_id);
-
                 }
 
                 //get the download option for the standard
@@ -490,19 +590,21 @@ query.on('row', function(row, result) {
                   DownloadScenes.add_download(download_obj)
                 }
 
-                console.log('total: ' + DownloadScenes.get_total_count())
-                logger.log('info', 'total: ' + DownloadScenes.get_total_count());
+                var msg_header = 'Total: ';
+                var msg = DownloadScenes.get_total_count();
+                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
-                console.log('Current: ' + DownloadScenes.get_current_count())
-                logger.log('info', 'Current: ' + DownloadScenes.get_current_count());
+                msg_header = 'Current: ';
+                msg = DownloadScenes.get_current_count();
+                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
-                console.log('complete: ' + DownloadScenes.iscomplete())
-                logger.log('info', 'Current: ' + DownloadScenes.iscomplete());
+                msg_header = 'Complete: ';
+                msg = DownloadScenes.iscomplete();
+                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 if( DownloadScenes.iscomplete() ) {
                   DownloadScenes.start_order()
                 }
-
 
             }).catch( (error) => {
 
@@ -526,10 +628,6 @@ query.on('row', function(row, result) {
 
 
 
-
-
-
-    //if product is not avaiablable order it usgs api
 
     // wait for order to complete every n seconds via usgs apu
 

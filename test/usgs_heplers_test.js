@@ -175,7 +175,122 @@ describe('USGS Helpers TESTS', function() {
 
     })
 
+  })
 
+
+  describe('check_slc' ,function (){
+    it('should return false if date is before May 5th 2003 ', function() {
+
+      var test_date = "2003-05-01";
+      var expected_result = false;
+      const result = USGS_HELPER.check_slc(test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return false if date is equal May 5th 2003 ', function() {
+
+      var test_date = "2003-05-05";
+      var expected_result = false;
+      const result = USGS_HELPER.check_slc(test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return true if date is after May 5th 2006 ', function() {
+
+      var test_date = "2006-05-15";
+      var expected_result = true;
+      const result = USGS_HELPER.check_slc(test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+  })
+
+
+  describe('get_product_abbrevation' ,function (){
+    it('should return L8 if LC80130292014100LGN00', function() {
+
+      var test_str = "LC80130292014100LGN00";
+      var expected_result = 'LC8';
+      const result = USGS_HELPER.get_product_abbrevation(test_str);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return LE7 if LE70220342016257EDC00', function() {
+
+      var test_str = "LE70220342016257EDC00";
+      var expected_result = "LE7";
+      const result = USGS_HELPER.get_product_abbrevation(test_str);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return LT5 if LT50300392003237PAC02', function() {
+
+      var test_str = "LT50300392003237PAC02";
+      var expected_result = "LT5";
+      const result = USGS_HELPER.get_product_abbrevation(test_str);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+  })
+
+
+  describe('get_datasetName' ,function (){
+    it('should return LANDSAT_8 if LC80130292014100LGN00', function() {
+
+      var test_str = "LC80130292014100LGN00";
+      var test_date = "2006-05-15"
+      var expected_result = 'LANDSAT_8';
+      const result = USGS_HELPER.get_datasetName(test_str, test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return LANDSAT_TM if LT50300392003237PAC02', function() {
+
+      var test_str = "LT50300392003237PAC02";
+      var test_date = "2003-04-15"
+      var expected_result = 'LANDSAT_TM';
+      const result = USGS_HELPER.get_datasetName(test_str, test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+
+    it('should return LANDSAT_ETM_SLC_OFF if LE70220342016257EDC00', function() {
+
+      var test_str = "LE70220342016257EDC00";
+      var test_date = "2016-09-13"
+      var expected_result = 'LANDSAT_ETM_SLC_OFF';
+      const result = USGS_HELPER.get_datasetName(test_str, test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
+    it('should return LANDSAT_ETM if LE70160332003147EDC00', function() {
+
+      var test_str = "LE70160332003147EDC00";
+      var test_date = "2003-05-27"
+      var expected_result = 'LANDSAT_ETM';
+      const result = USGS_HELPER.get_datasetName(test_str, test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
 
   })
 

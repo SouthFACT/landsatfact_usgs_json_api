@@ -642,10 +642,8 @@ query.on('row', function(row, result) {
 
 
     // wait for order to complete every n seconds via usgs api?  this may take tooo long no I have one in process for a few days.
+    //it seems that currently all scenes are in progesss.
 
-    // downoload order usgs api
-
-    // write downloaded scenes to download.txt
 
 
   });

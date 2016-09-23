@@ -18,6 +18,8 @@ const test_datasetfields_request_json = require("../json/test-datasetfields-requ
 const test_datasetfields_response_json = require("../json/test-datasetfields-response.json")
 
 const test_download_request_json = require("../json/test-download-request.json")
+const test_download_response_json = require("../json/test-download-response.json")
+const test_download_response_regxp = new RegExp("\Qhttp://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=\E[a-zA-Z0-9]*\Q&iid=LC80130282014100LGN00&did=\E[0-9]*\Q&ver=production\E");
 
 const test_downloadoptions_request_json = require("../json/test-downloadoptions-request.json")
 const test_downloadoptions_response_json = require("../json/test-downloadoptions-response.json")
@@ -36,11 +38,12 @@ var test_api_call = function(apiKey, request_code, body){
   const usgs_request_code = USGS_HELPER.get_usgs_response_code(request_code);
 
   //make call to USGS api and return promise
-  return USGS_HELPER.get_usgsapi_response(ugss_request_code, request_body);
+  return USGS_HELPER.get_usgsapi_response(usgs_request_code, request_body);
 
 }
 
 describe('USGS API TESTS', function() {
+
 
   describe('USGS login', function() {
     it('should be fullfilled', function(done) {
@@ -89,7 +92,7 @@ describe('USGS API TESTS', function() {
     })
 
   });
- 
+
   describe('USGS request code: download', function() {
 
     it('should be fullfilled', function(done) {
@@ -113,12 +116,11 @@ describe('USGS API TESTS', function() {
       })
     })
 
-  });
-
   describe('USGS request code: downloadoptions', function() {
 
     // Each time we run a download request the response url will have a new iid field in the url,
     // so we can't check the response against a static url
+    // Will attempt to use a regular expression...
 
     it('should be fullfilled', function(done) {
       api_key.then( apiKey => {
@@ -143,6 +145,4 @@ describe('USGS API TESTS', function() {
 
   });
 
-
-
-});
+})

@@ -26,10 +26,11 @@ const MAX_DOWNLOADS_AT_A_TIME = 5;
 const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
 
-var failed_downloads = []; //need to check into a better way to do this other than global
+//config data
+const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
 
-
-const DOWNLOAD_DIR = './downloads/';
+const download_directory = CONFIG_YAML.download_directory;
+const DOWNLOAD_DIR = download_directory;
 const DOWNLOAD_FILE_DIR = '';
 
 //generic counter for qeueing the # of concurent downloads
@@ -97,7 +98,7 @@ var DownloadScenes = (function() {
   }
 
   //write the file for failed and dowloaded scenes
-  function write_file(file, list){
+  function write_file(file, list, usephp){
 
 
     //get file destination
@@ -108,18 +109,30 @@ var DownloadScenes = (function() {
 
     //file originally written by php so need to mimic the output.
     //  will talk to everyone about how to change it.
-    file.write("Array\n")
-    file.write("(\n")
+    if(usephp){
+      file.write("Array\n")
+      file.write("(\n")
+    }
 
     var count = 0;
 
     list.map( datachunk => {
-      file.write("    [" + count + "] => " + datachunk + "\n")
+      var start = "";
+      var end = ""
+      console.log(datachunk, file)
+      if(usephp){
+        start = "    [";
+        end = "] => ";
+        count = "";
+      }
+
+      file.write(start + count + end + datachunk + "\n")
       count = increment_count(count,1)
     })
 
-    file.write(")\n")
-
+    if(usephp){
+      file.write(")\n")
+    }
 
   }
   //
@@ -220,6 +233,8 @@ var DownloadScenes = (function() {
                         //  we can add the order request here to the end of the array of downloads that are available.
                         //  if when we get to this it is not available we will deal with the failure in the download section
                         DownloadScenes.push(download_body);
+                        Succeed_Order.push(ordered_scene);
+
                         total_scenes_for_download = increment_count(total_scenes_for_download, 1);
                         //download
                         //wait just in case still sending requests for order.
@@ -227,6 +242,8 @@ var DownloadScenes = (function() {
                         //  also since we cannot have simultaneous api calls we have to delay the download call to ensure
                         //  the orders have been submitted and there are no more calls to the api (by waiting to till have made the last order)
                         if(totalorders === ordercount){
+                          write_file('ordered', Succeed_Order, false);
+                          write_file('order failed', Failed_Order, false);
                           setTimeout( download() , 5000 )
                         }
 
@@ -395,19 +412,20 @@ var DownloadScenes = (function() {
         // we are done, resolve promise with and close the downliaded tar file
         response.on('end', () =>  {
           file.end()
-          resolve(dest);
 
           Succeed_Download.push(dest);
 
           //when all downloads have been completed write file
           if(total_downloads === download_count){
-            write_file('downloaded', Succeed_Download);
+            write_file('downloaded', Succeed_Download, true);
+            write_file('download failed', Failed_Download, false);
             const msg_header = 'update metadata end';
             const msg = '';
             write_message(LOG_LEVEL_INFO, msg_header, msg)
 
           }
 
+          resolve(dest);
           //add scene to download txt
           //remove one from downoload counter so we can start a new download
           DownloadCounter.decrement();
@@ -486,20 +504,14 @@ logger.log('info','update metadata start');
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
-//config data must be in a file named metadata.yaml
-const METADATA_YAML = yaml.load("./config/metadata.yaml");
-
 //get config data
 const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
 
 const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 
-//get the array of datasetnames for use in USGS API calls
-const datasets = METADATA_YAML.metadata_datasets;
-
 
 //query db and get the last days scenes
-const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 2"
+const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 
 //WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 
@@ -568,7 +580,6 @@ query.on('row', function(row, result) {
                 // nothing to return so write out failed????
                 if(!downloads[0]){
                   DownloadScenes.add_failed('not able to download scene', scene_id);
-                  logger.log('error', 'not able to download scene: ' + scene_id);
                 }
 
                 //get the orders option for the standard
@@ -620,10 +631,12 @@ query.on('row', function(row, result) {
 
             }).catch( (error) => {
 
-              failed_downloads.push({scene_id});
-              console.log('dowload options api: ' + error.message);
-              logger.log('error', 'download failed for scene: ' + scene_id);
-              logger.log('error', 'dowload api: ' + error.message);
+              // failed_downloads.push({scene_id});
+              // console.log('dowload options api: ' + error.message);
+              DownloadScenes.add_failed('download failed for scene:', scene_id);
+              //
+              // logger.log('error', 'download failed for scene: ' + scene_id);
+              // logger.log('error', 'dowload api: ' + error.message);
 
             });
 

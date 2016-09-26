@@ -33,6 +33,19 @@ const download_directory = CONFIG_YAML.download_directory;
 const DOWNLOAD_DIR = download_directory;
 const DOWNLOAD_FILE_DIR = '';
 
+function file_exists(path) {
+  fs.accessSync(path, fs.F_OK, function(err) {
+      if (!err) {
+          console.log('in file_exists true')
+          return true
+      } else {
+          console.log('in file_exists false')
+          return false
+      }
+  });
+}
+
+
 //generic counter for qeueing the # of concurent downloads
 var DownloadCounter = (function() {
 
@@ -79,6 +92,11 @@ var DownloadScenes = (function() {
   var count = 0;
 
   function get_file_dest(file){
+
+    d = new Date()
+    df = d.getYear()+""+d.getMonth()+""+d.getDate()
+    // +'_'+(d.getHours()+1)+'_'+d.getMinutes()+'_'+d.getSeconds()
+
     switch (file) {
       case "dowloaded":
         return DOWNLOAD_FILE_DIR + 'downloaded.txt'
@@ -87,10 +105,10 @@ var DownloadScenes = (function() {
         return DOWNLOAD_FILE_DIR + 'ordered.txt'
         break;
       case "order failed":
-        return DOWNLOAD_FILE_DIR + 'ordered_failed.txt'
+        return DOWNLOAD_FILE_DIR + 'order_failed-' + df + '.txt'
         break;
       case "download failed":
-        return DOWNLOAD_FILE_DIR + 'download_failed.txt'
+        return DOWNLOAD_FILE_DIR + 'download_failed-' + df + '.txt'
         break;
       default:
         return DOWNLOAD_FILE_DIR + 'downloaded.txt'
@@ -374,6 +392,19 @@ var DownloadScenes = (function() {
 
     // return new pending promise
     return new Promise((resolve, reject) => {
+
+      if (!file_exists(path)){
+        DownloadCounter.increment();
+
+        Succeed_Download.push(scene_id)
+
+        const msg_header = 'the file ' + dest + ' alread exists, so we do not need to download it.';
+        const msg = scene_id
+
+        write_message(LOG_LEVEL_INFO, msg_header, msg);
+
+        resolve(dest)
+      }
 
       //if url is blank that usually means it needs to ordered add order code
       if(!url){

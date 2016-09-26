@@ -34,15 +34,14 @@ const DOWNLOAD_DIR = download_directory;
 const DOWNLOAD_FILE_DIR = '';
 
 function file_exists(path) {
-  fs.accessSync(path, fs.F_OK, function(err) {
-      if (!err) {
-          console.log('in file_exists true')
-          return true
-      } else {
-          console.log('in file_exists false')
-          return false
-      }
-  });
+  try {
+    fs.accessSync(path, fs.F_OK);
+      console.log('in file_exists true')
+      return true
+    } catch (e) {
+      console.log('in file_exists false')
+      return false
+    }
 }
 
 
@@ -393,87 +392,90 @@ var DownloadScenes = (function() {
     // return new pending promise
     return new Promise((resolve, reject) => {
 
-      if (!file_exists(path)){
+      if (file_exists(dest)){
         DownloadCounter.increment();
 
         Succeed_Download.push(scene_id)
 
-        const msg_header = 'the file ' + dest + ' alread exists, so we do not need to download it.';
-        const msg = scene_id
+        var msg_header = 'the file ' + dest + ' alread exists, so we do not need to download it.';
+        var msg = scene_id
 
         write_message(LOG_LEVEL_INFO, msg_header, msg);
 
         resolve(dest)
+      } else {
+
+
+              //if url is blank that usually means it needs to ordered add order code
+              if(!url){
+                msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
+                msg = scene_id
+                Failed_Download.push(scene_id)
+
+                write_message(LOG_LEVEL_ERR, msg_header, msg);
+
+                //add scene to faileddownload txt
+                reject(msg_header);
+              };
+
+              //define the correct http protocal to make download request
+              const lib = url.startsWith('https') ? require('https') : require('http');
+              const request = lib.get(url, (response) => {
+
+                // handle http errors
+                if (response.statusCode < 200 || response.statusCode > 299) {
+                    reject(new Error('Failed to load page, status code: ' + response.statusCode));
+                 }
+
+                // temporary data holder
+                var file = fs.createWriteStream(dest);
+
+                msg_header = 'Downloading';
+                msg = dest;
+                write_message(LOG_LEVEL_INFO, msg_header, msg);
+
+                //on resolve when the #of files being downloaed is less than the
+                //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
+                //  been completely downloaded will a new one begin and not reach the limit
+                //  of 10 in to minutes not completed.  Also it seems that whnen more than
+                //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
+                if(currentDownloads < simultaneous_donwloads){
+                  resolve(dest)
+
+                  //keep incrementing the # of concurent downloads to will reach the max allowed
+                  //  (determined by the USGS api) and simultaneous_donwloads
+                  DownloadCounter.increment();
+                }
+
+                // on every content datachunk, push it to the file and write it.
+                response.on('data', (datachunk) => file.write(datachunk));
+
+                // we are done, resolve promise with and close the downliaded tar file
+                response.on('end', () =>  {
+                  file.end()
+
+                  Succeed_Download.push(dest);
+
+
+                  if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
+                    write_file('downloaded', Succeed_Download, true);
+                    write_file('download failed', Failed_Download, false);
+                    const msg_header = 'update metadata end';
+                    const msg = '';
+                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+                  }
+
+                  resolve(dest);
+                  //add scene to download txt
+                  //remove one from downoload counter so we can start a new download
+                  DownloadCounter.decrement();
+                });
+
+              });
+
       }
-
-      //if url is blank that usually means it needs to ordered add order code
-      if(!url){
-        const msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
-        const msg = scene_id
-        Failed_Download.push(scene_id)
-
-        write_message(LOG_LEVEL_ERR, msg_header, msg);
-
-        //add scene to faileddownload txt
-        reject(msg_header);
-      };
-
-      //define the correct http protocal to make download request
-      const lib = url.startsWith('https') ? require('https') : require('http');
-      const request = lib.get(url, (response) => {
-
-        // handle http errors
-        if (response.statusCode < 200 || response.statusCode > 299) {
-            reject(new Error('Failed to load page, status code: ' + response.statusCode));
-         }
-
-        // temporary data holder
-        var file = fs.createWriteStream(dest);
-
-        const msg_header = 'Downloading';
-        const msg = dest;
-        write_message(LOG_LEVEL_INFO, msg_header, msg);
-
-        //on resolve when the #of files being downloaed is less than the
-        //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
-        //  been completely downloaded will a new one begin and not reach the limit
-        //  of 10 in to minutes not completed.  Also it seems that whnen more than
-        //  five occur I see 503 errors so keeping MAX_DOWNLOADS_AT_A_TIME at 4 for now
-        if(currentDownloads < simultaneous_donwloads){
-          resolve(dest)
-
-          //keep incrementing the # of concurent downloads to will reach the max allowed
-          //  (determined by the USGS api) and simultaneous_donwloads
-          DownloadCounter.increment();
-        }
-
-        // on every content datachunk, push it to the file and write it.
-        response.on('data', (datachunk) => file.write(datachunk));
-
-        // we are done, resolve promise with and close the downliaded tar file
-        response.on('end', () =>  {
-          file.end()
-
-          Succeed_Download.push(dest);
-
-
-          if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
-
-            write_file('downloaded', Succeed_Download, true);
-            write_file('download failed', Failed_Download, false);
-            const msg_header = 'update metadata end';
-            const msg = '';
-            write_message(LOG_LEVEL_INFO, msg_header, msg)
-
-          }
-
-          resolve(dest);
-          //add scene to download txt
-          //remove one from downoload counter so we can start a new download
-          DownloadCounter.decrement();
-        });
-
-      });
 
       // handle connection errors of the request
       request.on('error', (err) => {

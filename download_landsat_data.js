@@ -100,6 +100,7 @@ var DownloadScenes = (function() {
   //write the file for failed and dowloaded scenes
   function write_file(file, list, usephp){
 
+    console.log(file + ' writing file..')
 
     //get file destination
     const dest = get_file_dest(file);
@@ -116,18 +117,27 @@ var DownloadScenes = (function() {
 
     var count = 0;
 
+    if(list.length === 0){
+      file.write("\n");
+    }
+
     list.map( datachunk => {
       var start = "";
       var end = ""
-      console.log(datachunk, file)
+
       if(usephp){
         start = "    [";
         end = "] => ";
+      }
+
+      if(!usephp){
         count = "";
       }
 
-      file.write(start + count + end + datachunk + "\n")
-      count = increment_count(count,1)
+      file.write(start + count + end + datachunk + "\n");
+
+      count = increment_count(count,1);
+
     })
 
     if(usephp){
@@ -156,7 +166,6 @@ var DownloadScenes = (function() {
     //  api call at at time,
     var lastPromise = Promise.resolve();
     const totalorders = OrderScenes.length
-    var ordercount = 0;
 
     //no orders then just go directly to download
     if(OrderScenes.length === 0){
@@ -170,10 +179,9 @@ var DownloadScenes = (function() {
       return lastPromise = lastPromise.then( () => {
 
         //count this as one order.  neeed to count each order
-        //  so we know when we have completed all orders. so once ordercount equals the length of all the orders in
+        //  so we know when we have completed all orders. so once all the orders failed or submitted equals the length of all the orders in
         //  OrderScenes then we will know all orders have been placed.  and then we can proceed with downloading...
         //  only have to do this to make sure we do not send more than one api call at a time.
-        ordercount += 1;
 
         //get the request JSON from the ordercenes array
         const request_body = order;
@@ -241,7 +249,7 @@ var DownloadScenes = (function() {
                         //  only start download when finished to avoid simultaneous api calls :(
                         //  also since we cannot have simultaneous api calls we have to delay the download call to ensure
                         //  the orders have been submitted and there are no more calls to the api (by waiting to till have made the last order)
-                        if(totalorders === ordercount){
+                        if(totalorders === (Succeed_Order.length + Failed_Order.length)){
                           write_file('ordered', Succeed_Order, false);
                           write_file('order failed', Failed_Order, false);
                           setTimeout( download() , 5000 )
@@ -301,13 +309,11 @@ var DownloadScenes = (function() {
 
   function download(){
     const total_downloads = DownloadScenes.length
-    var download_count = 0;
 
     var lastPromise = Promise.resolve();
 
     DownloadScenes.map( order => {
       return lastPromise = lastPromise.then( () => {
-        download_count += 1;
 
         const request_body = order;
 
@@ -323,7 +329,7 @@ var DownloadScenes = (function() {
             const download = {tarFile, dest};
 
             // if we do have a URL attempt download
-            return get_tar(tarFile, dest, scene_id, MAX_DOWNLOADS_AT_A_TIME, total_downloads, download_count)
+            return get_tar(tarFile, dest, scene_id, MAX_DOWNLOADS_AT_A_TIME, total_downloads)
               .then((data) => {
                 //do nothing
               })
@@ -338,7 +344,9 @@ var DownloadScenes = (function() {
             const msg_header = 'dowload api';
             const msg = error.message;
             write_message(LOG_LEVEL_ERR, msg_header, msg);
+
             Failed_Download.push(scene_id)
+            console.log(Failed_Download.length + ' - downloads failed catch error 353')
 
           }
         })
@@ -348,6 +356,8 @@ var DownloadScenes = (function() {
         const msg = error.message;
         write_message(LOG_LEVEL_ERR, msg_header, msg);
         Failed_Download.push(scene_id)
+        console.log(Failed_Download.length + ' - last promise failed catch error 363')
+
       })
     })
 
@@ -356,7 +366,7 @@ var DownloadScenes = (function() {
   //function to get tar files from a passed url
   //  this also turns the download in to promise and Also
   //  limits the # simultaneous downloads to
-  const get_tar = function(url, dest, scene_id, simultaneous_donwloads, total_downloads, download_count ) {
+  const get_tar = function(url, dest, scene_id, simultaneous_donwloads, total_downloads ) {
     //add failed download.txt
     //add succeded download.txt
 
@@ -369,12 +379,12 @@ var DownloadScenes = (function() {
       if(!url){
         const msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
         const msg = scene_id
-        write_message(LOG_LEVEL_ERR, msg_header, msg);
-
         Failed_Download.push(scene_id)
 
+        write_message(LOG_LEVEL_ERR, msg_header, msg);
+
         //add scene to faileddownload txt
-        reject('url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?');
+        reject(msg_header);
       };
 
       //define the correct http protocal to make download request
@@ -415,8 +425,9 @@ var DownloadScenes = (function() {
 
           Succeed_Download.push(dest);
 
-          //when all downloads have been completed write file
-          if(total_downloads === download_count){
+
+          if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
             write_file('downloaded', Succeed_Download, true);
             write_file('download failed', Failed_Download, false);
             const msg_header = 'update metadata end';
@@ -509,9 +520,21 @@ const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
 
 const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 
+const scene_arg = process.argv[2]
+
+var last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date OFFSET 6 LIMIT 3"
+
+if( scene_arg ){
+  last_day_scenes = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
+  console.log(last_day_scenes)
+}
+
+// console.log(process.argv[2])
+// return
+//
+// var
 
 //query db and get the last days scenes
-const last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 
 //WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
 

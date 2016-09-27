@@ -12,6 +12,9 @@ var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
 var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 
+var emailer = require('./lib/email/send_error_email.js');
+var error_email = emailer()
+
 //check if a file exists synchronously
 function file_exists(path) {
   try {
@@ -364,6 +367,13 @@ var DownloadScenes = (function() {
                         //  also since we cannot have simultaneous api calls we have to delay the download call to ensure
                         //  the orders have been submitted and there are no more calls to the api (by waiting to till have made the last order)
                         if(totalorders === (Succeed_Order.length + Failed_Order.length)){
+
+                          //only send email if there is failed orders
+                          if(Failed_Order.length>0){
+                            error_email.set_text('Orders for unprocessed data from the USGS api failed for these scenes:' + Failed_Order.toString())
+                            error_email.send_email()
+                          }
+
                           write_file('ordered', Succeed_Order, false);
                           write_file('order failed', Failed_Order, false);
                           setTimeout( download() , 5000 )
@@ -500,6 +510,13 @@ var DownloadScenes = (function() {
         write_message(LOG_LEVEL_INFO, msg_header, msg);
 
         if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
+          //only send email if there is failed downloads
+          if(Failed_Download.length>0){
+            error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+            error_email.send_email()
+          }
+
           write_file('downloaded', Succeed_Download, true);
           write_file('download failed', Failed_Download, false);
           msg_header = 'update metadata end';
@@ -521,6 +538,13 @@ var DownloadScenes = (function() {
                   write_message(LOG_LEVEL_ERR, msg_header, msg);
 
                   if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
+                    //only send email if there is failed downloads
+                    if(Failed_Download.length>0){
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.send_email()
+                    }
+
                     write_file('downloaded', Succeed_Download, true);
                     write_file('download failed', Failed_Download, false);
                     msg_header = 'update metadata end';
@@ -543,6 +567,13 @@ var DownloadScenes = (function() {
                   Failed_Download.push(scene_id)
 
                   if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
+                    //only send email if there is failed downloads
+                    if(Failed_Download.length>0){
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.send_email()
+                    }
+
                     write_file('downloaded', Succeed_Download, true);
                     write_file('download failed', Failed_Download, false);
                     msg_header = 'update metadata end';
@@ -584,6 +615,13 @@ var DownloadScenes = (function() {
                   Succeed_Download.push(dest);
 
                   if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+
+                    //only send email if there is failed downloads
+                    if(Failed_Download.length>0){
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.send_email()
+                    }
+
                     write_file('downloaded', Succeed_Download, true);
                     write_file('download failed', Failed_Download, false);
                     const msg_header = 'update metadata end';
@@ -864,7 +902,5 @@ query.on('end', function(result) {
   });
 
 
-
-// manage logs
 
 //send email failures

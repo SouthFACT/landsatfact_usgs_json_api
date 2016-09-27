@@ -516,7 +516,7 @@ var DownloadScenes = (function() {
 
           //only send email if there is failed downloads
           if(Failed_Download.length>0){
-            error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+            error_email.set_text('Downloads from the USGS api failed for these scenes: ' + Failed_Download.toString() + '.  Check the attached log for more details.')
             error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
             error_email.send_email()
           }
@@ -545,7 +545,7 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_text('Downloads from the USGS api failed for these scenes: ' + Failed_Download.toString() + '.  Check the attached log for more details.')
                       error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
@@ -575,7 +575,7 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_text('Downloads from the USGS api failed for these scenes: ' + Failed_Download.toString() + '.  Check the attached log for more details.')
                       error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
@@ -624,7 +624,7 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_text('Downloads from the USGS api failed for these scenes: ' + Failed_Download.toString() + '.  Check the attached log for more details.')
                       error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
@@ -727,42 +727,33 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 
 const scene_arg = process.argv[2]
 
+const last_day_scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
+
 const list_yesterdays_failed = get_yesterdays_failures();
-const yesterdays_failed_scenes =  'SELECT scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ' +
+const yesterdays_failed_scenes =  'SELECT' +
+                                    last_day_scenes_fields +
                                   ' FROM landsat_metadata ' +
                                   ' WHERE scene_id in ' + list_yesterdays_failed;
 
-var last_day_scenes = yesterdays_failed_scenes +
+const last_day_scenes = " (SELECT " +
+                          last_day_scenes_fields +
+                        " FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date AND scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+
+
+
+
+// "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes";
+
+var scenes_for_dowloading_SQL = yesterdays_failed_scenes +
                       " UNION " +
-                      " (SELECT scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 " +
-                      " FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date AND scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+                      last_day_scenes;
 
 
 
+//check if there is an argument of a scene if so use that.
 if( scene_arg ){
-  last_day_scenes = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
+  scenes_for_dowloading_SQL = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
 }
-
-// console.log(process.argv[2])
-// return
-//
-// var
-
-//query db and get the last days scenes
-
-//WHERE acquisition_date =  '2003-08-25'::date LIMIT 9"
-
-//acquisition_date =  '2016-08-25'::date LIMIT 7"
-
-// acquisition_date =  '2003-08-25'::date LIMIT 9"
-
-// "SELECT * FROM landsat_metadata WHERE acquisition_date > '2003-08-01'::date AND acquisition_date < '2003-08-31'::date ORDER BY acquisition_date DESC"
-
-// WHERE acquisition_date =  '2003-08-01'::date"
-
-// ""
-
-// "SELECT * FROM landsat_metadata WHERE  acquisition_date > '2003-08-01'::date AND acquisition_date < '2006-08-01'::date ORDER BY acquisition_date DESC" //"SELECT * FROM vw_last_days_scenes"; // WHERE substr(scene_id,1,3) = 'LC8';
 
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();
@@ -770,7 +761,7 @@ var lastPromise = Promise.resolve();
 //login and get promise for api key
 var api_key = USGS_HELPER.get_api_key();
 
-const query = pg_client.query(last_day_scenes);
+const query = pg_client.query(scenes_for_dowloading_SQL);
 
 
 

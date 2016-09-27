@@ -12,10 +12,64 @@ var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
 var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 
+//check if a file exists synchronously
+function file_exists(path) {
+  try {
+    fs.accessSync(path, fs.F_OK);
+      return true
+    } catch (e) {
+      return false
+    }
+}
+
+//get todays data as string
+today = get_date_string()
+
+//delete a file used to manage logs and failed download and error files
+function delete_file(file){
+
+  //check if file exists
+  the_file_exists = file_exists(file);
+
+  //if the file exists delete it.
+  if(the_file_exists){
+    fs.unlink(file,function(err){
+         if(err) {
+           return console.log(err);
+         }
+
+         msg_header = 'old file deleted';
+         msg = file;
+         write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+     });
+  }
+}
+
+function delete_old_files(){
+
+  const week_ago = date_by_subtracting_days(new Date(),7)
+  week_ago_string = get_date_string(week_ago)
+
+  var file = 'logs/download_landsat_data-' + week_ago_string+ '.log'
+  delete_file(file)
+
+  file = './order_failed-' + week_ago_string+ '.txt'
+  delete_file(file)
+
+  file = './download_failed-' + week_ago_string+ '.txt'
+  delete_file(file)
+
+
+}
+
+
+delete_old_files();
+
 //setup logger
 var logger = new (winston.Logger)({
   transports: [
-    new (winston.transports.File)({ filename: 'logs/download_landsat_data.log'})
+    new (winston.transports.File)({ filename: 'logs/download_landsat_data-' + today+ '.log'})
   ]
 });
 
@@ -29,20 +83,14 @@ const LOG_LEVEL_INFO = 'info';
 //config data
 const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
 
+
 const download_directory = CONFIG_YAML.download_directory;
 const DOWNLOAD_DIR = download_directory;
 const DOWNLOAD_FILE_DIR = '';
 
-function file_exists(path) {
-  try {
-    fs.accessSync(path, fs.F_OK);
-      console.log('in file_exists true')
-      return true
-    } catch (e) {
-      console.log('in file_exists false')
-      return false
-    }
-}
+
+
+
 
 
 //generic counter for qeueing the # of concurent downloads
@@ -73,6 +121,56 @@ var DownloadCounter = (function() {
   };
 })();
 
+// remove on day from current day
+function date_by_subtracting_days(date, days) {
+    return new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate() - days,
+        date.getHours(),
+        date.getMinutes(),
+        date.getSeconds(),
+        date.getMilliseconds()
+    );
+}
+
+//get yesterdays download failures and add get a SQL list
+//  so we can add it to todays list.  if it fails it should again it will end up back on the
+//  download list
+function get_yesterdays_failures() {
+
+  var list = "";
+  const dayago_string = date_by_subtracting_days(new Date(),1)
+
+  //format a day string for writing failires
+  const dayago = get_date_string(dayago_string)
+  // d.getFullYear()+""+("0" + (d.getMonth() + 1)).slice(-2)+""+("0" + d.getDate()).slice(-2)
+
+  const file = 'download_failed-' + dayago + '.txt';
+
+  fs.readFileSync('download_failed-' + dayago + '.txt').toString().split('\n').forEach(function (line) {
+    list = list + "'" + line  + "',";
+  });
+
+
+  list  = "(" + list.substring(0,list.length-1) + ")"
+  return list
+
+}
+
+//function to create a sting from the current date for writing logs and other files...
+function get_date_string(date){
+  var date;
+
+  if(!date){
+    the_date = new Date()
+  } else {
+    the_date = date
+  }
+
+  return the_date.getFullYear()+""+("0" + (the_date.getMonth() + 1)).slice(-2)+""+("0" + the_date.getDate()).slice(-2)
+}
+
 //generic holder of downloads
 var DownloadScenes = (function() {
   var DownloadScenes = [];
@@ -90,11 +188,10 @@ var DownloadScenes = (function() {
   var total_count = 0;
   var count = 0;
 
+  //get the dest file name
   function get_file_dest(file){
 
-    d = new Date()
-    df = d.getYear()+""+d.getMonth()+""+d.getDate()
-    // +'_'+(d.getHours()+1)+'_'+d.getMinutes()+'_'+d.getSeconds()
+    today = get_date_string();
 
     switch (file) {
       case "dowloaded":
@@ -104,10 +201,10 @@ var DownloadScenes = (function() {
         return DOWNLOAD_FILE_DIR + 'ordered.txt'
         break;
       case "order failed":
-        return DOWNLOAD_FILE_DIR + 'order_failed-' + df + '.txt'
+        return DOWNLOAD_FILE_DIR + 'order_failed-' + today + '.txt'
         break;
       case "download failed":
-        return DOWNLOAD_FILE_DIR + 'download_failed-' + df + '.txt'
+        return DOWNLOAD_FILE_DIR + 'download_failed-' + today + '.txt'
         break;
       default:
         return DOWNLOAD_FILE_DIR + 'downloaded.txt'
@@ -294,7 +391,7 @@ var DownloadScenes = (function() {
             } else {
               //when there are no objects to dowload just jump to the dowload
               //  add wait just in case still sending requests for order.
-               setTimeout( download() , 5000 )
+              setTimeout( download() , 5000 )
             }
 
           })
@@ -402,21 +499,39 @@ var DownloadScenes = (function() {
 
         write_message(LOG_LEVEL_INFO, msg_header, msg);
 
+        if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+          write_file('downloaded', Succeed_Download, true);
+          write_file('download failed', Failed_Download, false);
+          msg_header = 'update metadata end';
+          msg = '';
+          write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+        }
+
         resolve(dest)
       } else {
 
 
-              //if url is blank that usually means it needs to ordered add order code
-              if(!url){
-                msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
-                msg = scene_id
-                Failed_Download.push(scene_id)
+                //if url is blank that usually means it needs to ordered add order code
+                if(!url){
+                  var msg_header = 'url is blank, maybe you need to order the scene or the scene has been ordered and is not ready?';
+                  var msg = scene_id
+                  Failed_Download.push(scene_id)
 
-                write_message(LOG_LEVEL_ERR, msg_header, msg);
+                  write_message(LOG_LEVEL_ERR, msg_header, msg);
 
-                //add scene to faileddownload txt
-                reject(msg_header);
-              };
+                  if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+                    write_file('downloaded', Succeed_Download, true);
+                    write_file('download failed', Failed_Download, false);
+                    msg_header = 'update metadata end';
+                    msg = '';
+                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+                  }
+
+                  //add scene to faileddownload txt
+                  reject(msg_header);
+                };
 
               //define the correct http protocal to make download request
               const lib = url.startsWith('https') ? require('https') : require('http');
@@ -424,6 +539,18 @@ var DownloadScenes = (function() {
 
                 // handle http errors
                 if (response.statusCode < 200 || response.statusCode > 299) {
+
+                  Failed_Download.push(scene_id)
+
+                  if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
+                    write_file('downloaded', Succeed_Download, true);
+                    write_file('download failed', Failed_Download, false);
+                    msg_header = 'update metadata end';
+                    msg = '';
+                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+
+                  }
+
                     reject(new Error('Failed to load page, status code: ' + response.statusCode));
                  }
 
@@ -456,9 +583,7 @@ var DownloadScenes = (function() {
 
                   Succeed_Download.push(dest);
 
-
                   if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
-
                     write_file('downloaded', Succeed_Download, true);
                     write_file('download failed', Failed_Download, false);
                     const msg_header = 'update metadata end';
@@ -538,6 +663,8 @@ var DownloadScenes = (function() {
 
 })();
 
+
+
 var scene_downloads = [];
 var orders = [];
 
@@ -555,11 +682,20 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 
 const scene_arg = process.argv[2]
 
-var last_day_scenes = "SELECT * FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date OFFSET 6 LIMIT 3"
+const list_yesterdays_failed = get_yesterdays_failures();
+const yesterdays_failed_scenes =  'SELECT scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ' +
+                                  ' FROM landsat_metadata ' +
+                                  ' WHERE scene_id in ' + list_yesterdays_failed;
+
+var last_day_scenes = yesterdays_failed_scenes +
+                      " UNION " +
+                      " (SELECT scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 " +
+                      " FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date AND scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+
+
 
 if( scene_arg ){
   last_day_scenes = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
-  console.log(last_day_scenes)
 }
 
 // console.log(process.argv[2])

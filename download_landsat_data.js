@@ -49,6 +49,7 @@ function delete_file(file){
   }
 }
 
+//deletes old log and failure files (older than 7 days)
 function delete_old_files(){
 
   const week_ago = date_by_subtracting_days(new Date(),7)
@@ -67,6 +68,7 @@ function delete_old_files(){
 }
 
 
+//call delete old files
 delete_old_files();
 
 //setup logger
@@ -370,7 +372,8 @@ var DownloadScenes = (function() {
 
                           //only send email if there is failed orders
                           if(Failed_Order.length>0){
-                            error_email.set_text('Orders for unprocessed data from the USGS api failed for these scenes:' + Failed_Order.toString())
+                            error_email.set_text('Orders for unprocessed data from the USGS api failed for these scenes: ' + Failed_Order.toString() + '.  Check the attached log for more details.')
+                            error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                             error_email.send_email()
                           }
 
@@ -513,7 +516,8 @@ var DownloadScenes = (function() {
 
           //only send email if there is failed downloads
           if(Failed_Download.length>0){
-            error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+            error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+            error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
             error_email.send_email()
           }
 
@@ -541,7 +545,8 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
 
@@ -570,7 +575,8 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
 
@@ -618,7 +624,8 @@ var DownloadScenes = (function() {
 
                     //only send email if there is failed downloads
                     if(Failed_Download.length>0){
-                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString())
+                      error_email.set_text('Downloads from the USGS api failed for these scenes:' + Failed_Download.toString() + '.  Check the attached log for more details.')
+                      error_email.set_attachments('./logs/download_landsat_data-' + today+ '.log')
                       error_email.send_email()
                     }
 
@@ -900,7 +907,3 @@ query.on('error', function(err) {
 query.on('end', function(result) {
     DownloadScenes.set_total(result.rowCount);
   });
-
-
-
-//send email failures

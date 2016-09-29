@@ -1,8 +1,12 @@
-{
-    "errorCode":null,
-    "error": "",
-    "data":[
-        "http://edclpdsftp.cr.usgs.gov/LDCMdownload/sno10/ops/l1/2014/013/029/LC80130292014100LGN00.tar.gz?iid=LC80130292014100LGN00&amp;did=63173803&amp;ver="
-    ],
-    "api_version":"1.0"
-}
+// These are several sample outputs used to test a regular expression.
+// We do not use this file directly. Note the changing id and did fields.
+
+["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=imvnh3qaftpneumrpcp3itmqi1&iid=LC80130282014100LGN00&did=270371861&ver=production"]
+
+["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=hdfl9dkq8srsff3tqkm1r4fn16&iid=LC80130282014100LGN00&did=270371948&ver=production"]
+
+["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=461ld6m46h7kfulqmhslst2142&iid=LC80130282014100LGN00&did=270371962&ver=production"]
+
+["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=0q9oket3n7ucf17b9p1kvkguj4&iid=LC80130282014100LGN00&did=270371967&ver=production"]
+
+["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=64guupc5v64gsds6phd7ptg6v7&iid=LC80130282014100LGN00&did=270371976&ver=production"]

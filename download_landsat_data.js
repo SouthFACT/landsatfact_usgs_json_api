@@ -71,7 +71,9 @@ const yesterdays_failed_scenes =  'SELECT' +
 
 const last_day_scenes = " (SELECT " +
                           last_day_scenes_fields +
-                        " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+                        " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
+
+                        // ,'LT50300402003237PAC02','LT50300392003237PAC02')
 // ,'LE70330382016238EDC00','LE70170382016238EDC00'
 
 //acquisition_date =  '2003-08-25'::date AND

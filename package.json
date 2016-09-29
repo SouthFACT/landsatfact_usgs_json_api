@@ -4,7 +4,7 @@
   "description": "test usgs api",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./test/usgs_api_calls.js"
+    "test": "mocha -t 5000 ./test/usgs_api_calls.js"
   },
   "author": "",
   "license": "ISC",

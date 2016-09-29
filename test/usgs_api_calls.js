@@ -28,6 +28,7 @@ const test_download_request_json = require("../json/test-download-request.json")
 // regular expression
 const test_download_response_regexp = /.*tar.gz\?id=[a-zA-Z0-9]*&iid=LC80130282014100LGN00&did=[0-9]*&ver=production/
 
+
 const test_downloadoptions_request_json = require("../json/test-downloadoptions-request.json")
 const test_downloadoptions_response_json = require("../json/test-downloadoptions-response.json")
 
@@ -40,14 +41,12 @@ const test_search_response_json = require("../json/test-search-response.json")
 const test_getbulkdownloadproducts_request_json = require("../json/test-getbulkdownloadproducts-request.json")
 const test_getbulkdownloadproducts_response_json = require("../json/test-getbulkdownloadproducts-response.json")
 
-
 const test_api_call = function (request_code, body) {
   return api_key_promise.then(
     function (apiKey) {
       const api_key_object = {apiKey};
       const request_body = USGS_HELPER.mergejson(api_key_object, body);
       const usgs_request_code = USGS_HELPER.get_usgs_response_code(request_code);
-
       //make call to USGS api and return promise
       return USGS_HELPER.get_usgsapi_response(usgs_request_code, request_body);
     },

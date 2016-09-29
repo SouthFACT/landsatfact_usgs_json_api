@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // These are several sample outputs used to test a regular expression for responses
 //   to the 'download' request code. Note the changing id and did fields.
 // We do not use this file directly.
@@ -17,3 +18,6 @@
 ["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=dn5evfv9m42vis40urs7conum7&iid=LC80130282014100LGN00&did=270381369&ver=production"]
 
 ["http://dds.cr.usgs.gov/ltaauth//sno18/ops/l1/2014/013/028/LC80130282014100LGN00.tar.gz?id=49v858f6b92n207m8tpmmljm53&iid=LC80130282014100LGN00&did=270383130&ver=production"]
+=======
+["http://edclpdsftp.cr.usgs.gov/LDCMdownload/sno10/ops/l1/2014/013/029/LC80130292014100LGN00.tar.gz?iid=LC80130292014100LGN00&amp;did=63173803&amp;ver="]
+>>>>>>> 99f618622863d5575e7ddea0444084428a25d53c

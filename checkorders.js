@@ -2,21 +2,36 @@ var yaml = require('yamljs');
 var pg = require('pg');
 var fs = require('fs');
 var winston = require('winston');
+var axios = require('axios');
 
+
+//get modules
+var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
+var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
+var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
+var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
+
+var apphelpers = require('./lib/helpers/app_helpers.js')
+var APP_HELPERS = apphelpers();
+
+var emailer = require('./lib/email/send_error_email.js');
+var error_email = emailer()
+
+var download_counter = require('./download_counter.js');
+var DownloadCounter = download_counter();
 
 const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
 
 //call delete old files
-APP_HELPERS.delete_old_files();
+APP_HELPERS.delete_old_files('check_orders_landsat_data');
 
+APP_HELPERS.set_logger_level('debug');
+APP_HELPERS.set_logfile('check_orders_landsat_data')
+APP_HELPERS.write_message(LOG_LEVEL_INFO, 'check order start', '');
 
-//setup logger
-var logger = new (winston.Logger)({
-  transports: [
-    new (winston.transports.File)({ filename: 'logs/check_orders_landsat_data-' + today+ '.log'})
-  ]
-});
+//set base URL for axios
+axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
 
 function make_scene_available_request(USGS_REQUEST_CODE, request_body, scene_id){
@@ -50,6 +65,7 @@ function make_scene_available_request(USGS_REQUEST_CODE, request_body, scene_id)
    //catch errors for the submitorder
    .catch( (error) => {
      if(error.message.indexOf('Rate limit exceeded - cannot support simultaneous requests') > 0){
+       console.log('simultaneous retry')
        return make_scene_available_request(USGS_REQUEST_CODE, request_body, scene_id);
      } else {
        const msg_header = 'check orders available';
@@ -144,6 +160,12 @@ function check_orders(orders_from_number_of_days_ago){
 
 
               })
+              //catch errors for the submitorder
+              .catch( (error) => {
+                const msg_header = 'api key';
+                const msg = error.message;
+                APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
+              });
 
             })
 
@@ -154,9 +176,12 @@ function check_orders(orders_from_number_of_days_ago){
 
             //handle query end
             query.on('end', function(result) {
-              console.log('end')
               thecount = result.rowCount;
             });
 
 
 }
+
+check_orders(0);
+
+APP_HELPERS.write_message(LOG_LEVEL_INFO, 'check order end', '');

@@ -13,6 +13,8 @@ downloads
 #ignore text files
 downloaded.txt
 ordered.txt
+downloaded*.txt
+ordered*.txt
 ordered_failed*.txt
 order_failed*.txt
 download_failed*.txt

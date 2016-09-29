@@ -12,71 +12,25 @@ var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
 var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 
+var apphelpers = require('./lib/helpers/app_helpers.js')
+var APP_HELPERS = apphelpers();
+
 var emailer = require('./lib/email/send_error_email.js');
 var error_email = emailer()
 
-//check if a file exists synchronously
-function file_exists(path) {
-  try {
-    fs.accessSync(path, fs.F_OK);
-      return true
-    } catch (e) {
-      return false
-    }
-}
-
-//get todays data as string
-today = get_date_string()
-
-//delete a file used to manage logs and failed download and error files
-function delete_file(file){
-
-  //check if file exists
-  the_file_exists = file_exists(file);
-
-  //if the file exists delete it.
-  if(the_file_exists){
-    fs.unlink(file,function(err){
-         if(err) {
-           return console.log(err);
-         }
-
-         msg_header = 'old file deleted';
-         msg = file;
-         write_message(LOG_LEVEL_INFO, msg_header, msg)
-
-     });
-  }
-}
-
-//deletes old log and failure files (older than 7 days)
-function delete_old_files(){
-
-  const week_ago = date_by_subtracting_days(new Date(),7)
-  week_ago_string = get_date_string(week_ago)
-
-  var file = 'logs/download_landsat_data-' + week_ago_string+ '.log'
-  delete_file(file)
-
-  file = './order_failed-' + week_ago_string+ '.txt'
-  delete_file(file)
-
-  file = './download_failed-' + week_ago_string+ '.txt'
-  delete_file(file)
+var download_counter = require('./download_counter.js');
+var DownloadCounter = download_counter();
 
 
-}
+
 
 
 //call delete old files
-delete_old_files();
+APP_HELPERS.delete_old_files();
 
-//setup logger
-var logger = new (winston.Logger)({
-  transports: [
-    new (winston.transports.File)({ filename: 'logs/download_landsat_data-' + today+ '.log'})
-  ]
-});
+
+APP_HELPERS.set_logfile('download_landsat_data')
+
 
 //max amount concurent simultaneous downloads from the USGS api
 //  it is 10 in ten minutes but we are limiting to a 5 at a time so we are not
@@ -94,89 +48,7 @@ const DOWNLOAD_DIR = download_directory;
 const DOWNLOAD_FILE_DIR = '';
 
 
-
-
-
-
-//generic counter for qeueing the # of concurent downloads
-var DownloadCounter = (function() {
-
-  //counter
-  var privateCounter = 1;
-
-  //increment or decrment counter
-  function changeBy(val) {
-    privateCounter += val;
-  }
-
-  //methods to do something to counter
-  return {
-    //increment the counter by 1
-    increment: function() {
-      changeBy(1);
-    },
-    //decrement the counter by 1
-    decrement: function() {
-      changeBy(-1);
-    },
-    //return the current value of the counter
-    value: function() {
-      return privateCounter;
-    }
-  };
-})();
-
-// remove on day from current day
-function date_by_subtracting_days(date, days) {
-    return new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate() - days,
-        date.getHours(),
-        date.getMinutes(),
-        date.getSeconds(),
-        date.getMilliseconds()
-    );
-}
-
-//get yesterdays download failures and add get a SQL list
-//  so we can add it to todays list.  if it fails it should again it will end up back on the
-//  download list
-function get_yesterdays_failures() {
-
-  var list = "";
-  const dayago_string = date_by_subtracting_days(new Date(),1)
-
-  //format a day string for writing failires
-  const dayago = get_date_string(dayago_string)
-  // d.getFullYear()+""+("0" + (d.getMonth() + 1)).slice(-2)+""+("0" + d.getDate()).slice(-2)
-
-  const file = 'download_failed-' + dayago + '.txt';
-
-  fs.readFileSync('download_failed-' + dayago + '.txt').toString().split('\n').forEach(function (line) {
-    list = list + "'" + line  + "',";
-  });
-
-
-  list  = "(" + list.substring(0,list.length-1) + ")"
-  return list
-
-}
-
-//function to create a sting from the current date for writing logs and other files...
-function get_date_string(date){
-  var date;
-
-  if(!date){
-    the_date = new Date()
-  } else {
-    the_date = date
-  }
-
-  return the_date.getFullYear()+""+("0" + (the_date.getMonth() + 1)).slice(-2)+""+("0" + the_date.getDate()).slice(-2)
-}
-
-//generic holder of downloads
+//generic holder of downloads move to seperate module
 var DownloadScenes = (function() {
   var DownloadScenes = [];
   var scenes_in_download = [];
@@ -196,14 +68,14 @@ var DownloadScenes = (function() {
   //get the dest file name
   function get_file_dest(file){
 
-    today = get_date_string();
+    today = APP_HELPERS.get_date_string();
 
     switch (file) {
       case "dowloaded":
-        return DOWNLOAD_FILE_DIR + 'downloaded.txt'
+        return DOWNLOAD_FILE_DIR + 'downloaded-' + today + '.txt'
         break;
       case "ordered":
-        return DOWNLOAD_FILE_DIR + 'ordered.txt'
+        return DOWNLOAD_FILE_DIR + 'ordered-' + today + '.txt'
         break;
       case "order failed":
         return DOWNLOAD_FILE_DIR + 'order_failed-' + today + '.txt'
@@ -212,7 +84,7 @@ var DownloadScenes = (function() {
         return DOWNLOAD_FILE_DIR + 'download_failed-' + today + '.txt'
         break;
       default:
-        return DOWNLOAD_FILE_DIR + 'downloaded.txt'
+        return DOWNLOAD_FILE_DIR + 'downloaded-' + today + '.txt'
     }
   }
 
@@ -270,11 +142,7 @@ var DownloadScenes = (function() {
     return current_count += val;
   }
 
-  //generic message for logging and console writing
-  function write_message(level, msg, val){
-    console.error(msg + ': ' + val);
-    logger.log(level, msg + ': ' + val);
-  }
+
 
   function order(){
 
@@ -297,10 +165,6 @@ var DownloadScenes = (function() {
       //start with resolved promise
       return lastPromise = lastPromise.then( () => {
 
-        //count this as one order.  neeed to count each order
-        //  so we know when we have completed all orders. so once all the orders failed or submitted equals the length of all the orders in
-        //  OrderScenes then we will know all orders have been placed.  and then we can proceed with downloading...
-        //  only have to do this to make sure we do not send more than one api call at a time.
 
         //get the request JSON from the ordercenes array
         const request_body = order;
@@ -348,7 +212,7 @@ var DownloadScenes = (function() {
 
                         const msg_header = 'order submitted for';
                         const msg = ordered_scene;
-                        write_message(LOG_LEVEL_INFO, msg_header, msg)
+                        APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg)
 
 
                         //create the download request json of course the the order will need to be completed before it can be downloaded
@@ -387,7 +251,7 @@ var DownloadScenes = (function() {
                       .catch( (error) => {
                         const msg_header = 'submitorder api';
                         const msg = error.message;
-                        write_message(LOG_LEVEL_ERR, msg_header, msg)
+                        APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
                         Failed_Order.push(order.entityIds[0])
 
                       });
@@ -396,7 +260,7 @@ var DownloadScenes = (function() {
                   .catch( (error) => {
                     const msg_header = 'updateorderscene api';
                     const msg = error.message;
-                    write_message(LOG_LEVEL_ERR, msg_header, msg)
+                    APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
                     Failed_Order.push(order.entityIds[0])
                   });
 
@@ -418,7 +282,7 @@ var DownloadScenes = (function() {
             } else {
               const msg_header = 'getorderproducts api';
               const msg = error.message;
-              write_message(LOG_LEVEL_ERR, msg_header, msg)
+              APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
               Failed_Order.push(order.entityIds[0])
             }
           });
@@ -428,7 +292,7 @@ var DownloadScenes = (function() {
       }).catch( (error) => {
         const msg_header = 'last promise orders';
         const msg = error.message;
-        write_message(LOG_LEVEL_ERR, msg_header, msg)
+        APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
       })
 
     })
@@ -470,7 +334,7 @@ var DownloadScenes = (function() {
           } else {
             const msg_header = 'dowload api';
             const msg = error.message;
-            write_message(LOG_LEVEL_ERR, msg_header, msg);
+            APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
 
             Failed_Download.push(scene_id)
             console.log(Failed_Download.length + ' - downloads failed catch error 353')
@@ -481,7 +345,7 @@ var DownloadScenes = (function() {
       .catch( (error) => {
         const msg_header = 'last promise orders';
         const msg = error.message;
-        write_message(LOG_LEVEL_ERR, msg_header, msg);
+        APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
         Failed_Download.push(scene_id)
         console.log(Failed_Download.length + ' - last promise failed catch error 363')
 
@@ -502,7 +366,7 @@ var DownloadScenes = (function() {
     // return new pending promise
     return new Promise((resolve, reject) => {
 
-      if (file_exists(dest)){
+      if (APP_HELPERS.file_exists(dest)){
         DownloadCounter.increment();
 
         Succeed_Download.push(scene_id)
@@ -510,7 +374,7 @@ var DownloadScenes = (function() {
         var msg_header = 'the file ' + dest + ' alread exists, so we do not need to download it.';
         var msg = scene_id
 
-        write_message(LOG_LEVEL_INFO, msg_header, msg);
+        APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
         if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
 
@@ -525,7 +389,7 @@ var DownloadScenes = (function() {
           write_file('download failed', Failed_Download, false);
           msg_header = 'update metadata end';
           msg = '';
-          write_message(LOG_LEVEL_INFO, msg_header, msg)
+          APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg)
 
         }
 
@@ -539,7 +403,7 @@ var DownloadScenes = (function() {
                   var msg = scene_id
                   Failed_Download.push(scene_id)
 
-                  write_message(LOG_LEVEL_ERR, msg_header, msg);
+                  APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
 
                   if(total_downloads === (Failed_Download.length + Succeed_Download.length)){
 
@@ -554,7 +418,7 @@ var DownloadScenes = (function() {
                     write_file('download failed', Failed_Download, false);
                     msg_header = 'update metadata end';
                     msg = '';
-                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+                    APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg)
 
                   }
 
@@ -584,7 +448,7 @@ var DownloadScenes = (function() {
                     write_file('download failed', Failed_Download, false);
                     msg_header = 'update metadata end';
                     msg = '';
-                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+                    APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg)
 
                   }
 
@@ -596,7 +460,7 @@ var DownloadScenes = (function() {
 
                 msg_header = 'Downloading';
                 msg = dest;
-                write_message(LOG_LEVEL_INFO, msg_header, msg);
+                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 //on resolve when the #of files being downloaed is less than the
                 //  MAX_DOWNLOADS_AT_A_TIME.  this ensures that only when a files has
@@ -633,7 +497,7 @@ var DownloadScenes = (function() {
                     write_file('download failed', Failed_Download, false);
                     const msg_header = 'update metadata end';
                     const msg = '';
-                    write_message(LOG_LEVEL_INFO, msg_header, msg)
+                    APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg)
 
                   }
 
@@ -671,14 +535,10 @@ var DownloadScenes = (function() {
 
       return val;
     },
-    write_message: function(level, msg, val){
-      write_message(level, msg, val);
-      return null
-    },
     add_failed: function(msg,val) {
       count = increment_count(count, 1);
       Failed_Download.push(val);
-      write_message(LOG_LEVEL_ERR, msg, val)
+      APP_HELPERS.write_message(LOG_LEVEL_ERR, msg, val)
       return val;
     },
     get_current_count: function(){
@@ -729,18 +589,20 @@ const scene_arg = process.argv[2]
 
 const last_day_scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
-const list_yesterdays_failed = get_yesterdays_failures();
+const list_yesterdays_failed = APP_HELPERS.get_yesterdays_failures();
 const yesterdays_failed_scenes =  'SELECT' +
                                     last_day_scenes_fields +
                                   ' FROM landsat_metadata ' +
                                   ' WHERE scene_id in ' + list_yesterdays_failed;
 
+
+
 const last_day_scenes = " (SELECT " +
                           last_day_scenes_fields +
-                        " FROM landsat_metadata  WHERE acquisition_date =  '2003-08-25'::date AND scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+                        " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01','LT50300402003237PAC02','LT50300392003237PAC02'))"
+// ,'LE70330382016238EDC00','LE70170382016238EDC00'
 
-
-
+//acquisition_date =  '2003-08-25'::date AND
 
 // "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes";
 
@@ -755,23 +617,25 @@ if( scene_arg ){
   scenes_for_dowloading_SQL = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
 }
 
-//captures lastpromise first one is resolved
+// //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();
+//
+//  lastPromise = check_orders(0);
 
-//login and get promise for api key
-var api_key = USGS_HELPER.get_api_key();
+
+
 
 const query = pg_client.query(scenes_for_dowloading_SQL);
 
-
-
-
+//login and get promise for api key
+var api_key_main = USGS_HELPER.get_api_key();
 
 // query to check for duplicate scenes
 query.on('row', function(row, result) {
 
+
     // process rows here
-      api_key
+      api_key_main
       .then( (apiKey) => {
 
         //get constant for node "EE"
@@ -839,15 +703,15 @@ query.on('row', function(row, result) {
 
                 var msg_header = 'Total';
                 var msg = DownloadScenes.get_total_count();
-                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 msg_header = 'Current';
                 msg = DownloadScenes.get_current_count();
-                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 msg_header = 'Complete';
                 msg = DownloadScenes.iscomplete();
-                DownloadScenes.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 //once we have completed adding all the scenes to either ordering or downloading
                 //  start the process to actually order and download products
@@ -861,7 +725,8 @@ query.on('row', function(row, result) {
 
               // failed_downloads.push({scene_id});
               // console.log('dowload options api: ' + error.message);
-              DownloadScenes.add_failed('download failed for scene:', scene_id);
+              DownloadScenes.add_failed('download failed for scene', scene_id);
+              console.log('dowload api: ' + error.message)
               //
               // logger.log('error', 'download failed for scene: ' + scene_id);
               // logger.log('error', 'dowload api: ' + error.message);

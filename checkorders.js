@@ -54,6 +54,8 @@ function make_scene_available_request(USGS_REQUEST_CODE, request_body, scene_id)
        var msg_header = ' The scene ' + scene_id + ' is now available please proceed to download'
        var msg = scene_id
        APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
+       
+       //add downoload....
 
      } else {
        var msg_header = ' The scene ' + scene_id + ' is still not available check again later...'
@@ -182,6 +184,11 @@ function check_orders(orders_from_number_of_days_ago){
 
 }
 
+//current orders
 check_orders(0);
+
+//yesterdays orders
+check_orders(1);
+
 
 APP_HELPERS.write_message(LOG_LEVEL_INFO, 'check order end', '');

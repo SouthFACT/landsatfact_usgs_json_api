@@ -69,7 +69,7 @@ const yesterdays_failed_scenes =  'SELECT' +
 
 
 
-const last_day_scenes = " (SELECT " +
+const last_day_scenes = " SELECT " +
                           last_day_scenes_fields +
                         " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
 

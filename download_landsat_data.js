@@ -62,10 +62,17 @@ const scene_arg = process.argv[2]
 const last_day_scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
 const list_yesterdays_failed = APP_HELPERS.get_yesterdays_failures();
-const yesterdays_failed_scenes =  'SELECT' +
-                                    last_day_scenes_fields +
-                                  ' FROM landsat_metadata ' +
-                                  ' WHERE scene_id in ' + list_yesterdays_failed;
+
+var yesterdays_failed_scenes = ''
+
+if (list_yesterdays_failed.length > 0){
+  yesterdays_failed_scenes =  'SELECT' +
+                              last_day_scenes_fields +
+                            ' FROM landsat_metadata ' +
+                            ' WHERE scene_id in ' + list_yesterdays_failed;
+} else {
+  yesterdays_failed_scenes = ''
+}
 
 
 

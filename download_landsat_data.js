@@ -88,7 +88,7 @@ var scenes_for_dowloading_SQL = yesterdays_failed_scenes +
 
 //check if there is an argument of a scene if so use that.
 if( scene_arg ){
-  scenes_for_dowloading_SQL = "SELECT * FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
+  scenes_for_dowloading_SQL = "SELECT " + last_day_scenes_fields + " FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
 }
 
 // //captures lastpromise first one is resolved

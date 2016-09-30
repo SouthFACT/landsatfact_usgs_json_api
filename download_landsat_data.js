@@ -229,7 +229,7 @@ query.on('row', function(row, result) {
 
 query.on('error', function(err) {
     msg_header = 'query error';
-    msg = error.message;
+    msg = err.message;
     APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
   });
 

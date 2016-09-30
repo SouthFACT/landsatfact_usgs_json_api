@@ -200,8 +200,6 @@ query.on('row', function(row, result) {
               DownloadScenes.add_failed(msg_header, scene_id);
               APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
-              //logger.log('error', 'download failed for scene: ' + scene_id);
-              // logger.log('error', 'dowload api: ' + error.message);
 
             });
 
@@ -230,9 +228,9 @@ query.on('row', function(row, result) {
   });
 
 query.on('error', function(err) {
-    console.log(err);
-    logger.log('error', 'query error: ' + err.message);
-
+    msg_header = 'query error';
+    msg = error.message;
+    APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
   });
 
 query.on('end', function(result) {

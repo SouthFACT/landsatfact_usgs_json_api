@@ -11,7 +11,7 @@ var logger = new (winston.Logger)({
   ]
 });
 
-logger.level = 'debug';
+logger.level = 'info';
 
 //get modules
 var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");

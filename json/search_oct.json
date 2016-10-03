@@ -22,6 +22,6 @@
 			"secondValue": 43
 		}]
 	},
-  "maxResults": 20,
+  "maxResults": 5000,
   "startingNumber": 1,
   "sortOrder": "ASC" }

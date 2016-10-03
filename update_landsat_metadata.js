@@ -442,7 +442,7 @@ datasets.map( dataset => {
                             //merge the fieldset into the recordset
                             const records = get_metadata_record_fieldset(metadata_recordset, fieldSet);
                             metadata_recordset = records;
-
+                            
                           })//metdataFields.map
                         })//fields_json.map
                       })//metadata_json.map

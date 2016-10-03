@@ -335,8 +335,6 @@ datasets.map( dataset => {
           startingNumber,
           sortOrder);
 
-          console.log(search_body);
-
           logger.log('info', 'search');
           logger.log('debug', 'search body' , search_body );
 
@@ -454,6 +452,7 @@ datasets.map( dataset => {
 
                     //logger.log('info', metadata_recordset);
 
+                    console.log(metadata_recordset)
                     //do the insert here
                     update_lsf_database.metadata_to_db(metadata_recordset);
 

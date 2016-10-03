@@ -313,7 +313,7 @@ datasets.map( dataset => {
         var additionalCriteria = make_additionalCriteria_filter(filterType, childFilters);
 
         //defaults will move to config yaml
-        var maxResults = 20;
+        var maxResults = 5000;
         var startingNumber = 1 ;
         var sortOrder = "ASC";
 
@@ -335,6 +335,7 @@ datasets.map( dataset => {
           startingNumber,
           sortOrder);
 
+          console.log(search_body);
 
           logger.log('info', 'search');
           logger.log('debug', 'search body' , search_body );

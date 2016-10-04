@@ -442,7 +442,7 @@ datasets.map( dataset => {
                             //merge the fieldset into the recordset
                             const records = get_metadata_record_fieldset(metadata_recordset, fieldSet);
                             metadata_recordset = records;
-                            
+
                           })//metdataFields.map
                         })//fields_json.map
                       })//metadata_json.map
@@ -452,7 +452,7 @@ datasets.map( dataset => {
 
                     //logger.log('info', metadata_recordset);
 
-                    console.log(metadata_recordset)
+                    //console.log(metadata_recordset)
                     //do the insert here
                     update_lsf_database.metadata_to_db(metadata_recordset);
 

@@ -4,7 +4,7 @@
   "description": "test usgs api",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test-api": "mocha -t 10000 ./test/usgs_api_calls.js"
   },
   "author": "",
   "license": "ISC",

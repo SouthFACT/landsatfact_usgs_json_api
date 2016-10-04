@@ -1,5 +1,4 @@
 var axios = require('axios');
-
 var assert = require('assert');
 var chai = require('chai');
 var expect  = require("chai").expect;
@@ -8,109 +7,115 @@ chai.use(require('chai-fuzzy'));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
 
-//get modules
-var USGS_CONSTANT = require("../lib/usgs_api/usgs_constants.js");
-var USGS_FUNCTION = require("../lib/usgs_api/usgs_functions.js");
-var USGS_HELPER = require("../lib/usgs_api/usgs_helpers.js");
-
-//get testjson
-const test_datasetfields_request_json = require("../json/test-datasetfields-request.json")
-const test_search_request_json = require("../json/test-search.json")
-
-const test_datasetfields_response_json = require("../json/test-datasetfields-response.json")
-const test_search_response_json = require("../json/test-search-response.json")
+const USGS_CONSTANT = require("../lib/usgs_api/usgs_constants.js");
+const USGS_FUNCTION = require("../lib/usgs_api/usgs_functions.js");
+const USGS_HELPER = require("../lib/usgs_api/usgs_helpers.js");
 
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
 //login and get promise for api key
-var api_key = USGS_HELPER.get_api_key();
+const api_key_promise = USGS_HELPER.get_api_key();
 
-var test_api_call = function(apiKey, request_code, body){
+//get testjson
+const test_datasets_request_json = require('../json/test-datasets-request.json')
+const test_datasets_response_json = require('../json/test-datasets-response.json')
 
-  //construct the request json
-  const api_key_object = {apiKey};
-  const request_body = USGS_HELPER.mergejson(api_key_object, body);
-  const usgs_request_code = USGS_HELPER.get_usgs_response_code(request_code);
+const test_datasetfields_request_json = require("../json/test-datasetfields-request.json")
+const test_datasetfields_response_json = require("../json/test-datasetfields-response.json")
 
-  //make call to USGS api and return promise
-  return USGS_HELPER.get_usgsapi_response(usgs_request_code, request_body);
+const test_download_request_json = require("../json/test-download-request.json")
+// regular expression
+const test_download_response_regexp = /.*tar.gz\?id=[a-zA-Z0-9]*&iid=LC80130282014100LGN00&did=[0-9]*&ver=production/
 
+const test_downloadoptions_request_json = require("../json/test-downloadoptions-request.json")
+const test_downloadoptions_response_json = require("../json/test-downloadoptions-response.json")
+
+const test_metadata_request_json = require("../json/test-metadata-request.json")
+const test_metadata_response_json = require("../json/test-metadata-response.json")
+
+const test_search_request_json = require("../json/test-search-request.json")
+const test_search_response_json = require("../json/test-search-response.json")
+
+const test_getbulkdownloadproducts_request_json = require("../json/test-getbulkdownloadproducts-request.json")
+const test_getbulkdownloadproducts_response_json = require("../json/test-getbulkdownloadproducts-response.json")
+
+const test_api_call = function (request_code, body) {
+  return api_key_promise.then(
+    // fulfilled
+    function (apiKey) {
+      const api_key_object = {apiKey};
+      const request_body = USGS_HELPER.mergejson(api_key_object, body);
+      const usgs_request_code = USGS_HELPER.get_usgs_response_code(request_code);
+      //make call to USGS api and return promise
+      return USGS_HELPER.get_usgsapi_response(usgs_request_code, request_body);
+    },
+    // rejected
+    function (err) {
+      throw new Error(err);
+    }
+  )
 }
 
 describe('USGS API TESTS', function() {
 
-  describe('USGS login', function() {
-    it('should be fullfilled', function(done) {
-      // const test_promise =;
-      api_key.should.be.fulfilled.and.notify(done);
-    })
-
-    it('should have data in data key (the api key)', function(done) {
-
-      api_key.then(function(result){
-        try {
-
-          expect(result).to.have.length.of.at.least(5);
-
-          done();
-        } catch(err) {
-          done(err);
-        }
-      }, done);
-
+  describe("request code: 'login'", function() {
+    it('returns a valid api key', function() {
+      return api_key_promise.should.be.fulfilled.and.eventually.have.length.of.at.least(5);
     })
   });
 
-
-  describe('USGS datasetfields', function() {
-
-    it('should be fullfilled', function(done) {
-      api_key.then( apiKey => {
-        const test_promise = test_api_call(apiKey, 'datasetfields', test_datasetfields_request_json)
-        test_promise.should.be.fulfilled.and.notify(done);
-      })
+  describe("request code: 'datasetfields'", function() {
+    it('response json is what we expect it to be', function() {
+      const test_promise = test_api_call('datasetfields', test_datasetfields_request_json)
+      return test_promise.should.eventually.be.like(test_datasetfields_response_json);
     })
-
-    it('response json should match', function(done) {
-      api_key.then( apiKey => {
-        const test_promise = test_api_call(apiKey, 'datasetfields', test_datasetfields_request_json)
-        test_promise.then(function(result){
-          try {
-            expect(result).to.be.like(test_datasetfields_response_json);
-            done();
-          } catch(err) {
-            done(err);
-          }
-        }, done);
-      })
-    })
-
   });
 
-  describe('USGS search', function() {
-
-    it('should be fullfilled', function(done) {
-      api_key.then( apiKey => {
-        const test_promise = test_api_call(apiKey, 'search', test_search_request_json)
-        test_promise.should.be.fulfilled.and.notify(done);
+  describe("request code: 'download'", function() {
+    it('download URL structure is what we expect it to be', function() {
+      const test_promise = test_api_call('download', test_download_request_json)
+      const test_result = test_promise.then(function (response) {
+        const download_url = response[0]
+        return test_download_response_regexp.test(download_url)
       })
+      return test_result.should.eventually.equal(true)
     })
+  })
 
-    it('response json should match', function(done) {
-      api_key.then( apiKey => {
-        const test_promise = test_api_call(apiKey, 'search', test_search_request_json)
-        test_promise.then(function(result){
-          try {
-            expect(result).to.be.like(test_search_response_json);
-            done();
-          } catch(err) {
-            done(err);
-          }
-        }, done);
-      })
+  describe("request code: 'search'", function() {
+    it('response json is what we expect it to be', function() {
+      test_promise = test_api_call('search', test_search_request_json)
+      return test_promise.should.eventually.be.like(test_search_response_json)
     })
+  })
 
-  });
+  describe("request code: 'metadata'", function () {
+    it('response json is what we expect it to be', function () {
+      test_promise = test_api_call('metadata', test_metadata_request_json)
+      return test_promise.should.eventually.be.like(test_metadata_response_json)
+    })
+  })
+
+  describe("request code: 'downloadoptions'", function () {
+    it('response json is what we expect it to be', function () {
+      test_promise = test_api_call('downloadoptions', test_downloadoptions_request_json)
+      return test_promise.should.eventually.be.like(test_downloadoptions_response_json)
+    })
+  })
+
+  describe("request code: 'datasets'", function () {
+    it('response json is what we expect it to be', function () {
+      test_promise = test_api_call('datasets', test_datasets_request_json)
+      return test_promise.should.eventually.be.like(test_datasets_response_json)
+    })
+  })
+
+  describe("request code: 'getbulkdownloadproducts'", function () {
+    it('response json is what we expect it to be', function () {
+      test_promise = test_api_call('getbulkdownloadproducts', test_getbulkdownloadproducts_request_json)
+      return test_promise.should.eventually.be.like(test_getbulkdownloadproducts_response_json)
+    })
+  })
 
 });

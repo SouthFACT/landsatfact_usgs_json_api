@@ -1,141 +1,668 @@
-[{
-	"fieldId": "10034",
-	"name": "Landsat Scene Identifier",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#entity_id   ",
-	"valueList": []
-}, {
-	"fieldId": "10036",
-	"name": "WRS Path",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_path",
-	"valueList": []
-}, {
-	"fieldId": "10038",
-	"name": "WRS Row",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_row",
-	"valueList": []
-}, {
-	"fieldId": "10041",
-	"name": "Sensor ID",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#sensor_id        ",
-	"valueList": [{
-		"value": null,
-		"name": "All"
+{
+	"numberReturned": 20,
+	"totalHits": 154,
+	"firstRecord": 1,
+	"lastRecord": 20,
+	"nextRecord": 21,
+	"results": [{
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 36.80429,
+			"longitude": -90.95029
+		},
+		"upperLeftCoordinate": {
+			"latitude": 38.52865,
+			"longitude": -90.4591
+		},
+		"upperRightCoordinate": {
+			"latitude": 38.12868,
+			"longitude": -88.33497
+		},
+		"lowerRightCoordinate": {
+			"latitude": 36.40563,
+			"longitude": -88.87442
+		},
+		"sceneBounds": "-90.95029,36.40563,-88.33497,38.52865",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/034/LC80230342016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230342016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230342016240LGN00/INVSVC/",
+		"entityId": "LC80230342016240LGN00",
+		"displayId": "LC80230342016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230342016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230342016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230342016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230342016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 34"
 	}, {
-		"value": "OLI",
-		"name": "OLI"
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 25.30783,
+			"longitude": -93.8922
+		},
+		"upperLeftCoordinate": {
+			"latitude": 27.04149,
+			"longitude": -93.47709
+		},
+		"upperRightCoordinate": {
+			"latitude": 26.6664,
+			"longitude": -91.60636
+		},
+		"lowerRightCoordinate": {
+			"latitude": 24.93169,
+			"longitude": -92.04917
+		},
+		"sceneBounds": "-93.8922,24.93169,-91.60636,27.04149",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/042/LC80230422016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230422016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230422016240LGN00/INVSVC/",
+		"entityId": "LC80230422016240LGN00",
+		"displayId": "LC80230422016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230422016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230422016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230422016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230422016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 42"
 	}, {
-		"value": "OLI_TIRS",
-		"name": "OLI_TIRS"
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 32.49999,
+			"longitude": -92.11071
+		},
+		"upperLeftCoordinate": {
+			"latitude": 34.22839,
+			"longitude": -91.65463
+		},
+		"upperRightCoordinate": {
+			"latitude": 33.83983,
+			"longitude": -89.64221
+		},
+		"lowerRightCoordinate": {
+			"latitude": 32.11165,
+			"longitude": -90.13768
+		},
+		"sceneBounds": "-92.11071,32.11165,-89.64221,34.22839",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/037/LC80230372016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230372016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230372016240LGN00/INVSVC/",
+		"entityId": "LC80230372016240LGN00",
+		"displayId": "LC80230372016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230372016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230372016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230372016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230372016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 37"
 	}, {
-		"value": "TIRS",
-		"name": "TIRS"
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 28.18747,
+			"longitude": -93.1985
+		},
+		"upperLeftCoordinate": {
+			"latitude": 29.91922,
+			"longitude": -92.76919
+		},
+		"upperRightCoordinate": {
+			"latitude": 29.53945,
+			"longitude": -90.84769
+		},
+		"lowerRightCoordinate": {
+			"latitude": 27.80709,
+			"longitude": -91.309
+		},
+		"sceneBounds": "-93.1985,27.80709,-90.84769,29.91922",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/040/LC80230402016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230402016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230402016240LGN00/INVSVC/",
+		"entityId": "LC80230402016240LGN00",
+		"displayId": "LC80230402016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230402016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230402016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230402016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230402016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 40"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 31.06332,
+			"longitude": -92.48044
+		},
+		"upperLeftCoordinate": {
+			"latitude": 32.7929,
+			"longitude": -92.03405
+		},
+		"upperRightCoordinate": {
+			"latitude": 32.40753,
+			"longitude": -90.05407
+		},
+		"lowerRightCoordinate": {
+			"latitude": 30.67787,
+			"longitude": -90.53725
+		},
+		"sceneBounds": "-92.48044,30.67787,-90.05407,32.7929",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/038/LC80230382016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230382016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230382016240LGN00/INVSVC/",
+		"entityId": "LC80230382016240LGN00",
+		"displayId": "LC80230382016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230382016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230382016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230382016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230382016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 38"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 35.37051,
+			"longitude": -91.3464
+		},
+		"upperLeftCoordinate": {
+			"latitude": 37.09632,
+			"longitude": -90.86795
+		},
+		"upperRightCoordinate": {
+			"latitude": 36.7005,
+			"longitude": -88.7837
+		},
+		"lowerRightCoordinate": {
+			"latitude": 34.97561,
+			"longitude": -89.30726
+		},
+		"sceneBounds": "-91.3464,34.97561,-88.7837,37.09632",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/035/LC80230352016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230352016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230352016240LGN00/INVSVC/",
+		"entityId": "LC80230352016240LGN00",
+		"displayId": "LC80230352016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230352016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230352016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230352016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230352016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 35"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 38.23689,
+			"longitude": -90.54361
+		},
+		"upperLeftCoordinate": {
+			"latitude": 39.95975,
+			"longitude": -90.03838
+		},
+		"upperRightCoordinate": {
+			"latitude": 39.55527,
+			"longitude": -87.87166
+		},
+		"lowerRightCoordinate": {
+			"latitude": 37.83414,
+			"longitude": -88.42851
+		},
+		"sceneBounds": "-90.54361,37.83414,-87.87166,39.95975",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/033/LC80230332016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230332016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230332016240LGN00/INVSVC/",
+		"entityId": "LC80230332016240LGN00",
+		"displayId": "LC80230332016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230332016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230332016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230332016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230332016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 33"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 33.9357,
+			"longitude": -91.73295
+		},
+		"upperLeftCoordinate": {
+			"latitude": 35.66289,
+			"longitude": -91.2662
+		},
+		"upperRightCoordinate": {
+			"latitude": 35.27086,
+			"longitude": -89.21907
+		},
+		"lowerRightCoordinate": {
+			"latitude": 33.54422,
+			"longitude": -89.72798
+		},
+		"sceneBounds": "-91.73295,33.54422,-89.21907,35.66289",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/036/LC80230362016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230362016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230362016240LGN00/INVSVC/",
+		"entityId": "LC80230362016240LGN00",
+		"displayId": "LC80230362016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230362016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230362016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230362016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230362016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 36"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 26.74812,
+			"longitude": -93.54812
+		},
+		"upperLeftCoordinate": {
+			"latitude": 28.48087,
+			"longitude": -93.12625
+		},
+		"upperRightCoordinate": {
+			"latitude": 28.10355,
+			"longitude": -91.23102
+		},
+		"lowerRightCoordinate": {
+			"latitude": 26.36994,
+			"longitude": -91.6827
+		},
+		"sceneBounds": "-93.54812,26.36994,-91.23102,28.48087",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/041/LC80230412016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230412016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230412016240LGN00/INVSVC/",
+		"entityId": "LC80230412016240LGN00",
+		"displayId": "LC80230412016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230412016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230412016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230412016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230412016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 41"
+	}, {
+		"acquisitionDate": "2016-08-27",
+		"startTime": "2016-08-27",
+		"endTime": "2016-08-27",
+		"lowerLeftCoordinate": {
+			"latitude": 29.62576,
+			"longitude": -92.8428
+		},
+		"upperLeftCoordinate": {
+			"latitude": 31.35651,
+			"longitude": -92.40538
+		},
+		"upperRightCoordinate": {
+			"latitude": 30.97408,
+			"longitude": -90.45571
+		},
+		"lowerRightCoordinate": {
+			"latitude": 29.24297,
+			"longitude": -90.92745
+		},
+		"sceneBounds": "-92.8428,29.24297,-90.45571,31.35651",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/023/039/LC80230392016240LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230392016240LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80230392016240LGN00/INVSVC/",
+		"entityId": "LC80230392016240LGN00",
+		"displayId": "LC80230392016240LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80230392016240LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80230392016240LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80230392016240LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80230392016240LGN00, Acquisition Date: 27-AUG-16, Path: 23, Row: 39"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 35.3704,
+			"longitude": -102.16119
+		},
+		"upperLeftCoordinate": {
+			"latitude": 37.0964,
+			"longitude": -101.68262
+		},
+		"upperRightCoordinate": {
+			"latitude": 36.70095,
+			"longitude": -99.60048
+		},
+		"lowerRightCoordinate": {
+			"latitude": 34.97586,
+			"longitude": -100.12412
+		},
+		"sceneBounds": "-102.16119,34.97586,-99.60048,37.0964",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/030/035/LC80300352016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300352016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80300352016241LGN00/INVSVC/",
+		"entityId": "LC80300352016241LGN00",
+		"displayId": "LC80300352016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80300352016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80300352016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300352016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80300352016241LGN00, Acquisition Date: 28-AUG-16, Path: 30, Row: 35"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 32.49999,
+			"longitude": -78.20449
+		},
+		"upperLeftCoordinate": {
+			"latitude": 34.22839,
+			"longitude": -77.74835
+		},
+		"upperRightCoordinate": {
+			"latitude": 33.83977,
+			"longitude": -75.7358
+		},
+		"lowerRightCoordinate": {
+			"latitude": 32.1116,
+			"longitude": -76.23133
+		},
+		"sceneBounds": "-78.20449,32.1116,-75.7358,34.22839",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/014/037/LC80140372016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140372016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80140372016241LGN00/INVSVC/",
+		"entityId": "LC80140372016241LGN00",
+		"displayId": "LC80140372016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80140372016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80140372016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140372016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80140372016241LGN00, Acquisition Date: 28-AUG-16, Path: 14, Row: 37"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 26.74778,
+			"longitude": -79.64194
+		},
+		"upperLeftCoordinate": {
+			"latitude": 28.48055,
+			"longitude": -79.21999
+		},
+		"upperRightCoordinate": {
+			"latitude": 28.10323,
+			"longitude": -77.32497
+		},
+		"lowerRightCoordinate": {
+			"latitude": 26.36962,
+			"longitude": -77.77671
+		},
+		"sceneBounds": "-79.64194,26.36962,-77.32497,28.48055",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/014/041/LC80140412016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140412016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80140412016241LGN00/INVSVC/",
+		"entityId": "LC80140412016241LGN00",
+		"displayId": "LC80140412016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80140412016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80140412016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140412016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80140412016241LGN00, Acquisition Date: 28-AUG-16, Path: 14, Row: 41"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 36.8039,
+			"longitude": -101.76517
+		},
+		"upperLeftCoordinate": {
+			"latitude": 38.52842,
+			"longitude": -101.27384
+		},
+		"upperRightCoordinate": {
+			"latitude": 38.12879,
+			"longitude": -99.15166
+		},
+		"lowerRightCoordinate": {
+			"latitude": 36.40557,
+			"longitude": -99.69121
+		},
+		"sceneBounds": "-101.76517,36.40557,-99.15166,38.52842",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/030/034/LC80300342016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300342016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80300342016241LGN00/INVSVC/",
+		"entityId": "LC80300342016241LGN00",
+		"displayId": "LC80300342016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80300342016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80300342016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300342016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80300342016241LGN00, Acquisition Date: 28-AUG-16, Path: 30, Row: 34"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 28.18739,
+			"longitude": -79.29228
+		},
+		"upperLeftCoordinate": {
+			"latitude": 29.9192,
+			"longitude": -78.86294
+		},
+		"upperRightCoordinate": {
+			"latitude": 29.5394,
+			"longitude": -76.94147
+		},
+		"lowerRightCoordinate": {
+			"latitude": 27.80698,
+			"longitude": -77.4028
+		},
+		"sceneBounds": "-79.29228,27.80698,-76.94147,29.9192",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/014/040/LC80140402016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140402016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80140402016241LGN00/INVSVC/",
+		"entityId": "LC80140402016241LGN00",
+		"displayId": "LC80140402016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80140402016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80140402016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140402016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80140402016241LGN00, Acquisition Date: 28-AUG-16, Path: 14, Row: 40"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 23.86704,
+			"longitude": -80.32493
+		},
+		"upperLeftCoordinate": {
+			"latitude": 25.60159,
+			"longitude": -79.91603
+		},
+		"upperRightCoordinate": {
+			"latitude": 25.22855,
+			"longitude": -78.06813
+		},
+		"lowerRightCoordinate": {
+			"latitude": 23.49274,
+			"longitude": -78.50272
+		},
+		"sceneBounds": "-80.32493,23.49274,-78.06813,25.60159",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/014/043/LC80140432016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140432016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80140432016241LGN00/INVSVC/",
+		"entityId": "LC80140432016241LGN00",
+		"displayId": "LC80140432016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80140432016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80140432016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140432016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80140432016241LGN00, Acquisition Date: 28-AUG-16, Path: 14, Row: 43"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 25.30775,
+			"longitude": -79.98597
+		},
+		"upperLeftCoordinate": {
+			"latitude": 27.04142,
+			"longitude": -79.57082
+		},
+		"upperRightCoordinate": {
+			"latitude": 26.66634,
+			"longitude": -77.70028
+		},
+		"lowerRightCoordinate": {
+			"latitude": 24.93161,
+			"longitude": -78.14312
+		},
+		"sceneBounds": "-79.98597,24.93161,-77.70028,27.04142",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/014/042/LC80140422016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140422016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80140422016241LGN00/INVSVC/",
+		"entityId": "LC80140422016241LGN00",
+		"displayId": "LC80140422016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80140422016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80140422016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80140422016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80140422016241LGN00, Acquisition Date: 28-AUG-16, Path: 14, Row: 42"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 25.30728,
+			"longitude": -104.70639
+		},
+		"upperLeftCoordinate": {
+			"latitude": 27.04132,
+			"longitude": -104.29114
+		},
+		"upperRightCoordinate": {
+			"latitude": 26.66698,
+			"longitude": -102.42427
+		},
+		"lowerRightCoordinate": {
+			"latitude": 24.93189,
+			"longitude": -102.86716
+		},
+		"sceneBounds": "-104.70639,24.93189,-102.42427,27.04132",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/030/042/LC80300422016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300422016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80300422016241LGN00/INVSVC/",
+		"entityId": "LC80300422016241LGN00",
+		"displayId": "LC80300422016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80300422016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80300422016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300422016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80300422016241LGN00, Acquisition Date: 28-AUG-16, Path: 30, Row: 42"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 23.86652,
+			"longitude": -105.04522
+		},
+		"upperLeftCoordinate": {
+			"latitude": 25.60146,
+			"longitude": -104.63619
+		},
+		"upperRightCoordinate": {
+			"latitude": 25.22922,
+			"longitude": -102.79226
+		},
+		"lowerRightCoordinate": {
+			"latitude": 23.49302,
+			"longitude": -103.22695
+		},
+		"sceneBounds": "-105.04522,23.49302,-102.79226,25.60146",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/030/043/LC80300432016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300432016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80300432016241LGN00/INVSVC/",
+		"entityId": "LC80300432016241LGN00",
+		"displayId": "LC80300432016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80300432016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80300432016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300432016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80300432016241LGN00, Acquisition Date: 28-AUG-16, Path: 30, Row: 43"
+	}, {
+		"acquisitionDate": "2016-08-28",
+		"startTime": "2016-08-28",
+		"endTime": "2016-08-28",
+		"lowerLeftCoordinate": {
+			"latitude": 32.49959,
+			"longitude": -102.92539
+		},
+		"upperLeftCoordinate": {
+			"latitude": 34.22817,
+			"longitude": -102.46916
+		},
+		"upperRightCoordinate": {
+			"latitude": 33.84007,
+			"longitude": -100.45932
+		},
+		"lowerRightCoordinate": {
+			"latitude": 32.11172,
+			"longitude": -100.9549
+		},
+		"sceneBounds": "-102.92539,32.11172,-100.45932,34.22817",
+		"browseUrl": "http://earthexplorer.usgs.gov/browse/landsat_8/2016/030/037/LC80300372016241LGN00.jpg",
+		"dataAccessUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300372016241LGN00&node=INVSVC",
+		"downloadUrl": "http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80300372016241LGN00/INVSVC/",
+		"entityId": "LC80300372016241LGN00",
+		"displayId": "LC80300372016241LGN00",
+		"metadataUrl": "http://earthexplorer.usgs.gov/metadata/xml/4923/LC80300372016241LGN00/",
+		"fgdcMetadataUrl": "http://earthexplorer.usgs.gov/fgdc/4923/LC80300372016241LGN00/save_xml",
+		"modifiedDate": "2016-09-07",
+		"orderUrl": "http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80300372016241LGN00&node=INVSVC",
+		"bulkOrdered": false,
+		"ordered": false,
+		"summary": "Entity ID: LC80300372016241LGN00, Acquisition Date: 28-AUG-16, Path: 30, Row: 37"
 	}]
-}, {
-	"fieldId": "10040",
-	"name": "Data Type Level 1",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#data_type_l1",
-	"valueList": [{
-		"value": null,
-		"name": "All"
-	}, {
-		"value": "L1GT",
-		"name": "Level 1GT"
-	}, {
-		"value": "L1T",
-		"name": "Level 1T"
-	}]
-}, {
-	"fieldId": "10037",
-	"name": "Cloud Cover",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#cloud_cover",
-	"valueList": [{
-		"value": null,
-		"name": "All"
-	}, {
-		"value": "0",
-		"name": "Less than 10%"
-	}, {
-		"value": "1",
-		"name": "Less than 20%"
-	}, {
-		"value": "2",
-		"name": "Less than 30%"
-	}, {
-		"value": "3",
-		"name": "Less than 40%"
-	}, {
-		"value": "4",
-		"name": "Less than 50%"
-	}, {
-		"value": "5",
-		"name": "Less than 60%"
-	}, {
-		"value": "6",
-		"name": "Less than 70%"
-	}, {
-		"value": "7",
-		"name": "Less than 80%"
-	}, {
-		"value": "8",
-		"name": "Less than 90%"
-	}, {
-		"value": "9",
-		"name": "Less than 100%"
-	}]
-}, {
-	"fieldId": "18615",
-	"name": "Date L1 Generated (Ex. YYYY/MM/DD)",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#date_l1_generated",
-	"valueList": []
-}, {
-	"fieldId": "10035",
-	"name": "Day/Night Indicator",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#day_or_night",
-	"valueList": [{
-		"value": null,
-		"name": "All"
-	}, {
-		"value": "DAY",
-		"name": "Day"
-	}, {
-		"value": "NIGHT",
-		"name": "Night"
-	}]
-}, {
-	"fieldId": "16067",
-	"name": "Nadir/Off Nadir",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#nadir_offnadir",
-	"valueList": [{
-		"value": null,
-		"name": "All"
-	}, {
-		"value": "NADIR",
-		"name": "Nadir"
-	}, {
-		"value": "OFFNADIR",
-		"name": "Off Nadir"
-	}, {
-		"value": "Test value",
-		"name": "TEST VALUE"
-	}]
-}, {
-	"fieldId": "17735",
-	"name": "Processing Software Version",
-	"fieldLink": "https://lta.cr.usgs.gov/landsat_dictionary.html#processing_software_version",
-	"valueList": [{
-		"value": null,
-		"name": "All"
-	}, {
-		"value": "LPGS_2.5.1",
-		"name": "LPGS_2.5.1"
-	}, {
-		"value": "LPGS_2.5.0",
-		"name": "LPGS_2.5.0"
-	}, {
-		"value": "LPGS_2.4.0",
-		"name": "LPGS_2.4.0"
-	}, {
-		"value": "LPGS_2.3.0",
-		"name": "LPGS_2.3.0"
-	}]
-}]
+}

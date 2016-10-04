@@ -1,0 +1,21 @@
+[{
+    "bounds": {
+        "north": 84.0636,
+        "east": 176.7604,
+        "south": -84.4693,
+        "west": -179.103
+    },
+    "datasetName": "LANDSAT_8",
+    "datasetFullName": "L8 OLI/TIRS",
+    "idnEntryId": "",
+    "endDate": "2016-09-29",
+    "startDate": "2013-04-11",
+    "lastModifiedDate": "2016-09-29",
+    "supportDownload": true,
+    "supportBulkDownload": true,
+    "bulkDownloadOrderLimit": 1000,
+    "supportCloudCover": false,
+    "supportOrder": true,
+    "orderLimit": "1000",
+    "totalScenes": 829268
+}]

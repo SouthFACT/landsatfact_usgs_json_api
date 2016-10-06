@@ -5,11 +5,22 @@ var parseString = require('xml2js').parseString;
 var stripPrefix = require('xml2js').processors.stripPrefix;
 var winston = require('winston');
 
+var apphelpers = require('./lib/helpers/app_helpers.js')
+var APP_HELPERS = apphelpers();
+
+
+//get todays data as string
+today = APP_HELPERS.get_date_string();
+name = "update_landsat_metadata"
+logger_file = 'logs/' + name + '-' + today + '.log'
+
+APP_HELPERS.delete_old_files(name);
+
 var logger = new (winston.Logger)({
-  transports: [
-    new (winston.transports.File)({ filename: 'logs/update_landsat_metadata.log'})
-  ]
-});
+        transports: [
+          new (winston.transports.File)({ filename: logger_file})
+        ]
+      });
 
 logger.level = 'info';
 

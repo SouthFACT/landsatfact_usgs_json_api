@@ -184,19 +184,17 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
 //    before the + character is not needed for our use case so we strip it out.
 var fix_data_type_l1_vals = function(databaseFieldName, fieldvalue){
 
+  //PROCESSING REQUIRED is too long for field, this field is 5 chartacters in the db
+  // so calling prreq
+  if (fieldvalue === 'PROCESSING REQUIRED'){
+    return "PRREQ"
+  };
+
+
   //not sure how to handle this in config.
   // maybe the db field definition needs to change so it accepts longer text
   // so we do not mutate the data.
-  if (databaseFieldName === "data_type_l1" &&
-
-
-    //PROCESSING REQUIRED is too long for field, this field is 5 chartacters in the db
-    // so calling prreq
-    if (fieldvalue === 'PROCESSING REQUIRED'){
-      return "PRREQ"
-    };
-
-    fieldvalue.indexOf("+") > 0){
+  if (databaseFieldName === "data_type_l1" && fieldvalue.indexOf("+") > 0){
 
     //set the field value when there is too many chartacters for db some extra wierd chartacters
     //  returned from api so we strip it out

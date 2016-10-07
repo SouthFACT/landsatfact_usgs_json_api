@@ -82,6 +82,7 @@ describe('USGS Helpers TESTS', function() {
 
   })
 
+/*
   describe('get_response_error' ,function (){
 
     it('should throw an error based on error in error key from a USGS response', function() {
@@ -101,6 +102,7 @@ describe('USGS Helpers TESTS', function() {
     })
 
   })
+*/
 
   describe('get_usgs_response_code' ,function (){
 

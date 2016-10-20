@@ -65,15 +65,10 @@ api_key
     const usgs_response = USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body);
 
     // usgs response
-    usgs_response
-      .then( data => {
-        console.log(JSON.stringify(data));
-      })
-      //catch http errors not return errors in response
-      .catch( error => {
-        return USGS_HELPER.throw_error(error);
-      });
-})
-.catch( error => {
-  return USGS_HELPER.throw_error(error);
+    usgs_response.then( data => {
+      console.log(JSON.stringify(data));
+    })
+
+}).catch( error => {
+  console.log(error)
 });

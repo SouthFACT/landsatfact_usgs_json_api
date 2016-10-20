@@ -71,11 +71,9 @@ api_key
       })
       //catch http errors not return errors in response
       .catch( error => {
-        return USGS_HELPER.throw_error(error);;
+        return USGS_HELPER.throw_error(error);
       });
-
-
 })
 .catch( error => {
-  return USGS_HELPER.throw_error(error);;
+  return USGS_HELPER.throw_error(error);
 });

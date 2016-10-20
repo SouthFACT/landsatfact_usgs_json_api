@@ -6,8 +6,6 @@ var should = require('chai').should();
 chai.use(require('chai-fuzzy'));
 var chaiAsPromised = require("chai-as-promised");
 chai.use(chaiAsPromised);
-var Promise = require("bluebird");
-Promise.longStackTraces();
 
 const USGS_CONSTANT = require("../lib/usgs_api/usgs_constants.js");
 const USGS_FUNCTION = require("../lib/usgs_api/usgs_functions.js");
@@ -200,16 +198,5 @@ describe('USGS API TESTS', function() {
       }).should.notify(done)
     })
   })
-  /*
-  describe("request code: 'logout'", function () {
-    it('should reject future api calls', function (done) {
-      const logout_promise = test_api_call('logout', {})
-      const test_promise = test_api_call('itembasket', {})
-      logout_promise.should.be.fulfilled.then(function () {
-        const test_promise = test_api_call('itembasket', {})
-        expect(test_promise).to.eventually.be.rejected.and.should.notify(done)
-      })
-    })
-  })
-  */
+  
 });

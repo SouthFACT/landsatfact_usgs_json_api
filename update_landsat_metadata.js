@@ -5,11 +5,22 @@ var parseString = require('xml2js').parseString;
 var stripPrefix = require('xml2js').processors.stripPrefix;
 var winston = require('winston');
 
+var apphelpers = require('./lib/helpers/app_helpers.js')
+var APP_HELPERS = apphelpers();
+
+
+//get todays data as string
+today = APP_HELPERS.get_date_string();
+name = "update_landsat_metadata"
+logger_file = 'logs/' + name + '-' + today + '.log'
+
+APP_HELPERS.delete_old_files(name);
+
 var logger = new (winston.Logger)({
-  transports: [
-    new (winston.transports.File)({ filename: 'logs/update_landsat_metadata.log'})
-  ]
-});
+        transports: [
+          new (winston.transports.File)({ filename: logger_file})
+        ]
+      });
 
 logger.level = 'info';
 
@@ -353,15 +364,20 @@ datasets.map( dataset => {
           return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
             .then( search_response => {
 
+            const total = search_response.numberReturned;
+            var count = 0;
             //walk the search_response and start to collect the
             //  info for inserting into db
             search_response.results.map(entity => {
+
 
               //metadata is not throttled so we can get all of this with normal patterns! yeah!
               logger.log('debug', 'metadata url' , entity.metadataUrl );
 
               axios.get(entity.metadataUrl)
               .then( metadata => {
+
+                count += 1;
 
                 //get xml from USGS api
                 const xml = metadata.data;
@@ -461,6 +477,12 @@ datasets.map( dataset => {
                     //console.log(metadata_recordset)
                     //do the insert here
                     update_lsf_database.metadata_to_db(metadata_recordset);
+                    //
+                    // console.log(count)
+                    // console.log(total)
+                    if(count === total){
+                      logger.log('info','update metadata end for ' + datasetName);
+                    }
 
                   }).catch( (error) => {
                     // console.error('get metadata: ' + error);

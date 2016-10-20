@@ -82,10 +82,9 @@ describe('USGS Helpers TESTS', function() {
 
   })
 
-/*
   describe('get_response_error' ,function (){
 
-    it('should throw an error based on error in error key from a USGS response', function() {
+    it('extracts error text from response json', function() {
       var testerror = "test error"
       var testobj = {
         responsetest:"responsetest",
@@ -97,12 +96,11 @@ describe('USGS Helpers TESTS', function() {
         }
       }
 
-     assert.throws( function() { USGS_HELPER.get_response_error(testobj); }, Error );
+     assert.equal(testobj.data.error, USGS_HELPER.get_response_error(testobj))
 
     })
 
   })
-*/
 
   describe('get_usgs_response_code' ,function (){
 

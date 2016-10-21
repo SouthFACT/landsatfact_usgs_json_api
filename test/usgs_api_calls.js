@@ -40,6 +40,7 @@ const test_search_response_json = require("../json/test-search-response.json")
 const test_getbulkdownloadproducts_request_json = require("../json/test-getbulkdownloadproducts-request.json")
 const test_getbulkdownloadproducts_response_json = require("../json/test-getbulkdownloadproducts-response.json")
 
+
 const test_api_call = function (request_code, body) {
   return api_key_promise.then(
     // fulfilled
@@ -49,19 +50,20 @@ const test_api_call = function (request_code, body) {
       const usgs_request_code = USGS_HELPER.get_usgs_response_code(request_code);
       //make call to USGS api and return promise
       return USGS_HELPER.get_usgsapi_response(usgs_request_code, request_body);
-    },
-    // rejected
-    function (err) {
-      throw new Error(err);
     }
   )
 }
 
 describe('USGS API TESTS', function() {
 
-  describe("request code: 'login'", function() {
+  describe("API key", function() {
     it('returns a valid api key', function() {
       return api_key_promise.should.be.fulfilled.and.eventually.have.length.of.at.least(5);
+    })
+
+    it('promise rejects for strings that are not real request codes', function () {
+      const test = test_api_call('dafdsa', {})
+      return test.should.be.rejected;
     })
   });
 
@@ -85,37 +87,117 @@ describe('USGS API TESTS', function() {
 
   describe("request code: 'search'", function() {
     it('response json is what we expect it to be', function() {
-      test_promise = test_api_call('search', test_search_request_json)
+      const test_promise = test_api_call('search', test_search_request_json)
       return test_promise.should.eventually.be.like(test_search_response_json)
     })
   })
 
   describe("request code: 'metadata'", function () {
     it('response json is what we expect it to be', function () {
-      test_promise = test_api_call('metadata', test_metadata_request_json)
+      const test_promise = test_api_call('metadata', test_metadata_request_json)
       return test_promise.should.eventually.be.like(test_metadata_response_json)
     })
   })
 
   describe("request code: 'downloadoptions'", function () {
     it('response json is what we expect it to be', function () {
-      test_promise = test_api_call('downloadoptions', test_downloadoptions_request_json)
+      const test_promise = test_api_call('downloadoptions', test_downloadoptions_request_json)
       return test_promise.should.eventually.be.like(test_downloadoptions_response_json)
     })
   })
 
   describe("request code: 'datasets'", function () {
-    it('response json is what we expect it to be', function () {
-      test_promise = test_api_call('datasets', test_datasets_request_json)
-      return test_promise.should.eventually.be.like(test_datasets_response_json)
+    it('response json has expected properties', function (done) {
+      const test_promise = test_api_call('datasets', test_datasets_request_json)
+      test_promise.should.be.fulfilled.then(function (result) {
+        expect(result).to.be.an('array')
+        result.forEach(function(obj) {
+          expect(obj).to.be.an('object').with.all.keys([
+            "bounds",
+            "datasetName",
+            "datasetFullName",
+            "idnEntryId",
+            "endDate",
+            "startDate",
+            "lastModifiedDate",
+            "supportDownload",
+            "supportBulkDownload",
+            "bulkDownloadOrderLimit",
+            "supportCloudCover",
+            "supportOrder",
+            "orderLimit",
+            "totalScenes"
+          ])
+          expect(obj['bounds']).to.be.an('object').with.all.keys(
+            [ 'north', 'east', 'south', 'west' ]
+          )
+        })
+      }).should.notify(done)
+
     })
   })
 
   describe("request code: 'getbulkdownloadproducts'", function () {
-    it('response json is what we expect it to be', function () {
-      test_promise = test_api_call('getbulkdownloadproducts', test_getbulkdownloadproducts_request_json)
-      return test_promise.should.eventually.be.like(test_getbulkdownloadproducts_response_json)
+    it('response json has expected properties', function (done) {
+      const test_promise = test_api_call('getbulkdownloadproducts', test_getbulkdownloadproducts_request_json)
+
+      test_promise.should.be.fulfilled.then(function (result) {
+        expect(result).to.be.an('array')
+
+        result.forEach(function(entityObj) {
+          expect(entityObj).to.be.an('object').with.all.keys(['entityId','orderingId','products'])
+          expect(entityObj).to.have.property('products').which.is.an('array')
+
+          entityObj['products'].forEach(function(product) {
+            expect(product).to.be.an('object').with.all.keys([
+              'available',
+              'downloadCode',
+              'filesize',
+              'productName',
+              'url',
+              'storageLocation'
+            ])
+          })
+        })
+      }).should.notify(done)
     })
   })
 
+  describe("request code: 'itembasket'", function () {
+    it('response json has expected properties', function (done) {
+      const test_promise = test_api_call('itembasket', {})
+
+      test_promise.should.be.fulfilled.then(function (result) {
+        expect(result).to.be.an('object').with.all.keys(['bulkDownloadItemBasket', 'orderItemBasket'])
+        expect(result['bulkDownloadItemBasket']).to.be.an('array')
+
+        result['bulkDownloadItemBasket'].forEach(function (basketItem) {
+          expect(basketItem).to.be.an('object').with.all.keys(['dataset', 'bulkDownloadScenes'])
+          expect(basketItem['bulkDownloadScenes']).to.be.an('array')
+
+          basketItem['bulkDownloadScenes'].forEach(function (sceneObj) {
+            expect(sceneObj).to.be.an('object').with.all.keys([
+              'available','downloadCode','filesize','productName','url'
+            ])
+          })
+        })
+
+        expect(result['orderItemBasket']).to.be.an('array')
+
+        result['orderItemBasket'].forEach(function (basketItem) {
+          expect(basketItem).to.be.an('object').with.all.keys(['dataset','orderScenes'])
+          expect(basketItem['orderScenes']).to.be.an('array')
+
+          basketItem['orderScenes'].forEach(function (sceneObj) {
+            expect(sceneObj).to.be.an('object').with.all.keys(['entityId','orderingId','product'])
+            expect(sceneObj['product']).to.be.an('object').with.all.keys([
+              'option','originator','outputMedia','price','productCode','productName'
+            ])
+          })
+        })
+
+      }).should.notify(done)
+    })
+  })
+  
 });

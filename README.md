@@ -491,14 +491,14 @@ testing using mocha we test the api results to make sure we getting good results
 
 ## testing examples
 
-  ### checks for api calls
-  ```bash
-  ./node_modules/mocha/bin/mocha test/usgs_api_calls.js
-  ```
+### checks for api calls
+```bash
+./node_modules/mocha/bin/mocha test/usgs_api_calls.js
+```
 
-  ### checks for api usgs helpers
-  ```bash
-  ./node_modules/mocha/bin/mocha test/usgs_helpers_test.js
-  ```
+### checks for api usgs helpers
+```bash
+./node_modules/mocha/bin/mocha test/usgs_helpers_test.js
+```
 
-  ...more to come.
+...more to come.

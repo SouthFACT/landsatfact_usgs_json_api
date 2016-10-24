@@ -28,10 +28,10 @@ npm install
 
 ## configuration
 you will need to have four config files....
-* [email](1-email)
-* [postgres](2-postgres)
-* [USGS](3-USGS)
-* [metadata](4-metadata)
+* [email](#1-email)
+* [postgres](#2-postgres)
+* [USGS](#3-USGS)
+* [metadata](#4-metadata)
 
 ### 1. email
 located in the directory: ./lib/email/

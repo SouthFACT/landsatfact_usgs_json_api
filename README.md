@@ -30,7 +30,7 @@ npm install
 you will need to have four config files....
 * [email](#1-email)
 * [postgres](#2-postgres)
-* [USGS](#3-USGS)
+* [USGS](#3-usgs)
 * [metadata](#4-metadata)
 
 ### 1. email

@@ -426,6 +426,9 @@ an example of the xml response is at http://earthexplorer.usgs.gov/metadata/xml/
 
 # running
 there are three main programs.
+* [update_landsat_metadata](#update_landsat_metadatajs)
+* [download_landsat_data](#download_landsat_datajs)
+* [usgs_cli](#usgs_clijs)
 
 ## update_landsat_metadata.js
 updates the Landsat data into the metadata table in the postgres database.

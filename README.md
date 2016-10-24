@@ -3,18 +3,37 @@
 Landsat FACT - USGS JSON api interface (node.js)
 
 * [setup and install](#setup)
-* configuration
-* running
-* logging
-* [tests](#testing)
+* [configuration](#configuration)
+* [running](#running)
+* [testing](#testing)
+* [logging](#logging)
 
 ## setup
 To install clone and npm install
 
+Clone
+```bash
+git clone git@github.com:nemac/landsatfact_usgs_json_api.git
+```
 
+then
+```bash
+$cd landsatfact_usgs_json_api
+```
+
+then install
+```bash
+npm install
+```
+
+## configuration
 you will need to have four config files....
+* [email](1-email)
+* [postgres](2-postgres)
+* [USGS](3-USGS)
+* [metadata](4-metadata)
 
-### 1. email - config.yaml
+### 1. email
 located in the directory: ./lib/email/
 name: config.yaml
 note: you will need to get the app authenticated with gmail for this to work.
@@ -29,7 +48,7 @@ accessToken: <access token>
 to_email_list: <comma delemited email reciepents>
 ```
 
-### 2. postgres - config.yaml
+### 2. postgres
 located in the directory: ./lib/postgres/
 name: config.yaml
 
@@ -42,7 +61,7 @@ port: <this postgres port number usually 5432>
 idleTimeoutMillis: 10000
 max: 10
 ```
-### usgs
+### 3. USGS
 #### config.yaml
 located in the directory: ./lib/usgs_api/
 name: config.yaml
@@ -62,7 +81,8 @@ download_lcv_text: ../project/dataexchange/
 ```
 
 ### then you need the overall config
-#### [metadata.yaml](config/metadata.yaml)
+#### 4. metadata
+[metadata.yaml](config/metadata.yaml)
 This helps determine how we create the metadata in our database.  Basically this  maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
 
 ```yaml

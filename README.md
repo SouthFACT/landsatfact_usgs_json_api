@@ -34,10 +34,11 @@ you will need to have four config files....
 * [metadata](#4-metadata)
 
 ### 1. email
-located in the directory: ./lib/email/
-name: config.yaml
-note: you will need to get the app authenticated with gmail for this to work.
+* needs to be located in the directory: ./lib/email/
+* name: config.yaml
+* note: you will need to get the app authenticated with gmail for this to work.
 a great example on how to do this can be found here: http://masashi-k.blogspot.com/2013/06/sending-mail-with-gmail-using-xoauth2.html
+* this is not in github because it contains sensitive information so you will have to create this yourself
 
 ```yaml
 username: <your email>@gmail.com
@@ -49,8 +50,9 @@ to_email_list: <comma delemited email reciepents>
 ```
 
 ### 2. postgres
-located in the directory: ./lib/postgres/
-name: config.yaml
+* located in the directory: ./lib/postgres/
+* name: config.yaml
+* this is not in github because it contains sensitive information so you will have to create this yourself
 
 ```yaml
 host: <your postgres hotname>
@@ -61,11 +63,13 @@ port: <this postgres port number usually 5432>
 idleTimeoutMillis: 10000
 max: 10
 ```
+
 ### 3. USGS
 #### config.yaml
-located in the directory: ./lib/usgs_api/
-name: config.yaml
-note: requires machine to machine access contact usgs to get this access.
+* located in the directory: ./lib/usgs_api/
+* name: config.yaml
+* note: requires machine to machine access contact usgs to get this access.
+* this is not in github because it contains sensitive information so you will have to create this yourself
 
 Change the following to match your system
 * download_directory
@@ -82,8 +86,8 @@ download_lcv_text: ../project/dataexchange/
 
 ### then you need the overall config
 #### 4. metadata
-[metadata.yaml](config/metadata.yaml)
-This helps determine how we create the metadata in our database.  Basically this  maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
+* this is in github the default settings are here [config/metadata.yaml](config/metadata.yaml)
+* This helps determine how we create the metadata in our database.  This maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
 
 ```yaml
 metadata_from_days_ago: 10
@@ -406,7 +410,7 @@ database:
  }
  ```
 
-Next is the object *metdataFields*.  This maps a metadata field to a database field.  This also defines how to calculate the values that will be inserted into the database. and is object with three keys:
+Next is the object *metdataFields*.  This maps a metadata field to a database field.  This also defines how to calculate the values that will be inserted into the database. and is an object with three keys:
 *field*:
     *fieldName*: the field name in response from USGS
     *databaseFieldName*: the field name in our database

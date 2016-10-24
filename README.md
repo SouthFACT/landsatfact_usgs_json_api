@@ -470,6 +470,13 @@ node usgs_cli.js -r metadata -f json/test-metadata-request.json
 ```
 as part of the testing process we have a bunch of request json files located in the ./JSON directory.  
 
+## supporting code
+All supporting code is located in ./lib and separated into four sections.
+* email - for email notifications
+* helpers - shared helper functions
+* postgres - postgres integrations
+* usgs_api - usgs api integrations
+
 # logging
 currently all code is logging for error level.  this means you we only see errors and important information in the logs.
 logs are ./log download_directory

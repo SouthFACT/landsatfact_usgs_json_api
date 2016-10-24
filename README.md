@@ -420,9 +420,9 @@ The metadata is returned as xml but converted to a JSON object
 an example of the xml response is at http://earthexplorer.usgs.gov/metadata/xml/4923/LC80130292014100LGN00
 
 #### the three methods
-* method: api  get the value from JSON response.  The value is held in the JSON response with field name defined in fieldName
-* method: api_browse  the value is the browse url
-* method: constant value is obtained with the value held in the fieldName in metadata.yaml file
+* **method**: api  get the value from JSON response.  The value is held in the JSON response with field name defined in fieldName
+* **method**: api_browse  the value is the browse url
+* **method**: constant value is obtained with the value held in the fieldName in metadata.yaml file
 
 # running
 there are three main programs.

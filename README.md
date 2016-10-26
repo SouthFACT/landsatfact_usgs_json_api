@@ -86,8 +86,10 @@ download_lcv_text: ../project/dataexchange/
 
 ### then you need the overall config
 #### 4. metadata
-* this is in github the default settings are here [config/metadata.yaml](config/metadata.yaml)
-* This helps determine how we create the metadata in our database.  This maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
+* this is in github.
+* The default settings are here [config/metadata.yaml](config/metadata.yaml)
+* This helps determine how we create the metadata in our database.  
+* This maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
 
 ```yaml
 metadata_from_days_ago: 10

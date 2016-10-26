@@ -431,13 +431,28 @@ there are three main programs.
 * [usgs_cli](#usgs_clijs)
 
 ## update_landsat_metadata.js
+
 updates the Landsat data into the metadata table in the postgres database.
+
+```bash
+node update_landsat_metadata.js
+```
 
 ## download_landsat_data.js
 downloads the actual Landsat imagery data and extracts it, so it is ready for processing.  This program is dual purpose, you can also pass it a scene and download only that scene. This is used to process custom requests.
 
 if no arguments are passed then we process everything in the last_day_scenes plus anything that failed previous
 creaetes logs of faulres sends emails. logs stored ./logs
+
+by scene:
+```bash
+node download_landsat_data.js LC80130292014100LGN00
+```
+or based on all the scenes from [yesterday](https://github.com/nemac/landsatfact-sql/blob/master/views.md#view-vw_last_days_scenes):
+```bash
+node download_landsat_data.js
+```
+
 
 ## usgs_cli.js
 can run usgs commands from command  line with request in line or from a text (JSON) file.  mainly great for testing
@@ -467,10 +482,12 @@ this is should print a response of
 [{"acquisitionDate":"2014-04-10","startTime":"2014-04-10","endTime":"2014-04-10","lowerLeftCoordinate":{"latitude":43.95287,"longitude":-73.38717},"upperLeftCoordinate":{"latitude":45.66895,"longitude":-72.81323},"upperRightCoordinate":{"latitude":45.24376,"longitude":-70.44335},"lowerRightCoordinate":{"latitude":43.53155,"longitude":-71.0851},"sceneBounds":"-73.38717,43.53155,-70.44335,45.66895","browseUrl":"http://earthexplorer.usgs.gov/browse/landsat_8/2014/013/029/LC80130292014100LGN00.jpg","dataAccessUrl":"http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80130292014100LGN00&node=INVSVC","downloadUrl":"http://earthexplorer.usgs.gov/download/external/options/LANDSAT_8/LC80130292014100LGN00/INVSVC/","entityId":"LC80130292014100LGN00","displayId":"LC80130292014100LGN00","metadataUrl":"http://earthexplorer.usgs.gov/metadata/xml/4923/LC80130292014100LGN00/","fgdcMetadataUrl":"http://earthexplorer.usgs.gov/fgdc/4923/LC80130292014100LGN00/save_xml","modifiedDate":"2016-04-25","orderUrl":"http://earthexplorer.usgs.gov/order/process?dataset_name=LANDSAT_8&ordered=LC80130292014100LGN00&node=INVSVC","bulkOrdered":false,"ordered":false,"summary":"Entity ID: LC80130292014100LGN00, Acquisition Date: 10-APR-14, Path: 13, Row: 29"}]
 ```
 
-or do it with a json request file.
+or do it with a json request file.[test-metadata-request.json](json/test-metadata-request.json)
+
 ```bash
 node usgs_cli.js -r metadata -f json/test-metadata-request.json
 ```
+
 as part of the testing process we have a bunch of request json files located in the ./JSON directory.  
 
 ## supporting code
@@ -487,7 +504,9 @@ logs are kept for 7 days
 emails are sent for failures
 
 # testing
-testing using mocha we test the api results to make sure we getting good results to indicate for us a warning that the api has changed.
+Using mocha.  
+
+Currently we are testing the USGS api responses and some of the code.  To make sure we are getting good results and to help us indicate for us a warning that the api has changed.
 
 ## testing examples
 

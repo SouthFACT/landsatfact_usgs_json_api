@@ -418,14 +418,14 @@ Next is the object *metdataFields*.  This maps a metadata field to a database fi
     *databaseFieldName*: the field name in our database
     *method*: method to calculate the value
 
-The metadata is returned as xml but converted to a JSON object
+*Note:* The metadata is returned as xml but converted to a JSON object
+
 an example of the xml response is at http://earthexplorer.usgs.gov/metadata/xml/4923/LC80130292014100LGN00
 
 #### the three methods
 * **method api**: get the value from metadata XML response.  The value is held in the metadata XML response with field name defined in fieldName
 * **method api_browse**: the value is the browse url
 * **method constant**: value is obtained with the value held in the fieldName in metadata.yaml file
-*note:*  The metadata is returned as xml but is read  into a JSON data object.
 
 # running
 there are three main programs.

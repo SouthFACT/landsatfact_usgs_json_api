@@ -86,7 +86,7 @@ download_lcv_text: ../project/dataexchange/
 
 ### then you need the overall config
 #### 4. metadata
-* this is in github.
+* This is in github.
 * The default settings are here [config/metadata.yaml](config/metadata.yaml)
 * This helps determine how we create the metadata in our database.  
 * This maps the USGS metadata JSON fields to our database fields. This also documents  how we calculate the values.
@@ -422,9 +422,10 @@ The metadata is returned as xml but converted to a JSON object
 an example of the xml response is at http://earthexplorer.usgs.gov/metadata/xml/4923/LC80130292014100LGN00
 
 #### the three methods
-* **method**: api  get the value from JSON response.  The value is held in the JSON response with field name defined in fieldName
-* **method**: api_browse  the value is the browse url
-* **method**: constant value is obtained with the value held in the fieldName in metadata.yaml file
+* **method api**: get the value from metadata XML response.  The value is held in the metadata XML response with field name defined in fieldName
+* **method api_browse**: the value is the browse url
+* **method constant**: value is obtained with the value held in the fieldName in metadata.yaml file
+*note:*  The metadata is returned as xml but is read  into a JSON data object.
 
 # running
 there are three main programs.

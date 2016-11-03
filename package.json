@@ -4,14 +4,12 @@
   "description": "test usgs api",
   "main": "index.js",
   "scripts": {
-    "test-api": "mocha -t 10000 ./test/usgs_api_calls.js",
-    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js"
+    "test": "mocha -t 10000 ./test/usgs_api_calls.js ./test/usgs_helpers_test.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^0.13.1",
-    "bluebird": "^3.4.6",
     "commander": "^2.9.0",
     "nodemailer": "^2.6.4",
     "pg": "^6.1.0",

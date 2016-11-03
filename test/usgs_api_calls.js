@@ -40,6 +40,7 @@ const test_search_response_json = require("../json/test-search-response.json")
 const test_getbulkdownloadproducts_request_json = require("../json/test-getbulkdownloadproducts-request.json")
 const test_getbulkdownloadproducts_response_json = require("../json/test-getbulkdownloadproducts-response.json")
 
+// testing
 const test_api_call = function (request_code, body) {
   return api_key_promise.then(
     // fulfilled

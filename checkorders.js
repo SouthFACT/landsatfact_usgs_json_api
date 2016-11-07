@@ -109,7 +109,7 @@ function check_orders(orders_from_number_of_days_ago){
             var api_key_co = USGS_HELPER.get_api_key();
 
             //get config data
-            const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
+            //const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
 
             //connect to db
             const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)

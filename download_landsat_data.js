@@ -29,17 +29,10 @@ APP_HELPERS.delete_old_files('order_failed');
 APP_HELPERS.delete_old_files('download_failed');
 APP_HELPERS.delete_old_files('downloaded');
 APP_HELPERS.delete_old_files('ordered');
-
-
 APP_HELPERS.set_logfile('download_landsat_data')
-
-
 
 const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
-
-//config data
-const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
 
 var scene_downloads = [];
 var orders = [];
@@ -48,12 +41,11 @@ APP_HELPERS.set_logger_level('debug');
 
 APP_HELPERS.write_message(LOG_LEVEL_INFO, 'download data start', '');
 
-
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
 
 //get config data
-const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
+//const PG_CONNECT = yaml.load("./lib/postgres/config.yaml");
 
 const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 

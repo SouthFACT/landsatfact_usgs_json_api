@@ -25,7 +25,6 @@ const test_datasetfields_request_json = require("../json/test-datasetfields-requ
 const test_datasetfields_response_json = require("../json/test-datasetfields-response.json")
 
 const test_download_request_json = require("../json/test-download-request.json")
-// regular expression
 const test_download_response_regexp = /.*tar.gz\?id=[a-zA-Z0-9]*&iid=LC80130282014100LGN00&did=[0-9]*&ver=production/
 
 const test_downloadoptions_request_json = require("../json/test-downloadoptions-request.json")

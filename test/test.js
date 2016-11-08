@@ -10,7 +10,6 @@ var USGS_HELPER = require("../lib/usgs_api/usgs_helpers.js");
 var PG_HANDLER = require('../lib/postgres/postgres_handlers.js')
 
 
-
 describe('USGS API TESTS', function() {
   describe('', function() {
     it('USGS api should return an api key', function(done) {

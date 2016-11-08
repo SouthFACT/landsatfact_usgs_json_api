@@ -65,11 +65,22 @@ max: 10
 ```
 
 ### 3. USGS
+
+#### API Login
+* note: app requires machine to machine access -- contact usgs to get this access.
+* this is not in github because it contains sensitive information so you will have to create this yourself
+* credentials are accessed via the environment variables `USGS_API_USERNAME` and `USGS_API_PASSWORD`
+
+For Linux, Mac, or Git Bash (Windows), add the following to `~/.bash_profile`:
+
+```bash
+export USGS_API_USERNAME=username
+export USGS_API_PASSWORD=pasword
+```
+
 #### config.yaml
 * located in the directory: ./lib/usgs_api/
 * name: config.yaml
-* note: requires machine to machine access contact usgs to get this access.
-* this is not in github because it contains sensitive information so you will have to create this yourself
 
 Change the following to match your system
 * download_directory
@@ -77,8 +88,6 @@ Change the following to match your system
 * download_lcv_text
 
 ```yaml
-username: <usgs machine to machine user name>
-password: <usgs machine to machine password>
 download_directory: ./downloads/
 download_text: ./
 download_lcv_text: ../project/dataexchange/

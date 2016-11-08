@@ -38,9 +38,6 @@ APP_HELPERS.set_logfile('download_landsat_data')
 const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
 
-//config data
-const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
-
 var scene_downloads = [];
 var orders = [];
 

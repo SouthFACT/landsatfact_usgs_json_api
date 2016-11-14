@@ -145,13 +145,11 @@ query.on('row', function(row, result) {
                   // {apiKey, scene_id, node, datasetName, acquisition_date}
                   if(standard_option_order.length > 0){
 
-                    const entityIds = [entityId]
+                    const entityIds = [scene_id]
 
                     const request_body = {apiKey, node, datasetName, entityIds};
 
-                    write_file('test-orders', request_body, false)
-
-
+                    // write_file('test-orders', request_body, false)
 
                     const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
@@ -170,9 +168,9 @@ query.on('row', function(row, result) {
                         if (orderobj){
 
                           //make request json for updating an order
-                          const apiKey = order.apiKey
-                          const node = order.node
-                          const datasetName = order.datasetName
+                          const apiKey = apiKey
+                          const node = node
+                          const datasetName = datasetName
                           const orderingId = getorderproducts_response[0].orderingId
                           const productCode = orderobj[0].productCode
                           const option = 'None'
@@ -186,7 +184,7 @@ query.on('row', function(row, result) {
                               .then( order_response => {
 
                                 //make request json for submitting the order
-                                const ordered_scene = order.entityIds[0]
+                                const ordered_scene = entityIds[0]
                                 const request_body = USGS_FUNCTION.usgsapi_submitorder(apiKey, node)
 
                                 //send request to USGS api to submit the order
@@ -214,7 +212,7 @@ query.on('row', function(row, result) {
                                     const msg_header = 'submitorder api';
                                     const msg = error.message;
                                     APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
-                                    Failed_Order.push(order.entityIds[0])
+                                    Failed_Order.push(entityIds[0])
 
                                   });
                               })
@@ -223,7 +221,7 @@ query.on('row', function(row, result) {
                                 const msg_header = 'updateorderscene api';
                                 const msg = error.message;
                                 APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
-                                Failed_Order.push(order.entityIds[0])
+                                Failed_Order.push(entityIds[0])
                               });
 
 

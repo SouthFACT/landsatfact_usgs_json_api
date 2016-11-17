@@ -24,11 +24,11 @@ var download_scenes = require('./lib/helpers/DownloadScenes.js');
 var DownloadScenes = download_scenes();
 
 //call delete old files
-APP_HELPERS.delete_old_files('download_landsat_data');
-APP_HELPERS.delete_old_files('order_failed');
-APP_HELPERS.delete_old_files('download_failed');
-APP_HELPERS.delete_old_files('downloaded');
-APP_HELPERS.delete_old_files('ordered');
+APP_HELPERS.delete_old_files('download_landsat_data', 'logs/', '.log');
+APP_HELPERS.delete_old_files('order_failed', '', '.txt');
+APP_HELPERS.delete_old_files('download_failed', '', '.txt');
+APP_HELPERS.delete_old_files('downloaded', '', '.txt');
+APP_HELPERS.delete_old_files('ordered', '', '.txt');
 
 
 APP_HELPERS.set_logfile('download_landsat_data')

@@ -14,7 +14,7 @@ today = APP_HELPERS.get_date_string();
 name = "update_landsat_metadata"
 logger_file = 'logs/' + name + '-' + today + '.log'
 
-APP_HELPERS.delete_old_files(name);
+APP_HELPERS.delete_old_files(name, 'logs/', '.log');
 
 var logger = new (winston.Logger)({
         transports: [

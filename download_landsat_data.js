@@ -76,11 +76,12 @@ if (list_yesterdays_failed.length > 0){
 
 
 
-const last_day_scenes = "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
+const last_day_scenes = " SELECT " +
+                          last_day_scenes_fields +
+                        " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
 
-                        // " SELECT " +
-                        //   last_day_scenes_fields +
-                        // " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
+//"SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
+
 
                         // ,'LT50300402003237PAC02','LT50300392003237PAC02')
 // ,'LE70330382016238EDC00','LE70170382016238EDC00'

@@ -76,9 +76,11 @@ if (list_yesterdays_failed.length > 0){
 
 
 
-const last_day_scenes = " SELECT " +
-                          last_day_scenes_fields +
-                        " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
+const last_day_scenes = "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
+
+// " SELECT " +
+//                           last_day_scenes_fields +
+//                         " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
 
 //"SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
 

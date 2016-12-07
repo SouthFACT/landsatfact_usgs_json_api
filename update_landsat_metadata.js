@@ -14,7 +14,7 @@ today = APP_HELPERS.get_date_string();
 name = "update_landsat_metadata"
 logger_file = 'logs/' + name + '-' + today + '.log'
 
-APP_HELPERS.delete_old_files(name);
+APP_HELPERS.delete_old_files(name, 'logs/', '.log');
 
 var logger = new (winston.Logger)({
         transports: [
@@ -29,6 +29,9 @@ var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
 var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
 var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
 const update_lsf_database = require("./lib/postgres/update_lsf_database.js");
+
+//delete old log files
+update_lsf_database.delete_update_logs();
 
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;

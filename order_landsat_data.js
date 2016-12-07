@@ -24,11 +24,11 @@ var download_scenes = require('./lib/helpers/DownloadScenes.js');
 var DownloadScenes = download_scenes();
 
 //call delete old files
-APP_HELPERS.delete_old_files('order_landsat_data');
-APP_HELPERS.delete_old_files('order_failed');
-APP_HELPERS.delete_old_files('download_failed');
-APP_HELPERS.delete_old_files('downloaded');
-APP_HELPERS.delete_old_files('ordered');
+APP_HELPERS.delete_old_files('order_landsat_data', 'logs/', '.log');
+APP_HELPERS.delete_old_files('order_failed', '', '.txt');
+APP_HELPERS.delete_old_files('download_failed', '', '.txt');
+APP_HELPERS.delete_old_files('downloaded', '', '.txt');
+APP_HELPERS.delete_old_files('ordered', '', '.txt');
 
 
 APP_HELPERS.set_logfile('order_landsat_data')
@@ -67,7 +67,8 @@ var scenes_for_dowloading_SQL = last_day_scenes;
 
 //check if there is an argument of a scene if so use that.
 if( scene_arg ){
-  scenes_for_dowloading_SQL = "SELECT " + last_day_scenes_fields + " FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
+  scenes_for_dowloading_SQL = "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
+  //"SELECT " + last_day_scenes_fields + " FROM landsat_metadata  WHERE scene_id = '" + scene_arg + "'";
 }
 
 // //captures lastpromise first one is resolved
@@ -145,13 +146,11 @@ query.on('row', function(row, result) {
                   // {apiKey, scene_id, node, datasetName, acquisition_date}
                   if(standard_option_order.length > 0){
 
-                    const entityIds = [entityId]
+                    const entityIds = [scene_id]
 
                     const request_body = {apiKey, node, datasetName, entityIds};
 
-                    write_file('test-orders', request_body, false)
-
-
+                    // write_file('test-orders', request_body, false)
 
                     const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
@@ -170,9 +169,9 @@ query.on('row', function(row, result) {
                         if (orderobj){
 
                           //make request json for updating an order
-                          const apiKey = order.apiKey
-                          const node = order.node
-                          const datasetName = order.datasetName
+                          const apiKey = apiKey
+                          const node = node
+                          const datasetName = datasetName
                           const orderingId = getorderproducts_response[0].orderingId
                           const productCode = orderobj[0].productCode
                           const option = 'None'
@@ -186,7 +185,7 @@ query.on('row', function(row, result) {
                               .then( order_response => {
 
                                 //make request json for submitting the order
-                                const ordered_scene = order.entityIds[0]
+                                const ordered_scene = entityIds[0]
                                 const request_body = USGS_FUNCTION.usgsapi_submitorder(apiKey, node)
 
                                 //send request to USGS api to submit the order
@@ -214,7 +213,7 @@ query.on('row', function(row, result) {
                                     const msg_header = 'submitorder api';
                                     const msg = error.message;
                                     APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
-                                    Failed_Order.push(order.entityIds[0])
+                                    Failed_Order.push(entityIds[0])
 
                                   });
                               })
@@ -223,7 +222,7 @@ query.on('row', function(row, result) {
                                 const msg_header = 'updateorderscene api';
                                 const msg = error.message;
                                 APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg)
-                                Failed_Order.push(order.entityIds[0])
+                                Failed_Order.push(entityIds[0])
                               });
 
 

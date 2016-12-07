@@ -24,7 +24,7 @@ const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
 
 //call delete old files
-APP_HELPERS.delete_old_files('check_orders_landsat_data');
+APP_HELPERS.delete_old_files('check_orders_landsat_data', 'logs/', '.log');
 
 APP_HELPERS.set_logger_level('debug');
 APP_HELPERS.set_logfile('check_orders_landsat_data')
@@ -54,7 +54,7 @@ function make_scene_available_request(USGS_REQUEST_CODE, request_body, scene_id)
        var msg_header = ' The scene ' + scene_id + ' is now available please proceed to download'
        var msg = scene_id
        APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
-       
+
        //add downoload....
 
      } else {

@@ -2,6 +2,7 @@ var assert = require('assert');
 var expect  = require("chai").expect;
 var should = require('chai').should();
 
+//testing
 
 //get modules
 var USGS_CONSTANT = require("../lib/usgs_api/usgs_constants.js");

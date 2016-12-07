@@ -7,7 +7,7 @@
           "downloadCode":"FR_REFL",
           "filesize":8722437,
           "productName":"LandsatLook \"Natural Color\" Image",
-          "url":"http://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_REFL/INVSVC/",
+          "url":"https://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_REFL/INVSVC/",
           "storageLocation":"LINK"
         },
         {
@@ -15,7 +15,7 @@
           "downloadCode":"FR_THERM",
           "filesize":2930523,
           "productName":"LandsatLook \"Thermal\" Image",
-          "url":"http://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_THERM/INVSVC/",
+          "url":"https://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_THERM/INVSVC/",
           "storageLocation":"LINK"
         },
         {
@@ -23,7 +23,7 @@
           "downloadCode":"FR_QB",
           "filesize":4578303,
           "productName":"LandsatLook \"Quality\" Image",
-          "url":"http://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_QB/INVSVC/",
+          "url":"https://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_QB/INVSVC/",
           "storageLocation":"LINK"
         },
         {
@@ -31,7 +31,7 @@
           "downloadCode":"FR_BUND",
           "filesize":16231263,
           "productName":"LandsatLook images with Geographic Reference",
-          "url":"http://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_BUND/INVSVC/",
+          "url":"https://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/FR_BUND/INVSVC/",
           "storageLocation":"LINK"
         },
         {
@@ -39,7 +39,7 @@
           "downloadCode":"STANDARD",
           "filesize":1056446866,
           "productName":"Level 1 GeoTIFF Data Product",
-          "url":"http://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/STANDARD/INVSVC/",
+          "url":"https://earthexplorer.usgs.gov/download/4923/LC80130292014100LGN00/STANDARD/INVSVC/",
           "storageLocation":"SILO"
         }
       ],

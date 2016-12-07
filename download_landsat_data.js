@@ -24,11 +24,11 @@ var download_scenes = require('./lib/helpers/DownloadScenes.js');
 var DownloadScenes = download_scenes();
 
 //call delete old files
-APP_HELPERS.delete_old_files('download_landsat_data');
-APP_HELPERS.delete_old_files('order_failed');
-APP_HELPERS.delete_old_files('download_failed');
-APP_HELPERS.delete_old_files('downloaded');
-APP_HELPERS.delete_old_files('ordered');
+APP_HELPERS.delete_old_files('download_landsat_data', 'logs/', '.log');
+APP_HELPERS.delete_old_files('order_failed', '', '.txt');
+APP_HELPERS.delete_old_files('download_failed', '', '.txt');
+APP_HELPERS.delete_old_files('downloaded', '', '.txt');
+APP_HELPERS.delete_old_files('ordered', '', '.txt');
 
 
 APP_HELPERS.set_logfile('download_landsat_data')
@@ -71,20 +71,15 @@ if (list_yesterdays_failed.length > 0){
   yesterdays_failed_scenes = ''
 }
 
+const last_day_scenes = "SELECT " + last_day_scenes_fields + " FROM landsat_metadata  WHERE scene_id in ('LE70150332016320EDC01')"
+
+//" FROM vw_last_days_scenes "
 
 
-const last_day_scenes = "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes"
+// " SELECT " +
+//                           last_day_scenes_fields +
+//                         " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
 
-                        // " SELECT " +
-                        //   last_day_scenes_fields +
-                        // " FROM landsat_metadata  WHERE scene_id in ('LE70220342003237EDC01')"
-
-                        // ,'LT50300402003237PAC02','LT50300392003237PAC02')
-// ,'LE70330382016238EDC00','LE70170382016238EDC00'
-
-//acquisition_date =  '2003-08-25'::date AND
-
-// "SELECT " + last_day_scenes_fields + " FROM vw_last_days_scenes";
 
 var scenes_for_dowloading_SQL = yesterdays_failed_scenes +
                       " UNION " +
@@ -176,17 +171,17 @@ query.on('row', function(row, result) {
                   DownloadScenes.add_download(download_obj)
                 }
 
-                var msg_header = 'Total';
-                var msg = DownloadScenes.get_total_count();
-                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
-
-                msg_header = 'Current';
-                msg = DownloadScenes.get_current_count();
-                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
-
-                msg_header = 'Complete';
-                msg = DownloadScenes.iscomplete();
-                APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                // var msg_header = 'Total';
+                // var msg = DownloadScenes.get_total_count();
+                // APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                //
+                // msg_header = 'Current';
+                // msg = DownloadScenes.get_current_count();
+                // APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
+                //
+                // msg_header = 'Complete';
+                // msg = DownloadScenes.iscomplete();
+                // APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
 
                 //once we have completed adding all the scenes to either ordering or downloading
                 //  start the process to actually order and download products
@@ -194,7 +189,6 @@ query.on('row', function(row, result) {
                 if( DownloadScenes.iscomplete() ) {
                   DownloadScenes.start_order()
                 }
-
 
             }).catch( (error) => {
 
@@ -205,7 +199,6 @@ query.on('row', function(row, result) {
 
               DownloadScenes.add_failed(msg_header, scene_id);
               APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
-
 
             });
 

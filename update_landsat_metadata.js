@@ -281,7 +281,7 @@ logger.log('info','update metadata start');
 //walk the datasets from the CONFIG_YAML
 datasets.map( dataset => {
   const datasetName = dataset.datasetName
-
+  console.log(datasetName)
   api_key
   .then( (apiKey) => {
 
@@ -357,7 +357,6 @@ datasets.map( dataset => {
 
           logger.log('info', 'search');
           logger.log('debug', 'search body' , search_body );
-
           //create request code for searching for available scenes
           const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('search');
 
@@ -369,6 +368,7 @@ datasets.map( dataset => {
 
             const total = search_response.numberReturned;
             var count = 0;
+            var metadata_message = []
             //walk the search_response and start to collect the
             //  info for inserting into db
             search_response.results.map(entity => {
@@ -381,6 +381,13 @@ datasets.map( dataset => {
               .then( metadata => {
 
                 count += 1;
+
+                //console messaging when run as cron this will be lsf log
+                if(count === 1){
+                  console.log('Current Date: ' + endDate)
+                  console.log('Previous Date: ' + startDate)
+                  console.log('Doing ' + datasetName + '....')
+                }
 
                 //get xml from USGS api
                 const xml = metadata.data;
@@ -405,7 +412,9 @@ datasets.map( dataset => {
 
                       //convert to js array
                       const metadata_json = [js];
+
                       logger.log('info', 'extracting metadata for: ' + entity.summary);
+                      metadata_message.push(entity.summary)
 
                       //walk the json and get the metadata
                       // also need to get browse links
@@ -477,14 +486,18 @@ datasets.map( dataset => {
 
                     //logger.log('info', metadata_recordset);
 
-                    //console.log(metadata_recordset)
                     //do the insert here
                     update_lsf_database.metadata_to_db(metadata_recordset);
-                    //
-                    // console.log(count)
-                    // console.log(total)
+
                     if(count === total){
                       logger.log('info','update metadata end for ' + datasetName);
+                      console.log('Extracting metadata for:')
+
+                      metadata_message.map( item => {
+                        console.log(item.replace('Entity','Scene'))
+                      })
+                      console.log('')
+
                     }
 
                   }).catch( (error) => {
@@ -515,6 +528,10 @@ datasets.map( dataset => {
 
           }); //last promise not real used to make sure the last promise has completed
           //  since USGS limits api calls to one at a time
-        })
+        }).catch(function(error) {
+          console.error('last promise: ' + error);
+          logger.log('error', 'last promise error: ' + error);
+
+        }); //last promise not real used to make sure the last promise has completed
       })
       logger.log('info','update metadata end');

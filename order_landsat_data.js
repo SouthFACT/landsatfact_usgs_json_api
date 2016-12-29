@@ -105,7 +105,7 @@ query.on('row', function(row, result) {
       .then( getorderproducts_response => {
 
         // ensure there was a response
-        if(getorderproducts_response[0]){
+        if(getorderproducts_response[0] || getorderproducts_response){
 
           //filter possible products to downloadable level 1 datasets, with no cost.
           const orderobj = getorderproducts_response[0].availableProducts.filter( res => {
@@ -127,7 +127,7 @@ query.on('row', function(row, result) {
 
             console.log('')
             console.log('updateorderscene')
-            cconsole.log(LOG_LEVEL_INFO, apiKey, node, datasetName, productCode, outputMedia, option, orderingId)
+            console.log(LOG_LEVEL_INFO, apiKey, node, datasetName, productCode, outputMedia, option, orderingId)
 
             //send request to USGS api to add the scene as an order
             const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('updateorderscene');
@@ -186,7 +186,7 @@ query.on('error', function(err) {
 query.on('end', function(result) {
   // DownloadScenes.set_total(result.rowCount);
   msg_header = 'query completed';
-  const message = result.rowCount === 1 ? ' scene that needs to ordered' : ' scenes that needs to ordered'
+  const message = result.rowCount === 1 ? ' scene that need to ordered' : ' scenes that need to ordered'
   msg = result.rowCount + message;
   console.log(LOG_LEVEL_INFO, msg_header, msg);
 });

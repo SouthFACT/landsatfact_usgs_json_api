@@ -47,11 +47,11 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 //get fields for sql query - that gets scences that need ordering,
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
-//LT50250362011032PAC01
-//LT50250352011016PAC01
-
 //set the SQL query to retreive scenes that need to be ordered
 const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
+
+//LT50250362011032PAC01
+//LT50250352011016PAC01
 
 // const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 2000 LIMIT 1000"
 

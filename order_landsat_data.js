@@ -32,7 +32,7 @@ const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
 
 var total_orders = 0
 
-APP_HELPERS.set_logger_level('debug');
+APP_HELPERS.set_logger_level('info');
 APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering data start', '');
 
 //set base URL for axios
@@ -50,10 +50,7 @@ const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, ro
 //set the SQL query to retreive scenes that need to be ordered
 const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
 
-//LT50250362011032PAC01
-//LT50250352011016PAC01
-
-// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 2000 LIMIT 1000"
+// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 3000 LIMIT 1000"
 
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();

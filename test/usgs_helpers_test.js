@@ -292,6 +292,17 @@ describe('USGS Helpers TESTS', function() {
 
     })
 
+    it('should return LANDSAT_TM if LT40270421989361XXX03', function() {
+
+      var test_str = "LT40270421989361XXX03";
+      var test_date = "1989-12-27"
+      var expected_result = 'LANDSAT_TM';
+      const result = USGS_HELPER.get_datasetName(test_str, test_date);
+      expect(result).to.be.like(expected_result);
+
+
+    })
+
   })
 
 

@@ -21,25 +21,19 @@ var error_email = emailer()
 
 //call delete old files
 APP_HELPERS.delete_old_files('order_landsat_data', 'logs/', '.log');
-APP_HELPERS.delete_old_files('order_failed', '', '.txt');
-APP_HELPERS.delete_old_files('download_failed', '', '.txt');
-APP_HELPERS.delete_old_files('downloaded', '', '.txt');
-APP_HELPERS.delete_old_files('ordered', '', '.txt');
 APP_HELPERS.set_logfile('order_landsat_data')
 
+const LOG_LEVEL_DEBUG = 'debug';
 const LOG_LEVEL_ERR = 'error';
 const LOG_LEVEL_INFO = 'info';
 
 //config data
 const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml");
 
-var scene_downloads = [];
-var orders = [];
+var total_orders = 0
 
 APP_HELPERS.set_logger_level('debug');
-
 APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering data start', '');
-
 
 //set base URL for axios
 axios.defaults.baseURL = USGS_CONSTANT.USGS_URL;
@@ -53,22 +47,13 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 //get fields for sql query - that gets scences that need ordering,
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
+//LT50250362011032PAC01
+//LT50250352011016PAC01
+
 //set the SQL query to retreive scenes that need to be ordered
 const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
-//LT50190341989361XXX02,LT50190331989361XXX02,LT50150361989365XXX01
-// WHERE sensor = 'LANDSAT_TM' LIMIT 250" // WHERE needs_ordering = 'YES'"
 
-// LT50190331989361XXX02
-// LT50180401989354XXX02
-// LT50290371989351XXX02
-// LT50190331989345XXX02
-// LT50190341989345XXX02
-// LT50210401989343XXX02
-// LT50210401989343XXX02
-
-// - undefined availableProducts LT40270421989361XXX03
-// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' LIMIT 250"
-// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE scene_id like 'LT4%'"
+// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 2000 LIMIT 1000"
 
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();
@@ -79,8 +64,11 @@ const query = pg_client.query(scenes_for_dowloading_SQL);
 //login and get promise for api key
 var api_key_main = USGS_HELPER.get_api_key();
 
+var count = 0;
+
 // query to check for duplicate scenes
 query.on('row', function(row, result) {
+
 
   // process rows here
   api_key_main
@@ -103,13 +91,15 @@ query.on('row', function(row, result) {
     //  api call at at time,
     return lastPromise = lastPromise.then( () => {
 
+      count = count + 1
+
       var entityIds = [scene_id]
+      console.log('checking: ' + scene_id)
+      APP_HELPERS.write_message(LOG_LEVEL_INFO, 'checking', scene_id)
 
       var request_body = {apiKey, node, datasetName, entityIds};
 
-      console.log('');
-      console.log('getorderproducts');
-      console.log(LOG_LEVEL_INFO, request_body)
+      APP_HELPERS.write_message(LOG_LEVEL_DEBUG, 'getorderproducts request', JSON.stringify(request_body));
 
       const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('getorderproducts');
 
@@ -117,7 +107,8 @@ query.on('row', function(row, result) {
       return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
       .then( getorderproducts_response => {
 
-        console.log(getorderproducts_response)
+        APP_HELPERS.write_message(LOG_LEVEL_DEBUG, 'getorderproducts response', getorderproducts_response);
+
         // ensure there was a response
         if(getorderproducts_response ){
 
@@ -145,18 +136,15 @@ query.on('row', function(row, result) {
 
               const request_body = USGS_FUNCTION.usgsapi_updateorderscene(apiKey, node, datasetName, productCode, outputMedia, option, orderingId);
 
-              console.log('')
-              console.log('')
-              console.log('updateorderscene')
-              console.log(LOG_LEVEL_INFO, apiKey, node, datasetName, productCode, outputMedia, option, orderingId)
-              console.log('')
-              console.log('')
+              APP_HELPERS.write_message(LOG_LEVEL_DEBUG, 'updateorderscene request', JSON.stringify(request_body));
 
               //send request to USGS api to add the scene as an order
               const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('updateorderscene');
 
                 return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
                     .then( order_response => {
+
+                      APP_HELPERS.write_message(LOG_LEVEL_DEBUG, 'updateorderscene response', order_response);
 
                       //make request json for submitting the order
                       const ordered_scene = entityIds[0]
@@ -166,47 +154,61 @@ query.on('row', function(row, result) {
                       //  unfourtunately there is no way to check the status (complete or in process) via the api
                       const USGS_REQUEST_CODE = USGS_HELPER.get_usgs_response_code('submitorder');
 
-                      console.log('')
-                      console.log('submitorder');
-                      console.log(LOG_LEVEL_INFO, apiKey, node)
+                      APP_HELPERS.write_message(LOG_LEVEL_DEBUG, 'submitorder request', JSON.stringify(request_body));
+                      console.log('  ordering scene: ' + ordered_scene)
+                      APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering scene', ordered_scene)
 
                       return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
                         .then ( order => {
 
-                          const msg_header = 'order submitted for';
+                          APP_HELPERS.write_message(LOG_LEVEL_INFO, 'submitorder response', order);
+
                           update_lsf_database.update_database_ordered(scene_id)
-                          const msg = ordered_scene;
-                          console.log(LOG_LEVEL_INFO, msg_header, msg)
+
+                          APP_HELPERS.write_message(LOG_LEVEL_INFO, 'submited order for', scene_id);
+
+                          //if at end, and all orders procesed write out end of ordering
+                          if(count >= total_orders){
+                            APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering data end', '')
+                          }
 
                      })
                      .catch( (error) => {
                        msg_header = 'submitorder: ';
                        msg = error.message;
-                       console.error(LOG_LEVEL_INFO,msg_header + msg)
+                       APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
                      });
 
                 })
                 .catch( (error) => {
                   msg_header = 'updateorderscene: ';
                   msg = error.message;
-                  console.error(LOG_LEVEL_INFO,msg_header + msg)
+                  APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
                 });
 
             } else {
-              console.log('nothing to order for scene ' + scene_id)
-              console.log('');
+              msg_header = 'Nothing to order for scene ';
+              msg = scene_id;
+              APP_HELPERS.write_message(LOG_LEVEL_DEBUG, msg_header, msg);
             }
 
           } else {
-            console.log('there was nothing in the get order response for scene ' + scene_id)
-            console.log('');
+            msg_header = 'There was nothing in the get order response for scene ';
+            msg = scene_id;
+            APP_HELPERS.write_message(LOG_LEVEL_DEBUG, msg_header, msg);
           }
 
         } else {
-          console.log('The get order response was empty, for scene ' + scene_id + '.  So nothing was ordered.  ' +
+          msg_header = ''
+          msg = 'The get order response was empty, for scene ' + scene_id + '.  So nothing was ordered.  ' +
                         'There are time when a scene cannot be ordered for an unkown reason.  ' +
-                        'We can attempt to order the scene in next run.')
-          console.log('');
+                        'We can attempt to order the scene in next run.'
+          APP_HELPERS.write_message(LOG_LEVEL_DEBUG, msg_header, msg);
+        }
+
+        //if at end, and all orders procesed write out end of ordering
+        if(count >= total_orders){
+          APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering data end', '')
         }
 
       })
@@ -214,25 +216,26 @@ query.on('row', function(row, result) {
 
         msg_header = 'get order products: ';
         msg = error.message;
-        console.error(LOG_LEVEL_INFO,msg_header + msg)
+        APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
+
       });
-
     })
-
   })
-
 })
 
 query.on('error', function(err) {
   msg_header = 'query error';
   msg = err.message;
-  console.error(LOG_LEVEL_ERR, msg_header, msg);
+  APP_HELPERS.write_message(LOG_LEVEL_ERR, msg_header, msg);
 });
 
 query.on('end', function(result) {
-  // DownloadScenes.set_total(result.rowCount);
   msg_header = 'query completed';
+  total_orders = result.rowCount
   const message = result.rowCount === 1 ? ' scene that need to ordered' : ' scenes that need to ordered'
   msg = result.rowCount + message;
-  console.log(LOG_LEVEL_INFO, msg_header, msg);
+  APP_HELPERS.write_message(LOG_LEVEL_INFO, msg_header, msg);
+  if(result.rowCount === 0){
+    APP_HELPERS.write_message(LOG_LEVEL_INFO, 'ordering data end', '')
+  }
 });

@@ -203,7 +203,9 @@ query.on('row', function(row, result) {
           }
 
         } else {
-          console.log('The get order response was empty, for scene ' + scene_id + '.  So nothing was ordered.')
+          console.log('The get order response was empty, for scene ' + scene_id + '.  So nothing was ordered.  ' +
+                        'There are time when a scene cannot be ordered for an unkown reason.  ' +
+                        'We can attempt to order the scene in next run.')
           console.log('');
         }
 

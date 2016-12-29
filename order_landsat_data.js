@@ -54,7 +54,7 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
 //set the SQL query to retreive scenes that need to be ordered
-const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND ordered != 'YES'"
+const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
 //LT50190341989361XXX02,LT50190331989361XXX02,LT50150361989365XXX01
 // WHERE sensor = 'LANDSAT_TM' LIMIT 250" // WHERE needs_ordering = 'YES'"
 
@@ -117,8 +117,10 @@ query.on('row', function(row, result) {
       return USGS_HELPER.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
       .then( getorderproducts_response => {
 
+        console.log(getorderproducts_response)
         // ensure there was a response
-        if(getorderproducts_response[0] || getorderproducts_response ){
+        if(getorderproducts_response ){
+
           //sometimes there is a response the but the response is empty
           //  this can happen when a api varriable is set to something wrong.
           //  such as a wrong sensor id for the scene which we get from USGS_HELPER.get_datasetName
@@ -194,12 +196,14 @@ query.on('row', function(row, result) {
               console.log('nothing to order for scene ' + scene_id)
               console.log('');
             }
+
           } else {
             console.log('there was nothing in the get order response for scene ' + scene_id)
             console.log('');
           }
+
         } else {
-          console.log('The get order response was null, for scene ' + scene_id)
+          console.log('The get order response was empty, for scene ' + scene_id + '.  So nothing was ordered.')
           console.log('');
         }
 

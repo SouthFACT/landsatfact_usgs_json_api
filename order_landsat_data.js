@@ -47,10 +47,15 @@ const pg_client = PG_HANDLER.pg_connect(PG_CONNECT)
 //get fields for sql query - that gets scences that need ordering,
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 ';
 
+// LT50170332009338GNC02
+//  LT50180402009345GNC02
+// LT50180362009345GNC02
+// LT50290372009342PAC02
+// LT50290342009342PAC02
 //set the SQL query to retreive scenes that need to be ordered
 const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
 
-// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 3000 LIMIT 1000"
+// const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 5000 LIMIT 1000"
 
 //captures lastpromise first one is resolved
 var lastPromise = Promise.resolve();

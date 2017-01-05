@@ -10,6 +10,9 @@
  * TODO
  * - documentation
  * - tests
+ * - use the logger
+ * - handle errors
+ *   - simultaneous requests error
 */
 
 // Libraries
@@ -50,7 +53,7 @@ var pg_pool = pg_handler.pg_pool(db_config)
  */
 const main = function () {
   // TODO: PUT QUERY TEXT SOMEWHERE ELSE? MAKE IT A VIEW?
-  const query_text = "SELECT * FROM landsat_metadata LIMIT 500"
+  const query_text = "SELECT * FROM landsat_metadata"
 
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     sort_records_by_dataset(query_result).then(function(scenes_by_dataset) {
@@ -157,7 +160,7 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
  *      downloadOptions: [
  *        {
  *          available: <Boolean>
- *          DL_OPTION_DOWNLOAD_CODE: <String>
+ *          downloadCode: <String>
  *          filesize: <Number>
  *          productName: <String>
  *          url: <String>
@@ -183,7 +186,7 @@ const sort_options_by_avail = function (response) {
 
     response.forEach((obj) => {
       var standard_option = obj['downloadOptions'].filter((option) => {
-        return option.DL_OPTION_DOWNLOAD_CODE === 'STANDARD'
+        return option['downloadCode'] === 'STANDARD'
       })
       if (standard_option.length) {
         if (standard_option[0].available) {

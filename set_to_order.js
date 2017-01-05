@@ -1,8 +1,16 @@
 /**
  * Sets records in the metadata table to be 'ordered'
  * for download if they are not available for download from USGS.
+ * 
+ *
  *
  */
+
+/**
+ * TODO
+ * - documentation
+ * - tests
+*/
 
 // Libraries
 var yaml = require('yamljs');
@@ -20,27 +28,29 @@ var usgs_helper = require("./lib/usgs_api/usgs_helpers.js");
 var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
-// Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml");
-
-// Constants for USGS API Calls
-const node = usgs_constants.NODE_EE;
-const downloadCode = "STANDARD"
-const dl_options_code = usgs_helper.get_usgs_response_code('downloadoptions');
-const SCENE_LIST_LIMIT = 10000
-
+// Constants
+const DL_OPTION_DOWNLOAD_CODE = "STANDARD"
+const DL_OPTIONS_USGS_RESPONSE_CODE = usgs_helper.get_usgs_response_code('downloadoptions');
+const SCENE_BATCH_LIMIT = 10000
 
 axios.defaults.baseURL = usgs_constants.USGS_URL;
 
 var get_api_key = usgs_helper.get_api_key();
 
+// Database connection
+const db_config = yaml.load("./lib/postgres/config.yaml");
 var pg_pool = pg_handler.pg_pool(db_config)
 
-//////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Main function
+ *
+ *
+ */
 const main = function () {
-  // TODO: PUT QUERY TEXT SOMEWHERE ELSE?
-  const query_text = "SELECT * FROM landsat_metadata LIMIT 15000"
+  // TODO: PUT QUERY TEXT SOMEWHERE ELSE? MAKE IT A VIEW?
+  const query_text = "SELECT * FROM landsat_metadata LIMIT 500"
 
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     sort_records_by_dataset(query_result).then(function(scenes_by_dataset) {
@@ -51,6 +61,13 @@ const main = function () {
 
 }
 
+/**
+ * Sort scene records by which dataset they belong to.
+ * 
+ * @param query_result is a list of records (scenes) from the metadata table.
+ *
+ * @return an object: keys are dataset names, values are lists of scene ids.
+ */
 const sort_records_by_dataset = function(query_result) {
   return Promise.resolve().then(function() {
     var scenes_by_dataset = {
@@ -63,11 +80,17 @@ const sort_records_by_dataset = function(query_result) {
       const row_dataset = usgs_helper.get_datasetName(row.scene_id, row.acquisition_date)
       scenes_by_dataset[row_dataset].push(row.scene_id)
     })
-    console.log('sort rows by dataset done')
+    console.log('COMPLETED sorting rows by dataset')
     return scenes_by_dataset
   })
 }
 
+/**
+ * Recursively process scenes for each dataset.
+ *
+ * @param scenes_by_dataset is the object returned by sort_records_by_dataset
+ * @param dataset_names is a list containing the names of each dataset
+ */
 const process_scenes = function (scenes_by_dataset, dataset_names) {
   return Promise.resolve().then(function () {
     const dataset_name = dataset_names.pop()
@@ -76,47 +99,49 @@ const process_scenes = function (scenes_by_dataset, dataset_names) {
   }).then(function () {
     if (dataset_names.length) {
       return process_scenes(scenes_by_dataset, dataset_names)
+    } else {
+      console.log('COMPLETED processing all scenes')
     }
-    console.log('completed processing all datasets')
   })
 }
 
 const process_scenes_for_dataset = function (scenes, dataset_name) {
   return Promise.resolve().then(function () {
     if (scenes.length) {
-      var scene_batch = scenes.slice(0, SCENE_LIST_LIMIT)
+      var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
       return process_scene_batch(scene_batch, dataset_name)
     }
   }).then(function () {
-    var next_scene_batch = scenes.slice(SCENE_LIST_LIMIT)
+    var next_scene_batch = scenes.slice(SCENE_BATCH_LIMIT)
     if (next_scene_batch.length) {
       return process_scenes_for_dataset(next_scene_batch, dataset_name)
     }
-    console.log('completed processing dataset ', dataset_name)
+    else {
+      console.log('COMPLETED processing dataset ', dataset_name)
+    }
   })
 }
 
-const process_scene_batch = function(scenes, dataset_name) {
+const process_scene_batch = function (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
     return sort_options_by_avail(response).then(function(scenes_by_avail) {
       return update_records_by_avail(scenes_by_avail)
     })
-    .catch(function (err) { console.log('error sorting by availibility', err.stack) })
+    .catch(function (err) { console.log('ERROR sorting by availibility', err.stack) })
   })
-  .catch(function (err) { console.log('error getting dl options', err.stack) })
+  .catch(function (err) { console.log('ERROR getting dl options', err.stack) })
 }
 
-const get_dl_options_for_scene_batch = function(scenes, dataset_name) {
+const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
-    console.log('begin processing scene batch for dataset ', dataset_name)
-    const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, node, dataset_name, scenes);
-    return usgs_helper.get_usgsapi_response(dl_options_code, request_body)
+    console.log('START processing scene batch for dataset ', dataset_name, ', batch size is', scenes.length)
+    const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, usgs_constants.NODE_EE, dataset_name, scenes);
+    return usgs_helper.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
       .catch(function(err) {
-        console.log('Error during DownloadOptions USGS API request: ', err.stack)
+        console.log('ERROR during DownloadOptions request: ', err.stack)
       })
       .then(function(response) {
-        console.log('got dl options for ', dataset_name, 'dataset')
-
+        console.log('COMPLETED get dl options for scene batch in dataset', dataset_name)
         return response
       })
   })
@@ -131,8 +156,8 @@ const get_dl_options_for_scene_batch = function(scenes, dataset_name) {
  *    {
  *      downloadOptions: [
  *        {
- *          avail: <Boolean>
- *          downloadCode: <String>
+ *          available: <Boolean>
+ *          DL_OPTION_DOWNLOAD_CODE: <String>
  *          filesize: <Number>
  *          productName: <String>
  *          url: <String>
@@ -148,7 +173,7 @@ const get_dl_options_for_scene_batch = function(scenes, dataset_name) {
  * @return an object with two lists: available and unavailable sceneIds
  *
  */
-const sort_options_by_avail = (response) => {
+const sort_options_by_avail = function (response) {
 
   // Mark needs_ordering field as YES if available for download (available is true),
   //   NO if not available for download
@@ -158,10 +183,10 @@ const sort_options_by_avail = (response) => {
 
     response.forEach((obj) => {
       var standard_option = obj['downloadOptions'].filter((option) => {
-        return option.downloadCode === 'STANDARD'
+        return option.DL_OPTION_DOWNLOAD_CODE === 'STANDARD'
       })
       if (standard_option.length) {
-        if (standard_option[0].avail) {
+        if (standard_option[0].available) {
           avail.push(obj.entityId)
         }
         else {
@@ -170,7 +195,7 @@ const sort_options_by_avail = (response) => {
       }
     })
 
-    console.log('options sorted')
+    console.log('COMPLETED sorting dl options by availability')
 
     return { 'available': avail, 'unavailable': unavail }
   })

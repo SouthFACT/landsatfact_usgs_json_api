@@ -4,14 +4,6 @@
  * 
  */
 
-/**
- * TODO
- * - move select query somewhere else
- * - more decoupling of functions (?)
- * - tests
- * - TEST case: simultaneous requests error
-*/
-
 // Libraries
 var yaml = require('yamljs')
 var pg = require('pg')

@@ -52,7 +52,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 // Initial SELECT query
 const query_text = "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering IS null "
-    + "OR needs_ordering IS 'YES'"
+    + "OR needs_ordering = 'YES'"
 
 
 //////////////////////////////////////////////////////////////////////////////////

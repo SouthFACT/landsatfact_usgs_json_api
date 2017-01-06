@@ -2,17 +2,14 @@
  * Sets records in the metadata table to be 'ordered'
  * for download if they are not available for download from USGS.
  * 
- *
- *
  */
 
 /**
  * TODO
+ * - move select query somewhere else
  * - more decoupling of functions (?)
  * - tests
- * - handle more cases
- *   - response is an empty list
- *   - simultaneous requests error
+ * - TEST case: simultaneous requests error
 */
 
 // Libraries
@@ -34,6 +31,7 @@ var app_helpers = require('./lib/helpers/app_helpers.js')()
 // Constants for handling USGS API
 const DL_OPTION_DOWNLOAD_CODE = "STANDARD"
 const DL_OPTIONS_USGS_RESPONSE_CODE = usgs_helper.get_usgs_response_code('downloadoptions')
+const MAX_DL_OPTIONS_REQUEST_ATTEMPTS = 5
 
 // Maximum scene list size for a single downloadoptions request
 const SCENE_BATCH_LIMIT = 10000
@@ -59,20 +57,18 @@ app_helpers.set_logger_level('debug')
 app_helpers.set_logfile(LOG_FILE)
 app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
-
+// Initial SELECT query
+const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering IS null"
 
 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 /**
  * Main function. Pulls relevant records from the metadata table to be processed,
- * then initiates the processing logic.
+ * then initiates the processing logic for the query result.
  *
  */
 const main = function () {
-  // TODO: PUT QUERY TEXT SOMEWHERE ELSE? MAKE IT A VIEW?
-  const query_text = "SELECT * FROM landsat_metadata"
 
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     sort_records_by_dataset(query_result).then(function(scenes_by_dataset) {
@@ -134,7 +130,6 @@ const process_scenes = function (scenes_by_dataset, dataset_names) {
   })
 }
 
-
 /**
  * Process the scenes for a single landsat dataset.
  *
@@ -147,7 +142,7 @@ const process_scenes = function (scenes_by_dataset, dataset_names) {
  */
 const process_scenes_for_dataset = function (scenes, dataset_name) {
   return Promise.resolve().then(function () {
-    if (scenes.length) {
+    if (scenes && scenes.length > 0) {
       var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
       return process_scene_batch(scene_batch, dataset_name)
     }
@@ -184,37 +179,22 @@ const process_scene_batch = function (scenes, dataset_name) {
  */
 const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attempts) {
   return get_api_key.then(function (apiKey) {
+    app_helpers.write_message(
+      LOG_LEVEL_INFO,
+      'START processing scene batch of size '+scenes.length+' for dataset ',
+      dataset_name
+    )
+
     num_attempts = num_attempts || 1
-    console.log('START processing scene batch for dataset ', dataset_name, ', batch size is', scenes.length)
     const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, usgs_constants.NODE_EE, dataset_name, scenes)
-    
     return usgs_helper.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
       .catch(function(err) {
-        app_helpers.write_message(
-          LOG_LEVEL_ERROR,
-          'ERROR on downloadoptions request',
-          err.stack
-        )
+        return handle_usgs_dl_options_response_error(err, scenes, dataset_name, num_attempts)
       })
       .then(function(response) {
-        if (response) {
-          app_helpers.write_message(
-            LOG_LEVEL_INFO,
-            'COMPLETED get download options for scene batch of dataset',
-            dataset_name
-          )
-          if (response.length) {
-            return response
-          }
-          else {
-            app_helpers.write_message(
-              LOG_LEVEL_INFO,
-              'No download options available for scene batch in dataset',
-              dataset_name
-            )
-          }
-        }
+        return process_usgs_dl_options_response(response, dataset_name)
       })
+
   })
   .catch(function (err) {
     app_helpers.write_message(
@@ -224,6 +204,55 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attem
     )
   })
 
+}
+
+/**
+ * Processes the response of a usgs downloadopotions request.
+ *
+ */
+const process_usgs_dl_options_response = function (response, dataset_name) {
+  if (response) {
+    app_helpers.write_message(
+      LOG_LEVEL_INFO,
+      'COMPLETED get download options for scene batch of dataset',
+      dataset_name
+    )
+    if (response.length) {
+      return response
+    }
+    else {
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'No download options returned for scene batch in dataset',
+        dataset_name
+      )
+    }
+  }
+  else {
+    app_helpers.write_message(
+      LOG_LEVEL_ERROR,
+      'No response data from downloadoptions request'
+    )
+  }
+}
+
+/**
+ * Handle errors returned by a usgs downloadoptions request.
+ * Initiates another request if we get a simultaenous requests error
+ * (up to a certain number of attempts)
+ *
+ */
+const handle_usgs_dl_options_response_error = function (err, scenes, dataset_name, num_attempts) {
+  return Promise.resolve().then(function () {
+    app_helpers.write_message(
+      LOG_LEVEL_ERROR,
+      'ERROR on downloadoptions request',
+      err.stack
+    )
+    if (err.message.indexOf('Rate limit exceeded') >= 0 && num_attempts < MAX_DL_OPTIONS_REQUEST_ATTEMPTS) {
+      return get_dl_options_for_scene_batch(scenes, dataset_name, ++num_attempts)
+    }    
+  })
 }
 
 
@@ -335,6 +364,19 @@ const build_update_query = function (scenes, needs_ordering_text) {
           + "'"+download_available_text+"' "
           + "WHERE scene_id IN "
           + scenes
+}
+
+
+module.exports = {
+  sort_records_by_dataset,
+  process_scenes_for_dataset,
+  process_scene_batch,
+  get_dl_options_for_scene_batch,
+  process_usgs_dl_options_response,
+  handle_usgs_dl_options_response_error,
+  sort_options_by_avail,
+  update_records,
+  update_records_by_availability,
 }
 
 

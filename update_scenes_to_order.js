@@ -4,6 +4,11 @@
  * 
  */
 
+/**
+ * TODO
+ *  delete old log files
+ */
+
 // Libraries
 var yaml = require('yamljs')
 var pg = require('pg')
@@ -75,7 +80,9 @@ const main = function () {
 
 
 /**
- * Sort scene records by which dataset they belong to.
+ * Sort scene records by which dataset they belong to,
+ * since a downloadoptions request can only process scenes
+ * in the same landsatd dataset.
  * 
  * @param query_result is a list of records (scenes) from the metadata table.
  *
@@ -103,8 +110,10 @@ const sort_records_by_dataset = function(query_result) {
 /**
  * Process scenes for each landsat dataset.
  *
- * We separate scenes by dataset because the DownloadOptions API request
- * requires all scenes being checked to be of the same dataset
+ * 
+ * requires all scenes being checked to be of the same dataset.
+ * This is done in batches since the maximum number of scenes
+ * a single DownloadOptions request allows is 50000.
  *
  * @param scenes_by_dataset is the object returned by sort_records_by_dataset
  * @param dataset_names is a list containing the names of each dataset
@@ -127,8 +136,7 @@ const process_scenes = function (scenes_by_dataset, dataset_names) {
 /**
  * Process the scenes for a single landsat dataset.
  *
- * This is done in batches since the maximum number of scenes
- * a single DownloadOptions request allows is 50000.
+
  *
  * @param scenes is a list of scene ids all from the same landsat dataset
  * @param dataset_name is the name of the landsat dataset being processed

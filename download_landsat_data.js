@@ -52,12 +52,6 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-/**
- * What if we just get 5 records at at time,
- * since we're running the script several times a day anyway?
- *
- */
-
 // Initial SELECT query
 const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' LIMIT 5"
 

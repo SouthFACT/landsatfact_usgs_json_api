@@ -123,8 +123,3 @@ const start_download = function (scene_id, url) {
 
 main()
 
-/*
-pg_handler.pool_query_db(pg_pool, query_last_days_scenes, [], function(query_result) {
-  process_result(query_result)
-})
-*/

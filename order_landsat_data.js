@@ -53,7 +53,7 @@ const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, ro
 // LT50290372009342PAC02
 // LT50290342009342PAC02
 //set the SQL query to retreive scenes that need to be ordered
-const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '')"
+const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE needs_ordering = 'YES' AND (ordered = 'NO' or ordered IS NULL or ordered = '') LIMIT 100"
 
 // const scenes_for_dowloading_SQL = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE sensor = 'LANDSAT_TM' ORDER BY acquisition_date DESC OFFSET 5000 LIMIT 1000"
 

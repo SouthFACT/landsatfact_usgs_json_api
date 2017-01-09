@@ -18,6 +18,8 @@ ordered*.txt
 ordered_failed*.txt
 order_failed*.txt
 download_failed*.txt
+none.txt
+test-orders.txt
 
 # Runtime data
 pids

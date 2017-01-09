@@ -3,7 +3,7 @@
  * 
  */
 
-////////////////////// Configuration ////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 // Libraries
 var yaml = require('yamljs')
@@ -11,6 +11,7 @@ var pg = require('pg')
 var fs = require('fs')
 var winston = require('winston')
 var axios = require('axios')
+var request = require('request')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
@@ -24,7 +25,7 @@ var app_helpers = require('./lib/helpers/app_helpers.js')()
 // Constants for handling USGS API
 const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
 const MAX_SINGLE_REQUEST_ATTEMPTS = 5
-const SCENE_BATCH_LIMIT = 10000
+const SCENE_BATCH_LIMIT = 5
 const USGS_DL_PRODUCTS = ['STANDARD']
 
 // Base URL for http promise library
@@ -49,52 +50,76 @@ app_helpers.set_logfile(LOG_FILE)
 app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 
+///////////////////////////////////////////////////////////////////////////////////
 
-
-//////////////////////////////////////////////////////////////////////////////////
-
-////////////////////// Ground Control ////////////////////////////////////////////
-
-// 10 download requests at a time
-// (but really, do 5)
-// 
-// Error Codes
-// DOWNLOAD_ERROR  An error occurred while looking up downloads
-// DOWNLOAD_RATE_LIMIT The number of unattampted downloads has been exceeded
-
-// 1985 scene, needs_ordering = null
-// LT50180351985215AA006
-// LT50180381985215AA005
+/**
+ * What if we just get 5 records at at time,
+ * since we're running the script several times a day anyway?
+ *
+ */
 
 // Initial SELECT query
-const query_last_days_scenes = "SELECT * FROM vw_last_days_scenes"
+const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' LIMIT 5"
 
 const main = function() {
-  pg_handler.pool_query_db(pg_pool, query_last_days_scenes, [], function (query_result) {
-    console.log(query_result.rows)
-    //process_result(query_result)
+  if (process.argv[2]) {
+    const scenes = process.argv[2]
+    query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' AND scene_id in "
+      + app_helpers.list_array_to_sql_list(scenes)
+  }
+  pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
+    var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
+    var dataset_names = usgs_constants.LANDSAT_DATASETS
+    usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
   })
 
 }
 
-const process_result = function (query_result) {
-  if (query_result.rows && query_result.rows.length) {
-    const scenes_by_dataset = usgs_helpers.sort_records_by_dataset(query_result.rows)
-    process_scenes
-    get_download_urls(query_result.rows).then(function (download_urls) {
-
+const process_scenes_for_dataset = function (dataset_name, scenes) {
+  return api_key_promise.then(function (apiKey) {
+    const scene_id = scenes.pop()
+    return process_scene(dataset_name, scene_id, apiKey).then(function() {
+      if (scenes.length) {
+        return process_scenes_for_dataset(dataset_name, scenes)
+      }
     })
-  }
-  else {
-    app_helpers.write_message(LOG_LEVEL_ERROR, 'ERROR view query for last days scenes returned no records')
-  }
+  }).catch(function (err) {
+    app_helpers.write_message(
+      LOG_LEVEL_ERROR,
+      'ERROR retrieving api key',
+      err.stack
+    )
+  })
 }
 
-const get_download_urls = function (scenes) {
-  const request_body = usgs_function.usgsapi_download(apiKey, usgs_constants.NODE_EE, datasetName, products, entityIds)
-  return usgs_helpers.get_usgsapi_response
+const process_scene = function (dataset_name, scene_id, apiKey) {
+  const request_body = usgs_functions.usgsapi_download(
+    apiKey,
+    usgs_constants.NODE_EE,
+    dataset_name,
+    USGS_DL_PRODUCTS,
+    [scene_id]
+  )
+  return usgs_helpers.get_usgsapi_response(
+    USGS_DL_RESPONSE_CODE,
+    request_body
+  ).catch(function (err) {
+    app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
+  }).then(function (response) {
+    start_download(scene_id, response[0])
+  })
+
 }
 
+// TODO handle various http codes
+const start_download = function (scene_id, url) {
+  request
+    .get(url)
+    .on('error', function (err) {
+      app_helpers.write_message(LOG_LEVEL_ERROR, err)
+    })
+    .pipe(fs.createWriteStream('./downloads/'+scene_id+'.tar.gz'))
+}
 
 main()
 

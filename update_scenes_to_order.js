@@ -99,9 +99,9 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
       return process_scene_batch(scene_batch, dataset_name)
     }
   }).then(function () {
-    var next_scene_batch = scenes.slice(SCENE_BATCH_LIMIT)
-    if (next_scene_batch.length) {
-      return process_scenes_for_dataset(next_scene_batch, dataset_name)
+    var scenes = scenes.slice(SCENE_BATCH_LIMIT)
+    if (scenes.length) {
+      return process_scenes_for_dataset(scenes, dataset_name)
     }
     else {
       app_helpers.write_message(

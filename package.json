@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test-api": "mocha -t 10000 ./test/usgs_api_calls.js",
-    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js",
+    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js"
   },
   "author": "",
   "license": "ISC",

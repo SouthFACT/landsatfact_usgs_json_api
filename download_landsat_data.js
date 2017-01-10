@@ -25,8 +25,9 @@ var app_helpers = require('./lib/helpers/app_helpers.js')()
 // Constants for handling USGS API
 const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
 const MAX_SINGLE_REQUEST_ATTEMPTS = 5
-const SCENE_BATCH_LIMIT = 5
+const DOWNLOAD_RATE_LIMIT = 5
 const USGS_DL_PRODUCTS = ['STANDARD']
+const DL_DIR = yaml.load('./lib/usgs_api/config.yaml').download_directory
 
 // Base URL for http promise library
 axios.defaults.baseURL = usgs_constants.USGS_URL
@@ -52,8 +53,23 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * TODO
+ * - more logging
+ * - handle http codes
+ * - add fields to vw_last_days_scenes
+ *
+ */
+
+
+var active_downloads = 0
+
 // Initial SELECT query
-const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' LIMIT 5"
+const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' LIMIT 11"
+
+const last_days_scenes = "SELECT * FROM vw_last_days_scenes WHERE "
+  + "needs_downloading = 'YES' AND "
+  + "download_available = 'YES'"
 
 const main = function() {
   if (process.argv[2]) {
@@ -70,20 +86,29 @@ const main = function() {
 }
 
 const process_scenes_for_dataset = function (dataset_name, scenes) {
-  return api_key_promise.then(function (apiKey) {
-    const scene_id = scenes.pop()
-    return process_scene(dataset_name, scene_id, apiKey).then(function() {
-      if (scenes.length) {
-        return process_scenes_for_dataset(dataset_name, scenes)
-      }
-    })
-  }).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      'ERROR retrieving api key',
-      err.stack
-    )
-  })
+  if (scenes && scenes.length) {
+    return api_key_promise.then(function (apiKey) {
+      const scene_id = scenes.pop()
+      return process_scene(dataset_name, scene_id, apiKey).then(function() {
+        if (active_downloads <= DOWNLOAD_RATE_LIMIT) {
+          return process_scenes_for_dataset(dataset_name, scenes)
+        }
+        else {
+          app_helpers.write_message(
+            LOG_LEVEL_INFO,
+            'Rate limit for concurrent downloads reached',
+            DOWNLOAD_RATE_LIMIT
+          )
+        }
+      })
+    }).catch(function (err) {
+      app_helpers.write_message(
+        LOG_LEVEL_ERROR,
+        'ERROR retrieving api key',
+        err.stack
+      )
+    })    
+  }
 }
 
 const process_scene = function (dataset_name, scene_id, apiKey) {
@@ -100,19 +125,41 @@ const process_scene = function (dataset_name, scene_id, apiKey) {
   ).catch(function (err) {
     app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
   }).then(function (response) {
-    start_download(scene_id, response[0])
+    if (response && response.length) {
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'START downloading ',
+        scene_id + '.tar.gz'
+      )
+      start_download(scene_id, response[0])
+    }
   })
 
 }
 
-// TODO handle various http codes
 const start_download = function (scene_id, url) {
+  active_downloads += 1
+  const filename = make_filename(scene_id)
+  const path = DL_DIR + filename
   request
     .get(url)
     .on('error', function (err) {
       app_helpers.write_message(LOG_LEVEL_ERROR, err)
     })
     .pipe(fs.createWriteStream('./downloads/'+scene_id+'.tar.gz'))
+    .on('finish', function () {
+      active_downloads -= 1
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'DONE downloading',
+        filename
+      )
+    })
+
+}
+
+const make_filename = function (scene_id) {
+  return scene_id + '.tar.gz'
 }
 
 main()

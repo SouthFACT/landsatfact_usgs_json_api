@@ -233,8 +233,12 @@ const update_record = function (scene_id) {
       + "needs_downloading = 'NO', "
       + "downloaded = 'YES', "
       + "needs_processing = 'YES'"
-
-  pg_handler.pool_query_db(pg_pool, query_text, [])
+  pg_handler.pool_query_db(pg_pool, query_text, [], function () {
+    app_helpers.write_message(
+      LOG_LEVEL_INFO,
+      'Updated database record for scene ' + scene_id
+    )
+  })
 }
 
 const make_filename = function (scene_id) {

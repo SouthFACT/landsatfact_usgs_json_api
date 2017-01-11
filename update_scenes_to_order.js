@@ -28,7 +28,6 @@ var app_helpers = require('./lib/helpers/app_helpers.js')()
 // Constants for handling USGS API
 const DL_OPTION_DOWNLOAD_CODE = "STANDARD"
 const DL_OPTIONS_USGS_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('downloadoptions')
-const MAX_DL_OPTIONS_REQUEST_ATTEMPTS = 5
 
 // Maximum scene list size for a single downloadoptions request
 const SCENE_BATCH_LIMIT = 10000
@@ -56,7 +55,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // Initial SELECT query
 const query_text = "SELECT * FROM landsat_metadata "
-  + "WHERE needs_ordering IS null "
+  + "WHERE needs_ordering = null "
     + "OR needs_ordering = 'YES'"
 
 
@@ -94,13 +93,13 @@ const main = function () {
  */
 const process_scenes_for_dataset = function (dataset_name, scenes) {
   return Promise.resolve().then(function () {
-    if (scenes && scenes.length > 0) {
+    if (scenes && scenes.length) {
       var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
       return process_scene_batch(scene_batch, dataset_name)
     }
   }).then(function () {
-    var scenes = scenes.slice(SCENE_BATCH_LIMIT)
-    if (scenes.length) {
+    if (scenes && scenes.length) {
+      var scenes = scenes.slice(SCENE_BATCH_LIMIT)
       return process_scenes_for_dataset(scenes, dataset_name)
     }
     else {
@@ -112,6 +111,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
     }
   })
 }
+
 
 const process_scene_batch = function (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
@@ -195,16 +195,11 @@ const process_usgs_dl_options_response = function (response, dataset_name) {
  *
  */
 const handle_usgs_dl_options_response_error = function (err, scenes, dataset_name, num_attempts) {
-  return Promise.resolve().then(function () {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      'ERROR on downloadoptions request',
-      err.stack
-    )
-    if (err.message.indexOf('Rate limit exceeded') >= 0 && num_attempts < MAX_DL_OPTIONS_REQUEST_ATTEMPTS) {
-      return get_dl_options_for_scene_batch(scenes, dataset_name, ++num_attempts)
-    }    
-  })
+  app_helpers.write_message(
+    LOG_LEVEL_ERROR,
+    'ERROR on downloadoptions request',
+    err.stack
+  )
 }
 
 

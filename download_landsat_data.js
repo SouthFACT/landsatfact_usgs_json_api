@@ -153,6 +153,10 @@ const start_download = function (scene_id, url) {
   const filename = make_filename(scene_id)
   const path = DL_DIR + filename
   if (fs.existsSync(path)) {
+    app_helpers.write_message(
+      LOG_LEVEL_INFO,
+      'File already exists. Deleting now.'
+    )
     fs.unlinkSync(path)
   }
   const file = fs.createWriteStream(path)

@@ -8,7 +8,7 @@
  *
  */
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
 
 // Libraries
 var yaml = require('yamljs')
@@ -29,12 +29,6 @@ var app_helpers = require('./lib/helpers/app_helpers.js')()
 
 // Settings for USGS
 const CONFIG_YAML = yaml.load('./lib/usgs_api/config.yaml')
-
-// Constants for handling USGS API
-const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
-const CONCURRENT_DL_LIMIT = 5
-const USGS_DL_PRODUCTS = ['STANDARD']
-const DL_DIR = CONFIG_YAML.download_directory
 
 // Base URL for http promise library
 axios.defaults.baseURL = usgs_constants.USGS_URL
@@ -65,6 +59,12 @@ const custom_request_query_template = ""
   + "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering = 'NO' "
   + "AND scene_id in "
+
+// Constants for handling the USGS API
+const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
+const CONCURRENT_DL_LIMIT = 5
+const USGS_DL_PRODUCTS = ['STANDARD']
+const DL_DIR = CONFIG_YAML.download_directory
 
 // The number of concurrent downloads in progress
 var active_downloads = 0

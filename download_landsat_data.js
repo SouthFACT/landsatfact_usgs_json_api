@@ -55,37 +55,42 @@ app_helpers.set_logger_level('debug')
 app_helpers.set_logfile(LOG_FILE)
 app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
+// SQL queries
+const last_days_scenes_query_text = "SELECT * FROM vw_last_days_scenes "
+  + "LIMIT 10"
+
+var custom_request_query_template = ""
+  + "SELECT * FROM landsat_metadata "
+  + "WHERE needs_ordering = 'NO' "
+  + "AND scene_id in "
+
+// The number of concurrent downloads in progress
+var active_downloads = 0
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-/**
- * TODO
- * - add necessary columns to vs_last_days_scenes
- *   (needs_ordering, download_available, etc)
- */
-
-
-var active_downloads = 0
-
-// Initial SELECT query
-const query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' LIMIT 10"
-
-const last_days_scenes = "SELECT * FROM vw_last_days_scenes WHERE "
-  + "needs_ordering = 'NO' AND "
-  + "download_available = 'YES'"
 
 const main = function() {
-  if (process.argv[2]) {
-    const scenes = process.argv.splice(2)
-    query_text = "SELECT * FROM landsat_metadata WHERE needs_ordering = 'NO' AND scene_id in "
-      + app_helpers.list_array_to_sql_list(scenes)
-  }
+  var query_text = make_initial_query()
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
     var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
-    var dataset_names = usgs_constants.LANDSAT_DATASETS
-    usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
+    usgs_helpers.process_scenes_by_dataset(
+      usgs_constants.LANDSAT_DATASETS,
+      scenes_by_dataset,
+      process_scenes_for_dataset
+    )
   })
 
+}
+
+const make_initial_query = function () {
+  if (process.argv[2]) {
+    const scenes = process.argv.slice(2)
+    return custom_request_query_template + app_helpers.list_array_to_sql_list(scenes)
+  }
+  else {
+    return last_days_scenes_query_text
+  }
 }
 
 const process_scenes_for_dataset = function (dataset_name, scenes) {
@@ -114,7 +119,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
   }
 }
 
-const process_scene = function (dataset_name, scene_id, apiKey, num_attempts) {
+const process_scene = function (dataset_name, scene_id, apiKey) {
   const request_body = usgs_functions.usgsapi_download(
     apiKey,
     usgs_constants.NODE_EE,
@@ -122,8 +127,6 @@ const process_scene = function (dataset_name, scene_id, apiKey, num_attempts) {
     USGS_DL_PRODUCTS,
     [scene_id]
   )
-  num_attempts = num_attempts || 1
-  
   return usgs_helpers.get_usgsapi_response(
     USGS_DL_RESPONSE_CODE,
     request_body
@@ -208,7 +211,9 @@ const handle_response = function (response, scene_id) {
 }
 
 const update_record = function (scene_id) {
-  const query_text = "UPDATE * FROM landsat_metadata WHERE scene_id in ("+scene_id+") "
+  const query_text = ""
+    + "UPDATE * FROM landsat_metadata "
+    + "WHERE scene_id in ("+scene_id+") "
     + "SET needs_ordering = 'NO', "
     + "ordered = 'YES', "
     + "download_available = 'YES', "

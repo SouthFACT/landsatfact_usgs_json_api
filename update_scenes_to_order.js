@@ -84,9 +84,7 @@ const main = function () {
 
 /**
  * Process the scenes for a single landsat dataset.
- *
-
- *
+ * 
  * @param scenes is a list of scene ids all from the same landsat dataset
  * @param dataset_name is the name of the landsat dataset being processed
  *
@@ -129,7 +127,7 @@ const process_scene_batch = function (scenes, dataset_name) {
  * 
  * @return the response of the DownloadOptions API call to USGS.
  */
-const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attempts) {
+const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
     app_helpers.write_message(
       LOG_LEVEL_INFO,
@@ -137,7 +135,6 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attem
       dataset_name
     )
 
-    num_attempts = num_attempts || 1
     const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, usgs_constants.NODE_EE, dataset_name, scenes)
     return usgs_helpers.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
       .catch(function(err) {
@@ -252,7 +249,7 @@ const sort_options_by_avail = function (response) {
         app_helpers.write_message(
           LOG_LEVEL_ERROR, 
           'ERROR no download option for '
-        );
+        )
 
       }
     })
@@ -293,7 +290,7 @@ const update_records_by_availability = function (scenes, field_text) {
       LOG_LEVEL_ERROR, 
       'ERROR updating scene records',
       err.stack
-    );
+    )
 
   })
 }

@@ -4,7 +4,8 @@
  * Command-line arguments are interpreted as scene ids.
  * If arguments are provided, then only download those scenes.
  * 
- * If no arguments are provided, download available scenes 10 at a time.
+ * If no arguments are provided, download 10 scenes from
+ * the last days scenes sql view.
  *
  */
 
@@ -62,7 +63,7 @@ const custom_request_query_template = ""
 
 // Constants for handling the USGS API
 const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
-const CONCURRENT_DL_LIMIT = 5
+const CONCURRENT_DL_LIMIT = 10
 const USGS_DL_PRODUCTS = ['STANDARD']
 const DL_DIR = CONFIG_YAML.download_directory
 

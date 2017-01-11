@@ -27,12 +27,14 @@ var usgs_helpers = require("./lib/usgs_api/usgs_helpers.js")
 var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
+// Settings for USGS
+const CONFIG_YAML = yaml.load('./lib/usgs_api/config.yaml')
+
 // Constants for handling USGS API
 const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
 const CONCURRENT_DL_LIMIT = 5
-const DL_RETRY_LIMIT = 5
 const USGS_DL_PRODUCTS = ['STANDARD']
-const DL_DIR = yaml.load('./lib/usgs_api/config.yaml').download_directory
+const DL_DIR = CONFIG_YAML.download_directory
 
 // Base URL for http promise library
 axios.defaults.baseURL = usgs_constants.USGS_URL
@@ -59,7 +61,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 const last_days_scenes_query_text = "SELECT * FROM vw_last_days_scenes "
   + "LIMIT 10"
 
-var custom_request_query_template = ""
+const custom_request_query_template = ""
   + "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering = 'NO' "
   + "AND scene_id in "
@@ -71,10 +73,11 @@ var active_downloads = 0
 
 const main = function() {
   var query_text = make_initial_query()
+  var dataset_names = usgs_constants.LANDSAT_DATASETS
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
     var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
     usgs_helpers.process_scenes_by_dataset(
-      usgs_constants.LANDSAT_DATASETS,
+      dataset_names,
       scenes_by_dataset,
       process_scenes_for_dataset
     )
@@ -92,34 +95,35 @@ const make_initial_query = function () {
   }
 }
 
+
 /**
  * Process scenes belonging to the same landsat dataset.
  * Limit concurrent downloads so we don't overload the USGS server.
  *
  */
 const process_scenes_for_dataset = function (dataset_name, scenes) {
-  if (scenes && scenes.length) {
+  if (scenes && scenes.length && active_downloads < CONCURRENT_DL_LIMIT) {
     return api_key_promise.then(function (apiKey) {
       const scene_id = scenes.pop()
-      return process_scene(dataset_name, scene_id, apiKey).then(function() {
-        if (active_downloads < CONCURRENT_DL_LIMIT) {
-          return process_scenes_for_dataset(dataset_name, scenes)
-        }
-        else {
-          app_helpers.write_message(
-            LOG_LEVEL_INFO,
-            'Rate limit for attempted downloads reached',
-            CONCURRENT_DL_LIMIT
-          )
-        }
-      })
+      return process_scene(dataset_name, scene_id, apiKey)
     }).catch(function (err) {
       app_helpers.write_message(
         LOG_LEVEL_ERROR,
         'ERROR retrieving api key',
         err.stack
       )
-    })    
+    }).then(function() {
+      if (active_downloads < CONCURRENT_DL_LIMIT) {
+        return process_scenes_for_dataset(dataset_name, scenes)
+      }
+      else {
+        app_helpers.write_message(
+          LOG_LEVEL_INFO,
+          'Rate limit for attempted downloads reached',
+          CONCURRENT_DL_LIMIT
+        )
+      }
+    })
   }
 }
 
@@ -166,38 +170,32 @@ const start_download = function (scene_id, url) {
   if (fs.existsSync(path)) {
     app_helpers.write_message(
       LOG_LEVEL_INFO,
-      'File already exists. Deleting now.'
+      'File already exists. Deleting old file.'
     )
     fs.unlinkSync(path)
   }
   const file = fs.createWriteStream(path)
-  return Promise.resolve().then(function () {
-    active_downloads += 1
-    request
-      .get(url)
-      .on('error', function (err) {
-        app_helpers.write_message(LOG_LEVEL_ERROR, err)
-      })
-      .on('response', function (response) {
-        handle_response(response, scene_id)
-      })
-      .pipe(file)
-      .on('finish', function () {
-        active_downloads -= 1
-        update_record(scene_id)
-        app_helpers.write_message(
-          LOG_LEVEL_INFO,
-          'DONE downloading',
-          filename
-        )
-      })
-  }).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      err.stack
-    )
-  })
+  request
+    .get(url)
+    .on('error', function (err) {
+      app_helpers.write_message(LOG_LEVEL_ERROR, err)
+    })
+    .on('response', function (response) {
+      handle_response(response, scene_id)
+    })
+    .pipe(file)
+    .on('finish', function () {
+      active_downloads -= 1
+      update_record(scene_id)
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'DONE downloading',
+        filename
+      )
+    })
+  return Promise.resolve(active_downloads += 1)
 }
+
 
 
 /**
@@ -209,12 +207,13 @@ const start_download = function (scene_id, url) {
  */
 const handle_response = function (response, scene_id) {
   if (response.statusCode > 200) {
-    const err = new Error('USGS responded with status code '
+    app_helpers.write_message(
+      LOG_LEVEL_ERROR,
+      'USGS responded with status code '
       + response.statusCode
       + ' while attempting to download archive for '
       + scene_id
     )
-    return Promise.reject(err)
   }
 }
 

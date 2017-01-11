@@ -4,6 +4,11 @@
  * 
  */
 
+/**
+ * TODO
+ *  delete old log files
+ */
+
 // Libraries
 var yaml = require('yamljs')
 var pg = require('pg')
@@ -16,14 +21,13 @@ Promise.longStackTraces()
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
-var usgs_helper = require("./lib/usgs_api/usgs_helpers.js")
+var usgs_helpers = require("./lib/usgs_api/usgs_helpers.js")
 var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
 // Constants for handling USGS API
 const DL_OPTION_DOWNLOAD_CODE = "STANDARD"
-const DL_OPTIONS_USGS_RESPONSE_CODE = usgs_helper.get_usgs_response_code('downloadoptions')
-const MAX_DL_OPTIONS_REQUEST_ATTEMPTS = 5
+const DL_OPTIONS_USGS_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('downloadoptions')
 
 // Maximum scene list size for a single downloadoptions request
 const SCENE_BATCH_LIMIT = 10000
@@ -32,7 +36,7 @@ const SCENE_BATCH_LIMIT = 10000
 axios.defaults.baseURL = usgs_constants.USGS_URL
 
 // USGS API key promise
-var get_api_key = usgs_helper.get_api_key()
+var get_api_key = usgs_helpers.get_api_key()
 
 // Database connection
 const db_config = yaml.load("./lib/postgres/config.yaml")
@@ -51,7 +55,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // Initial SELECT query
 const query_text = "SELECT * FROM landsat_metadata "
-  + "WHERE needs_ordering IS null "
+  + "WHERE needs_ordering = null "
     + "OR needs_ordering = 'YES'"
 
 
@@ -65,85 +69,36 @@ const query_text = "SELECT * FROM landsat_metadata "
 const main = function () {
 
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
-    sort_records_by_dataset(query_result).then(function(scenes_by_dataset) {
+    if (query_result.rows && query_result.rows.length) {
+      const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
       var dataset_names = Object.keys(scenes_by_dataset)
-      process_scenes(scenes_by_dataset, dataset_names)
-    })
-  })
-
-}
-
-
-/**
- * Sort scene records by which dataset they belong to.
- * 
- * @param query_result is a list of records (scenes) from the metadata table.
- *
- * @return an object: keys are dataset names, values are lists of scene ids.
- *
- */
-const sort_records_by_dataset = function(query_result) {
-  return Promise.resolve().then(function() {
-    var scenes_by_dataset = {
-      LANDSAT_8: [],
-      LANDSAT_ETM_SLC_OFF: [],
-      LANDSAT_ETM: [],
-      LANDSAT_TM: []
+      usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
     }
-    query_result.rows.forEach(function(row) {
-      const row_dataset = usgs_helper.get_datasetName(row.scene_id, row.acquisition_date)
-      scenes_by_dataset[row_dataset].push(row.scene_id)
-    })
-    app_helpers.write_message(LOG_LEVEL_INFO, 'COMPLETED sorting rows by dataset', '')
-    return scenes_by_dataset
-  })
-}
-
-
-/**
- * Process scenes for each landsat dataset.
- *
- * We separate scenes by dataset because the DownloadOptions API request
- * requires all scenes being checked to be of the same dataset
- *
- * @param scenes_by_dataset is the object returned by sort_records_by_dataset
- * @param dataset_names is a list containing the names of each dataset
- *
- */
-const process_scenes = function (scenes_by_dataset, dataset_names) {
-  return Promise.resolve().then(function () {
-    const dataset_name = dataset_names.pop()
-    const dataset_scenes = scenes_by_dataset[dataset_name]
-    return process_scenes_for_dataset(dataset_scenes, dataset_name)
-  }).then(function () {
-    if (dataset_names.length) {
-      return process_scenes(scenes_by_dataset, dataset_names)
-    } else {
-      app_helpers.write_message(LOG_LEVEL_INFO, 'COMPLETED processing all scenes', '')
+    else {
+      app_helpers.write_message(LOG_LEVEL_INFO, 'SELECT query returned no rows to process')
     }
   })
+
 }
+
 
 /**
  * Process the scenes for a single landsat dataset.
- *
- * This is done in batches since the maximum number of scenes
- * a single DownloadOptions request allows is 50000.
- *
+ * 
  * @param scenes is a list of scene ids all from the same landsat dataset
  * @param dataset_name is the name of the landsat dataset being processed
  *
  */
-const process_scenes_for_dataset = function (scenes, dataset_name) {
+const process_scenes_for_dataset = function (dataset_name, scenes) {
   return Promise.resolve().then(function () {
-    if (scenes && scenes.length > 0) {
+    if (scenes && scenes.length) {
       var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
       return process_scene_batch(scene_batch, dataset_name)
     }
   }).then(function () {
-    var next_scene_batch = scenes.slice(SCENE_BATCH_LIMIT)
-    if (next_scene_batch.length) {
-      return process_scenes_for_dataset(next_scene_batch, dataset_name)
+    if (scenes && scenes.length) {
+      var scenes = scenes.slice(SCENE_BATCH_LIMIT)
+      return process_scenes_for_dataset(scenes, dataset_name)
     }
     else {
       app_helpers.write_message(
@@ -154,6 +109,7 @@ const process_scenes_for_dataset = function (scenes, dataset_name) {
     }
   })
 }
+
 
 const process_scene_batch = function (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
@@ -171,7 +127,7 @@ const process_scene_batch = function (scenes, dataset_name) {
  * 
  * @return the response of the DownloadOptions API call to USGS.
  */
-const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attempts) {
+const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
     app_helpers.write_message(
       LOG_LEVEL_INFO,
@@ -179,9 +135,8 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name, num_attem
       dataset_name
     )
 
-    num_attempts = num_attempts || 1
     const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, usgs_constants.NODE_EE, dataset_name, scenes)
-    return usgs_helper.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
+    return usgs_helpers.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
       .catch(function(err) {
         return handle_usgs_dl_options_response_error(err, scenes, dataset_name, num_attempts)
       })
@@ -237,16 +192,11 @@ const process_usgs_dl_options_response = function (response, dataset_name) {
  *
  */
 const handle_usgs_dl_options_response_error = function (err, scenes, dataset_name, num_attempts) {
-  return Promise.resolve().then(function () {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      'ERROR on downloadoptions request',
-      err.stack
-    )
-    if (err.message.indexOf('Rate limit exceeded') >= 0 && num_attempts < MAX_DL_OPTIONS_REQUEST_ATTEMPTS) {
-      return get_dl_options_for_scene_batch(scenes, dataset_name, ++num_attempts)
-    }    
-  })
+  app_helpers.write_message(
+    LOG_LEVEL_ERROR,
+    'ERROR on downloadoptions request',
+    err.stack
+  )
 }
 
 
@@ -299,7 +249,7 @@ const sort_options_by_avail = function (response) {
         app_helpers.write_message(
           LOG_LEVEL_ERROR, 
           'ERROR no download option for '
-        );
+        )
 
       }
     })
@@ -340,7 +290,7 @@ const update_records_by_availability = function (scenes, field_text) {
       LOG_LEVEL_ERROR, 
       'ERROR updating scene records',
       err.stack
-    );
+    )
 
   })
 }
@@ -358,19 +308,6 @@ const build_update_query = function (scenes, needs_ordering_text) {
           + "'"+download_available_text+"' "
           + "WHERE scene_id IN "
           + scenes
-}
-
-
-module.exports = {
-  sort_records_by_dataset,
-  process_scenes_for_dataset,
-  process_scene_batch,
-  get_dl_options_for_scene_batch,
-  process_usgs_dl_options_response,
-  handle_usgs_dl_options_response_error,
-  sort_options_by_avail,
-  update_records,
-  update_records_by_availability,
 }
 
 

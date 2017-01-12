@@ -48,7 +48,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 const query_text = "SELECT * FROM landsat_metadata WHERE "
   + "needs_ordering = 'YES' "
   + "AND (ordered = 'NO' or ordered IS NULL or ordered = '') "
-  + "LIMIT 5"
+  + "LIMIT 100"
 
 // Constants for handling the USGS API
 const USGS_DL_PRODUCTS = ['STANDARD']

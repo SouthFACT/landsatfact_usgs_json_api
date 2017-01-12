@@ -3,7 +3,7 @@
  *
  * Command-line arguments are interpreted as scene ids.
  * If arguments are provided, then only download those scenes.
- * 
+ *
  * If no arguments are provided, download 10 scenes from
  * the last days scenes sql view.
  *
@@ -230,7 +230,7 @@ const update_record = function (scene_id) {
       + "needs_downloading = 'NO', "
       + "downloaded = 'YES', "
       + "needs_processing = 'YES' "
-      + "WHERE scene_id = " + scene_id
+      + "WHERE scene_id = '" + scene_id + "'"
   pg_handler.pool_query_db(pg_pool, query_text, [], function () {
     app_helpers.write_message(
       LOG_LEVEL_INFO,

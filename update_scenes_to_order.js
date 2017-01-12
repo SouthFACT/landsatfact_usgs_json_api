@@ -4,11 +4,6 @@
  * 
  */
 
-/**
- * TODO
- *  delete old log files
- */
-
 // Libraries
 var yaml = require('yamljs')
 var pg = require('pg')
@@ -46,8 +41,7 @@ var pg_pool = pg_handler.pg_pool(db_config)
 const TODAY_DATE = app_helpers.get_date_string()
 const LOG_LEVEL_INFO = 'info'
 const LOG_LEVEL_ERROR = 'error'
-const LOG_FILE = 'update_scenes_to_order_' + TODAY_DATE
-
+const LOG_FILE = 'update_scenes_to_order'
 app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
 app_helpers.set_logger_level('debug')
 app_helpers.set_logfile(LOG_FILE)
@@ -113,7 +107,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
 
 const process_scene_batch = function (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
-    if (response) {
+    if (response && response.length) {
       return sort_options_by_avail(response).then(function(scenes_by_avail) {
         return update_records(scenes_by_avail)
       })

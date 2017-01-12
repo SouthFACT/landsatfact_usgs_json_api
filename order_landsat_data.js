@@ -145,7 +145,7 @@ const process_scene_batch = function (dataset_name, scene_batch, apiKey) {
 }
 
 /**
- * Get orderable level 1 products for a batch of scens.
+ * Get orderable level 1 products for a batch of scenes.
  *
  */
 const get_order_products = function (dataset_name, scene_batch, apiKey) {

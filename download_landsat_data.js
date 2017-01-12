@@ -225,15 +225,12 @@ const handle_response = function (response, scene_id) {
  */
 const update_record = function (scene_id) {
   const query_text = ""
-    + "UPDATE * FROM landsat_metadata "
-    + "WHERE scene_id in ("+scene_id+") "
+    + "UPDATE landsat_metadata "
     + "SET "
-      + "needs_ordering = 'NO', "
-      + "ordered = 'YES', "
-      + "download_available = 'YES', "
       + "needs_downloading = 'NO', "
       + "downloaded = 'YES', "
-      + "needs_processing = 'YES'"
+      + "needs_processing = 'YES' "
+      + "WHERE scene_id = " + scene_id
   pg_handler.pool_query_db(pg_pool, query_text, [], function () {
     app_helpers.write_message(
       LOG_LEVEL_INFO,

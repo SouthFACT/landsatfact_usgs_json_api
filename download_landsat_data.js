@@ -42,7 +42,6 @@ const db_config = yaml.load("./lib/postgres/config.yaml")
 var pg_pool = pg_handler.pg_pool(db_config)
 
 // Logging
-const TODAY_DATE = app_helpers.get_date_string()
 const LOG_LEVEL_INFO = 'info'
 const LOG_LEVEL_ERROR = 'error'
 const LOG_FILE = 'download_landsat_data'
@@ -74,7 +73,7 @@ var active_downloads = 0
 
 const main = function() {
   var query_text = make_initial_query()
-  var dataset_names = usgs_constants.LANDSAT_DATASETS
+  var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
     var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
     usgs_helpers.process_scenes_by_dataset(

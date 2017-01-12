@@ -47,7 +47,7 @@ app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 const query_text = "SELECT * FROM landsat_metadata WHERE "
   + "needs_ordering = 'YES' "
   + "AND (ordered = 'NO' or ordered IS NULL or ordered = '') "
-  + "LIMIT 20"
+  + "LIMIT 5"
 
 // Constants for handling the USGS API
 const USGS_DL_PRODUCTS = ['STANDARD']
@@ -61,7 +61,7 @@ const USGS_SUBMIT_ORDER_CODE = usgs_helpers.get_usgs_response_code(
   'submitorder'
 )
 
-const GET_ORDER_PRODUCTS_SCENE_BATCH_LIMIT = 1000
+const GET_ORDER_PRODUCTS_SCENE_BATCH_LIMIT = 100
 
 // The number of concurrent downloads in progress
 var active_downloads = 0
@@ -120,7 +120,8 @@ const process_scene_batch = function (dataset_name, scene_batch, apiKey) {
         response,
         apiKey
       ).then(function () {
-        return submit_order()
+        return submit_order(apiKey).then(function () {
+        }
       })
     }
     else {
@@ -179,8 +180,7 @@ const filter_order_products = function (response) {
 const update_order_scenes = function (dataset_name, order_products, apiKey) {
   if (order_products && order_products.length) {
     const scene_order = order_products.pop()
-    console.log(scene_order)
-    const ordering_id = scene_order.availableProducts[0].orderingId
+    const ordering_id = scene_order.orderingId
     const product_code = scene_order.availableProducts[0].productCode
     const option = 'None'
     const output_media = 'DWNLD'
@@ -204,8 +204,11 @@ const update_order_scenes = function (dataset_name, order_products, apiKey) {
   }
 }
 
-const submit_order = function () {
-  const request_body = usgs_functions.usgsapi_submitorder(apiKey, node)
+const submit_order = function (apiKey) {
+  const request_body = usgs_functions.usgsapi_submitorder(
+    apiKey,
+    usgs_constants.NODE_EE
+  )
   return usgs_helpers.get_usgsapi_response(
     USGS_SUBMIT_ORDER_CODE,
     request_body
@@ -225,5 +228,6 @@ const submit_order = function () {
     }
   })
 }
+
 
 main()

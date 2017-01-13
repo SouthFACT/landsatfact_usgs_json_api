@@ -71,14 +71,16 @@ var scenes_ordered = []
 const main = function () {
   var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
-    var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(
-      query_result.rows
-    )
-    usgs_helpers.process_scenes_by_dataset(
-      dataset_names,
-      scenes_by_dataset,
-      process_scenes_for_dataset
-    )
+    if (query_result.rows && query_result.rows.length) {
+      var scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(
+        query_result.rows
+      )
+      usgs_helpers.process_scenes_by_dataset(
+        dataset_names,
+        scenes_by_dataset,
+        process_scenes_for_dataset
+      )      
+    }
   })
 }
 

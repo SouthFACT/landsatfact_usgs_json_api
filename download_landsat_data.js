@@ -17,6 +17,7 @@ var pg = require('pg')
 var fs = require('fs')
 var winston = require('winston')
 var axios = require('axios')
+var request = require('request')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 

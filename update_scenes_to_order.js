@@ -65,11 +65,14 @@ const main = function () {
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     if (query_result.rows && query_result.rows.length) {
       const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
-      var dataset_names = Object.keys(scenes_by_dataset)
+      var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
       usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
     }
     else {
-      app_helpers.write_message(LOG_LEVEL_INFO, 'SELECT query returned no rows to process')
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'SELECT query returned no rows to process.'
+      )
     }
   })
 

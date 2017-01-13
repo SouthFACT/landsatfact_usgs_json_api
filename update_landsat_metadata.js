@@ -191,8 +191,8 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
 };
 
 //fix data_type_l1
-//  the data_type_l1 metadata field has too many chartacters that are not used byt the
-//  Landsat fact datbase.  in these cases we must make sure the chartacter limit of 5
+//  the data_type_l1 metadata field has too many chartacters that are not used by the
+//  Landsat fact database.  in these cases we must make sure the chartacter limit of 5
 //  characters will not fail to insert into the database so we strip out characters that are not needed.
 //  from visual inspeaction this happens when the + charater has text before it.  any charaters
 //    before the + character is not needed for our use case so we strip it out.

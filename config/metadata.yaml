@@ -14,7 +14,7 @@ metadata_datasets:
     fieldValues:
       - value: 33
       - value: 43
-  metdataFields:
+  metadataFields:
   - field:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id
@@ -81,7 +81,7 @@ metadata_datasets:
     fieldValues:
       - value: 33
       - value: 43
-  metdataFields:
+  metadataFields:
   - field:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id
@@ -148,7 +148,7 @@ metadata_datasets:
     fieldValues:
       - value: 33
       - value: 43
-  metdataFields:
+  metadataFields:
   - field:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id
@@ -215,7 +215,7 @@ metadata_datasets:
     fieldValues:
       - value: 33
       - value: 43
-  metdataFields:
+  metadataFields:
   - field:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id

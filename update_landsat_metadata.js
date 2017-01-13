@@ -88,7 +88,7 @@ var get_start_date = function(days_ago){
 
 // needs an json object of fields to limit another json object of metadata fields returned from
 //  the USGS api
-var get_child_filters = function(fields_json, datasetfields){
+var get_child_filters = function(fields_json, dataset_fields){
 
   // instiate a blank array
   var array = []
@@ -101,9 +101,9 @@ var get_child_filters = function(fields_json, datasetfields){
 
     const limit_keys = ['name']
 
-    //limit json in datasetfields (from USGS api) based on fieldName in CONFIG_YAML
+    //limit json in dataset_fields (from USGS api) based on fieldName in CONFIG_YAML
     //   this will allow the usgs API to dynamicall figure out the currect fieldid
-    const limited = limit_json(datasetfields, limit_keys, fieldName)
+    const limited = limit_json(dataset_fields, limit_keys, fieldName)
 
     //get the id of the field from the api
     const fieldId = limited[0].fieldId
@@ -287,85 +287,93 @@ const process_metadata_by_dataset = function (datasets) {
   })
 }
 
+const get_dataset_fields_for_dataset = function (dataset) {
+  const request_body = usgs_functions.usgsapi_datasetfields(apiKey, usgs_constants.NODE_EE, datasetName)
+  logger.log('debug', 'dataset fields body' , request_body )
+
+  const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers.get_usgs_response_code('datasetfields')
+
+  return usgs_helpers.get_usgsapi_response(
+    USGS_DATASET_FIELDS_REQUEST_CODE,
+    request_body
+  ).catch(function (err) {
+    app_helpers.write_message(
+      LOG_LEVEL_ERROR,
+      'ERROR during datasetfields USGS request',
+      err.stack
+    )
+  })
+
+}
+
+const do_search_request = function (dataset_fields) {
+  // get the fields object from CONFIG_YAML
+  // so we can translate the USGS field to a field id from USGS api
+  const fields = dataset.fields
+
+  //create the childFilters object
+  const childFilters = get_child_filters(fields, dataset_fields)
+
+  //get start and end date
+  var endDate = new Date()
+
+  //get start date
+  const startDate = get_start_date(metadata_from_days_ago)
+
+  //instiate search varriables.  this allows to pass undefined varriables
+  //  for optional elements
+  var lowerLeft
+  var upperRight
+  var months
+  var includeUnknownCloudCover
+  var minCloudCover
+  var maxCloudCover
+
+  //set filter type for additionalCriteria json
+  const filterType = "and"
+
+  //make additionalCriteria filter
+  var additionalCriteria = make_additionalCriteria_filter(filterType, childFilters)
+
+  //defaults will move to config yaml
+  var maxResults = 5000
+  var startingNumber = 1 
+  var sortOrder = "ASC"
+
+  //create search body json
+  var search_body = usgs_functions.usgsapi_search(
+    apiKey,
+    usgs_constants.NODE_EE,
+    datasetName,
+    lowerLeft,
+    upperRight,
+    startDate,
+    endDate,
+    months,
+    includeUnknownCloudCover,
+    minCloudCover,
+    maxCloudCover,
+    additionalCriteria,
+    maxResults,
+    startingNumber,
+    sortOrder
+  )
+
+  logger.log('info', 'search')
+  logger.log('debug', 'search body' , search_body )
+
+  //create request code for searching for available scenes
+  const USGS_SEARCH_REQUEST_CODE = usgs_helpers.get_usgs_response_code('search')
+  
+  return usgs_helpers.get_usgsapi_response(USGS_SEARCH_REQUEST_CODE, search_body)
+
+}
+
 const process_metadata_for_dataset = function (dataset) {
-  return api_key.then( (apiKey) => {
 
-    //get the actaul filterid value from the request datasetfields
-    const request_body = usgs_functions.usgsapi_datasetfields(apiKey, usgs_constants.NODE_EE, datasetName)
-    logger.log('debug', 'dataset fields body' , request_body )
-
-    const USGS_REQUEST_CODE = usgs_helpers.get_usgs_response_code('datasetfields')
-
-    //make call to USGS api.  Make sure last promise is resolved first
-    //  becuase USGS api is throttled for one request at a time
-
-      //actual request after the last promise has been resolved
-      return usgs_helpers.get_usgsapi_response(USGS_REQUEST_CODE, request_body)
-      .then( datasetfields => {
-
-        childFilters = []
-
-        //get the fields object from CONFIG_YAML
-        //  so we can translate the USGS field to a field id from USGS api
-        const fields = dataset.fields
-
-        //create the childFilters object
-        const childFilters = get_child_filters (fields, datasetfields)
-
-        //get start and end date
-        var endDate = new Date()
-
-        //get start date
-        const startDate = get_start_date(metadata_from_days_ago)
-
-        //instiate search varriables.  this allows to pass undefined varriables
-        //  for optional elements
-        var lowerLeft
-        var upperRight
-        var months
-        var includeUnknownCloudCover
-        var minCloudCover
-        var maxCloudCover
-
-        //set filter type for additionalCriteria json
-        const filterType = "and"
-
-        //make additionalCriteria filter
-        var additionalCriteria = make_additionalCriteria_filter(filterType, childFilters)
-
-        //defaults will move to config yaml
-        var maxResults = 5000
-        var startingNumber = 1 
-        var sortOrder = "ASC"
-
-        //create search body json
-        var search_body = usgs_functions.usgsapi_search(
-          apiKey,
-          usgs_constants.NODE_EE,
-          datasetName,
-          lowerLeft,
-          upperRight,
-          startDate,
-          endDate,
-          months,
-          includeUnknownCloudCover,
-          minCloudCover,
-          maxCloudCover,
-          additionalCriteria,
-          maxResults,
-          startingNumber,
-          sortOrder)
-
-          logger.log('info', 'search')
-          logger.log('debug', 'search body' , search_body )
-
-          //create request code for searching for available scenes
-          const USGS_REQUEST_CODE = usgs_helpers.get_usgs_response_code('search')
-
-          //blocking by other calls to USGS api. there is a 1 call limit imposed by USGS.
-          //  so have to return all promises to make sure they finish.
-          // make the call to the usgs to get available data and the metadata url
-          return usgs_helpers.get_usgsapi_response(USGS_REQUEST_CODE, search_body)
+  get_dataset_fields_for_dataset.then( dataset_fields => {
+    do_search_request(dataset_fields)
+          return usgs_helpers.get_usgsapi_response(USGS_SEARCH_REQUEST_CODE, search_body)
             .then( search_response => {
 
             const total = search_response.numberReturned

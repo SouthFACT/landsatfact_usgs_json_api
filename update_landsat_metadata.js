@@ -1,3 +1,8 @@
+/**
+ *
+ *
+ */
+
 
 // Libraries
 var axios = require('axios')
@@ -44,6 +49,12 @@ var metadata_recordset = new Array()
 
 /////////////////////////////////
 
+/**
+ * TODO
+ * - documentation
+ * - tests
+ */
+
 const main = function () {
   process_metadata_by_dataset(datasets)
 }
@@ -70,6 +81,29 @@ const process_metadata_by_dataset = function (datasets) {
     }
   })
 }
+
+const process_metadata_for_dataset = function (dataset) {
+  return get_dataset_fields_for_dataset(dataset).then( dataset_fields => {
+    do_search_request(
+      dataset.datasetName,
+      dataset_fields
+    ).then(search_response => {
+      return process_search_response(search_response)
+    })
+  })
+
+const process_search_response = function (response) {
+  search_response.results.map(entity => {
+    get_metadata_for_entity(entity)
+  })
+}
+
+const get_metadata_for_entity = function (entity) {
+  axios.get(entity.metadataUrl).then( metadata => {
+    process_metadata_for_entity(metadata)
+  })
+}
+
 
 const get_dataset_fields_for_dataset = function (dataset) {
   const request_body = usgs_functions.usgsapi_datasetfields(apiKey, usgs_constants.NODE_EE, datasetName)
@@ -161,28 +195,6 @@ const do_search_request = function (dataset_name, dataset_fields) {
     )
   })
 
-}
-
-const process_metadata_for_dataset = function (dataset) {
-  get_dataset_fields_for_dataset(dataset).then( dataset_fields => {
-    do_search_request(
-      dataset.datasetName,
-      dataset_fields
-    ).then(search_response => {
-      process_search_response(search_response)
-    })
-  })
-
-const process_search_response = function (response) {
-  search_response.results.map(entity => {
-    get_metadata_for_entity(entity)
-  })
-}
-
-const get_metadata_for_entity = function (entity) {
-  axios.get(entity.metadataUrl).then( metadata => {
-    process_metadata_for_entity(metadata)
-  })
 }
 
 const process_metadata_for_entity = function (metadata) {

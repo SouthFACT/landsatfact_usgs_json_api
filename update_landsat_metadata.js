@@ -53,6 +53,7 @@ var metadata_recordset = new Array()
  * TODO
  * - documentation
  * - tests
+ * - add update db call!
  */
 
 const main = function () {
@@ -63,6 +64,7 @@ const process_metadata_by_dataset = function (datasets) {
   return api_key.then(function () {
     var dataset = datasets.pop()
     return process_metadata_for_dataset(dataset)
+  
   }).catch(function (err) {
     app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
   }).then(function () {
@@ -70,6 +72,7 @@ const process_metadata_by_dataset = function (datasets) {
       LOG_LEVEL_INFO,
       'DONE updating metadata for dataset'
     )
+
     if (datasets.length) {
       return process_metadata_by_dataset(datasets)
     }
@@ -94,14 +97,14 @@ const process_metadata_for_dataset = function (dataset) {
 
 const process_search_response = function (response) {
   search_response.results.map(entity => {
-    get_metadata_for_entity(entity)
+    get_metadata_for_entity(entity).then( metadata => {
+      process_metadata_for_entity(metadata)
+    })
   })
 }
 
 const get_metadata_for_entity = function (entity) {
-  axios.get(entity.metadataUrl).then( metadata => {
-    process_metadata_for_entity(metadata)
-  })
+  return axios.get(entity.metadataUrl)
 }
 
 

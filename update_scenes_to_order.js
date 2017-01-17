@@ -309,3 +309,15 @@ const build_update_query = function (scenes, needs_ordering_text) {
 
 main()
 
+module.exports = {
+  main,
+  process_scenes_for_dataset,
+  process_scene_batch,
+  get_dl_options_for_scene_batch,
+  process_usgs_dl_options_response,
+  handle_usgs_dl_options_response_error,
+  sort_options_by_avail,
+  update_records,
+  update_records_by_availability,
+  build_update_query
+}

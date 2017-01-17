@@ -22,7 +22,17 @@ var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
 // Settings for USGS
-const CONFIG_YAML = yaml.load('./lib/usgs_api/config.yaml')
+const USGS_CONFIG
+if (process.env.NODE_ENV === 'test') {
+  USGS_CONFIG = {
+    username: process.env.USGS_API_USERNAME,
+    password: process.env.USGS_API_PASSWORD,
+    download_directory: process.env.USGS_DOWNLOAD_DIR
+  }
+}
+else {
+  USGS_CONFIG = yaml.load('./lib/usgs_api/config.yaml')
+}
 
 // Base URL for http promise library
 axios.defaults.baseURL = usgs_constants.USGS_URL

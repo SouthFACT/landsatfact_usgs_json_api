@@ -324,6 +324,8 @@ const parse_metadata_fields_json = function (metadata_fields) {
     metadata_recordset = records
 
   })
+  
+  update_lsf_database.metadata_to_db(metadata_recordset);
 
 }
 

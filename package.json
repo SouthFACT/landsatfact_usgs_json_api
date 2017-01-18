@@ -6,7 +6,7 @@
   "scripts": {
     "test-api": "mocha -t 10000 ./test/test_real_usgs_api.js",
     "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js",
-    "test-to-order": "mocha ./test/test_update_scenes_to_order.js"
+    "test-main": "mocha ./test/test_main_scripts.js"
   },
   "author": "",
   "license": "ISC",

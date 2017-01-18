@@ -243,8 +243,9 @@ const sort_options_by_avail = function (response) {
         }
       } else {
         app_helpers.write_message(
-          LOG_LEVEL_ERROR, 
-          'ERROR no download option for '
+          LOG_LEVEL_INFO, 
+          'No standard download option for ',
+          obj.entityId
         )
 
       }
@@ -277,8 +278,7 @@ const update_records = function (scenes_by_avail) {
 const update_records_by_availability = function (scenes, field_text) {
   return Promise.resolve().then(function () {
     if (scenes.length) {
-      sql_list = app_helpers.list_array_to_sql_list(scenes)
-      var query_text = build_update_query(sql_list, field_text)
+      var query_text = build_update_query(scenes, field_text)
       pg_handler.pool_query_db(pg_pool, query_text, [])
     }
   }).catch(function (err) {
@@ -297,13 +297,14 @@ const update_records_by_availability = function (scenes, field_text) {
  *
  */
 const build_update_query = function (scenes, needs_ordering_text) {
+  const sql_list = app_helpers.list_array_to_sql_list(scenes)
   const download_available_text = needs_ordering_text === 'NO' ? 'YES' : 'NO'
   return "UPDATE landsat_metadata SET needs_ordering = "
           + "'"+needs_ordering_text+"', "
           + "download_available = "
           + "'"+download_available_text+"' "
           + "WHERE scene_id IN "
-          + scenes
+          + sql_list
 }
 
 

@@ -461,8 +461,8 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
 }
 
 //fix data_type_l1
-//  the data_type_l1 metadata field has too many chartacters that are not used by the
-//  Landsat fact database.  in these cases we must make sure the chartacter limit of 5
+//  the data_type_l1 metadata field has too many characters that are not used by the
+//  Landsat fact database. in these cases we must make sure the chartacter limit of 5
 //  characters will not fail to insert into the database so we strip out characters that are not needed.
 //  from visual inspeaction this happens when the + charater has text before it.  any charaters
 //    before the + character is not needed for our use case so we strip it out.
@@ -491,8 +491,8 @@ var fix_data_type_l1_vals = function(databaseFieldName, fieldValue){
 }
 
 //returns a field name and field value object for a metadata field
-//  this field set will be combined to create a metada record for insertion
-//  into the Landsat Fact Datbase
+//  this field set will be combined to create a metadata record for insertion
+//  into the Landsat Fact Database
 //    this function is for creating a the field set when the value is defined
 //    by the USGS API
 var get_api_fieldset = function(field_json, configFieldName, databaseFieldName){

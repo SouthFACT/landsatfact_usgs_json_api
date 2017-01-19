@@ -438,11 +438,9 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
     //walk the browse url data and get the browselink
     browse_urls_json.map( url => {
 
-      //get the caption for the images
-      const caption = url.data.caption
-
       //only interested in the human readable image or RGB image
-      if('LandsatLook "Natural Color" Preview Image' === caption){
+      const id = url.data.id
+      if(id === 'BROWSE_REFL_WMS_PATH'){
 
         //set the field value
         fieldValue = url.browseLink[0]

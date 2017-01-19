@@ -46,6 +46,12 @@ var api_key = usgs_helpers.get_api_key()
 
 var metadata_recordset = new Array()
 
+// set to currently processing dataset from the metadata yaml file.
+// declared here so we have access to it within the
+// processor function for the xml parser.
+// should find a better way to do this...
+var dataset
+
 
 /////////////////////////////////
 
@@ -61,9 +67,9 @@ const main = function () {
 }
 
 const process_metadata_by_dataset = function (datasets) {
-  return api_key.then(function () {
-    var dataset = datasets.pop()
-    return process_metadata_for_dataset(dataset)
+  return api_key.then(function (apiKey) {
+    dataset = datasets.pop()
+    return process_metadata_for_dataset(apiKey)
   
   }).catch(function (err) {
     app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
@@ -85,18 +91,15 @@ const process_metadata_by_dataset = function (datasets) {
   })
 }
 
-const process_metadata_for_dataset = function (dataset) {
-  return get_dataset_fields_for_dataset(dataset).then( dataset_fields => {
-    do_search_request(
-      dataset,
-      dataset_fields
-    ).then(search_response => {
+const process_metadata_for_dataset = function (apiKey) {
+  return get_dataset_fields_for_dataset(apiKey).then( dataset_fields => {
+    return do_search_request(apiKey, dataset_fields).then(search_response => {
       return process_search_response(search_response)
     })
   })
 }
 
-const get_dataset_fields_for_dataset = function (dataset) {
+const get_dataset_fields_for_dataset = function (apiKey) {
 
   app_helpers.write_message(
     LOG_LEVEL_INFO,
@@ -104,7 +107,9 @@ const get_dataset_fields_for_dataset = function (dataset) {
     dataset.datasetName
   )
 
-  const request_body = usgs_functions.usgsapi_datasetfields(apiKey, usgs_constants.NODE_EE, datasetName)
+  const request_body = usgs_functions.usgsapi_datasetfields(
+    apiKey, usgs_constants.NODE_EE, dataset.datasetName
+  )
   const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers.get_usgs_response_code('datasetfields')
 
   return usgs_helpers.get_usgsapi_response(
@@ -116,13 +121,23 @@ const get_dataset_fields_for_dataset = function (dataset) {
       'ERROR during datasetfields USGS request',
       err.stack
     )
+  }).then(function (response) {
+    if (response) {
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'USGS datasetfields request completed successfully for dataset',
+        dataset.datasetName
+      )
+    }
+    return response
   })
 
 }
 
-const process_search_response = function (response) {
+const process_search_response = function (search_response) {
   search_response.results.map(entity => {
     get_metadata_for_entity(entity).then( metadata => {
+      console.log('axios response: ', metadata)
       process_metadata_for_entity(metadata)
     })
   })
@@ -132,7 +147,7 @@ const get_metadata_for_entity = function (entity) {
   return axios.get(entity.metadataUrl)
 }
 
-const do_search_request = function (dataset, dataset_fields) {
+const do_search_request = function (apiKey, dataset_fields) {
   app_helpers.write_message(
       LOG_LEVEL_INFO,
       'START USGS search request for dataset ',
@@ -173,6 +188,15 @@ const do_search_request = function (dataset, dataset_fields) {
       'ERROR during USGS search request',
       err.stack
     )
+  }).then(function (response) {
+    if (response) {
+      app_helpers.write_message(
+        LOG_LEVEL_INFO,
+        'USGS search request completed successfully for dataset',
+        dataset.datasetName
+      )
+      return response
+    }
   })
 
 }
@@ -213,11 +237,6 @@ const parseString_processor = function (err, js) {
 
     throw err
   }
-
-  app_helpers.write_message(
-    LOG_LEVEL_INFO,
-    'START parsing metadata xml for dataset'
-  )
 
   //convert to js array
   const metadata_json = [js]
@@ -291,10 +310,18 @@ const parse_metadata_fields_json = function (fields, browse_json) {
     metadata_recordset = records
 
   })
-  
-  update_lsf_database.metadata_to_db(metadata_recordset);
+  console.log('metadata_recordset:', metadata_recordset)
+  //update_lsf_database.metadata_to_db(metadata_recordset);
 
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -518,3 +545,5 @@ var get_metadata_record_fieldset = function(record_set, field_set){
    new_array.push(field_set)
    return new_array
 }
+
+main()

@@ -44,22 +44,25 @@ const metadata_from_days_ago = METADATA_YAML.metadata_from_days_ago
 // USGS API login promise
 var api_key = usgs_helpers.get_api_key()
 
-var metadata_recordset = new Array()
+const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers
+      .get_usgs_response_code('datasetfields')
+const USGS_SEARCH_REQUEST_CODE = usgs_helpers
+      .get_usgs_response_code('search')
 
-// set to currently processing dataset from the metadata yaml file.
+// dataset metadata object from metadata.yaml
 // declared here so we have access to it within the
 // processor function for the xml parser.
-// should find a better way to do this...
 var dataset
-
 
 /////////////////////////////////
 
 /**
  * TODO
+ * - fix parse string bit
+ * - 
  * - documentation
  * - tests
- * - add update db call!
+ * - refactor process_search_response to use recursion/promise convention
  */
 
 const main = function () {
@@ -70,7 +73,6 @@ const process_metadata_by_dataset = function (datasets) {
   return api_key.then(function (apiKey) {
     dataset = datasets.pop()
     return process_metadata_for_dataset(apiKey)
-  
   }).catch(function (err) {
     app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
   }).then(function () {
@@ -78,7 +80,6 @@ const process_metadata_by_dataset = function (datasets) {
       LOG_LEVEL_INFO,
       'DONE updating metadata for dataset'
     )
-
     if (datasets.length) {
       return process_metadata_by_dataset(datasets)
     }
@@ -100,18 +101,14 @@ const process_metadata_for_dataset = function (apiKey) {
 }
 
 const get_dataset_fields_for_dataset = function (apiKey) {
-
   app_helpers.write_message(
     LOG_LEVEL_INFO,
     'START USGS datasetfields request for dataset',
     dataset.datasetName
   )
-
   const request_body = usgs_functions.usgsapi_datasetfields(
     apiKey, usgs_constants.NODE_EE, dataset.datasetName
   )
-  const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers.get_usgs_response_code('datasetfields')
-
   return usgs_helpers.get_usgsapi_response(
     USGS_DATASET_FIELDS_REQUEST_CODE,
     request_body
@@ -135,16 +132,19 @@ const get_dataset_fields_for_dataset = function (apiKey) {
 }
 
 const process_search_response = function (search_response) {
-  search_response.results.map(entity => {
-    get_metadata_for_entity(entity).then( metadata => {
-      console.log('axios response: ', metadata)
-      process_metadata_for_entity(metadata)
+  return search_response.results.forEach(scene_obj => {
+    get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
+      parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
+        process_scene_metadata(metadata_as_json).then(records => {
+          update_lsf_database.metadata_to_db(records)
+        })
+      })
     })
   })
 }
 
-const get_metadata_for_entity = function (entity) {
-  return axios.get(entity.metadataUrl)
+const get_metadata_xml_for_scene = function (scene_obj) {
+  return axios.get(scene_obj.metadataUrl)
 }
 
 const do_search_request = function (apiKey, dataset_fields) {
@@ -171,7 +171,6 @@ const do_search_request = function (apiKey, dataset_fields) {
   var lowerLeft, upperRight, months, includeUnknownCloudCover,
       minCloudCover, maxCloudCover
   
-  const USGS_SEARCH_REQUEST_CODE = usgs_helpers.get_usgs_response_code('search')
   var search_body = usgs_functions.usgsapi_search(
     apiKey, usgs_constants.NODE_EE, dataset.datasetName,
     lowerLeft, upperRight, startDate, endDate, months,
@@ -202,72 +201,61 @@ const do_search_request = function (apiKey, dataset_fields) {
 }
 
 
-const process_metadata_for_entity = function (metadata) {
+const parse_scene_metadata_xml = function (metadata) {
   //get xml from USGS api
   const xml = metadata.data
 
-  // NOT USED
-  // parse xml to json.... a bit messy needs some fixes which can be done with parser
-  // var parser = new xml2js.Parser()
+  return new Promise(function (resolve, reject) {
+    // parse xml to json, removing xml tag prefixes
+    // change the attribute key from '$' to 'data' 
+    // change the charkey from '_' to 'value'
+    var parser = new xml2js.Parser()
+    parseString(
+      xml,
+      {
+        tagNameProcessors: [stripPrefix],
+        attrkey:'data',
+        charkey:'value'
+      },
+      function (err, js) {
+        if(err) {
+          app_helpers.write_message(
+            LOG_LEVEL_ERROR,
+            'ERROR parsing scene metadata xml',
+            err.stack
+          )
+          reject(err)
+        }
+        const metadata_json = [js]
 
-  // parse xml to json remove prefixes because it would be near impossible
-  // to walk the JSON data with prefixes
-  // change the key from '$' to 'data' $ would be a pain to walk also.
-  // change the charkey from '_' to value _ would be a pain to walk also and
-  parseString(
-    xml,
-    {
-      tagNameProcessors: [stripPrefix],
-      attrkey:'data',
-      charkey:'value'
-    },
-    parseString_processor
-  )
-}
-
-
-const parseString_processor = function (err, js) {
-  //make sure there are no errors
-  if(err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      'ERROR parsing metadata xml',
-      err.stack
+        resolve(metadata_json)
+      }
     )
-
-    throw err
-  }
-
-  //convert to js array
-  const metadata_json = [js]
-
-  parse_metadata_fields(metadata_json)
+  })
 }
 
-const parse_metadata_fields = function (metadata_json) {
-  metadata_json.map( metadata => {
-    const fields_json = metadata.scene.metadataFields
+const process_scene_metadata = function (metadata_json) {
+  var records = []
+  metadata_json.forEach( metadata => {
+    const scene_metadata_fields = metadata.scene.metadataFields
     //get the image urls for thumbnails metadata from usgs xml
     const browse_json = metadata.scene.browseLinks
-    parse_fields_json(fields_json, browse_json)
+    scene_metadata_fields.forEach( metadata_field => {
+      process_metadata_field(metadata_field, browse_json, records)
+    })
   })
+  return records
 
 }
 
-const parse_fields_json = function (fields_json, browse_json) {
-  fields_json.map( fields => {
-    parse_metadata_fields_json(fields, browse_json)
-  })
-}
-
-const parse_metadata_fields_json = function (fields, browse_json) {
-  const field_json = fields.metadataField
+const process_metadata_field = function (metadata_field, browse_json, records) {
+  const field_json = metadata_field.metadataField
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
   const metadata_fields = dataset.metadataFields
 
   //walk each definition from the CONFIG_YAML
-  metadataFields.map( meta => {
+  metadata_fields.forEach( meta => {
 
     //get the database field name from the CONFIG_YAML
     databaseFieldName = meta.field[0].databaseFieldName
@@ -305,13 +293,9 @@ const parse_metadata_fields_json = function (fields, browse_json) {
 
     } //constant method
 
-    //merge the fieldset into the recordset
-    const records = get_metadata_record_fieldset(metadata_recordset, fieldSet)
-    metadata_recordset = records
+    records.push(fieldSet)
 
   })
-  console.log('metadata_recordset:', metadata_recordset)
-  //update_lsf_database.metadata_to_db(metadata_recordset);
 
 }
 
@@ -390,7 +374,7 @@ var get_child_filters = function(fields_json, dataset_fields){
     const limit_keys = ['name']
 
     //limit json in dataset_fields (from USGS api) based on fieldName in CONFIG_YAML
-    //   this will allow the usgs API to dynamicall figure out the currect fieldid
+    //   this will allow the usgs API to dynamically figure out the correct fieldid
     const limited = limit_json(dataset_fields, limit_keys, fieldName)
 
     //get the id of the field from the api

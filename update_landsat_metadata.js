@@ -168,7 +168,6 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
     //walk the browse url data and get the browselink
     browse_urls_json.map( url => {
 
-      //get the caption for the images
       const id = url.data.id;
 
       //only interested in the human readable image or RGB image

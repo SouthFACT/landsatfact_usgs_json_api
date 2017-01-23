@@ -6,3 +6,4 @@ chai.use(require('chai-fuzzy'))
 var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 
+update_metadata = require('../update_landsat_metadata.js')

@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <eemetadata:scene link="https://earthexplorer.usgs.gov/metadata/3373/LE70330372017016EDC00/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:eemetadata="http://earthexplorer.usgs.gov/eemetadata.xsd">
-
 <eemetadata:metadataFields>
-
-  <eemetadata:metadataField name="Landsat Scene Identifier" link="https://lta.cr.usgs.gov/landsat_dictionary.html#entity_id">
-    <eemetadata:metadataValue xsi:type="xsd:string">
-    LE70330372017016EDC00</eemetadata:metadataValue>
-  </eemetadata:metadataField>
-  
+<eemetadata:metadataField name="Landsat Scene Identifier" link="https://lta.cr.usgs.gov/landsat_dictionary.html#entity_id">
+  <eemetadata:metadataValue xsi:type="xsd:string">
+  LE70330372017016EDC00</eemetadata:metadataValue>
+</eemetadata:metadataField>  
 <eemetadata:metadataField name="Sensor Mode" link="https://lta.cr.usgs.gov/landsat_dictionary.html#sensor_mode">
 <eemetadata:metadataValue xsi:type="xsd:string">
 BUMPER</eemetadata:metadataValue>
@@ -257,7 +254,7 @@ WGS84</eemetadata:metadataValue>
 WGS84</eemetadata:metadataValue>
 </eemetadata:metadataField>
 <eemetadata:metadataField name="UTM Zone" link="https://lta.cr.usgs.gov/landsat_dictionary.html#utm_zone">
-<eemetadata:metadataValuexsi:type="xsd:string">
+<eemetadata:metadataValue xsi:type="xsd:string">
 13</eemetadata:metadataValue>
 </eemetadata:metadataField>
 <eemetadata:metadataField name="Grid Cell Size Panchromatic" link="https://lta.cr.usgs.gov/landsat_dictionary.html#grid_cell_size_panchromatic">

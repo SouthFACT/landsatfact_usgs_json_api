@@ -1,5 +1,6 @@
 /**
- *
+ * Check for any newly added scenes and add
+ * relevant scene metadata to the metadata table.
  *
  */
 
@@ -52,7 +53,6 @@ const USGS_SEARCH_REQUEST_CODE = usgs_helpers
 // dataset metadata object from metadata.yaml
 // declared here so we have access to it within the
 // processor function for the xml parser.
-var dataset
 
 /////////////////////////////////
 
@@ -69,8 +69,8 @@ const main = function () {
 
 const process_metadata_by_dataset = function (datasets) {
   return api_key.then(function (apiKey) {
-    dataset = datasets.pop()
-    return process_metadata_for_dataset(apiKey)
+    var dataset = datasets.pop()
+    return process_metadata_for_dataset(apiKey, dataset)
   }).catch(function (err) {
     app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
   }).then(function () {
@@ -90,15 +90,15 @@ const process_metadata_by_dataset = function (datasets) {
   })
 }
 
-const process_metadata_for_dataset = function (apiKey) {
-  return get_dataset_fields_for_dataset(apiKey).then( dataset_fields => {
-    return do_search_request(apiKey, dataset_fields).then(search_response => {
-      return process_search_response(search_response)
+const process_metadata_for_dataset = function (apiKey, dataset) {
+  return get_dataset_fields_for_dataset(apiKey, dataset).then( dataset_fields => {
+    return do_search_request(apiKey, dataset, dataset_fields).then(search_response => {
+      return process_search_response(dataset, search_response)
     })
   })
 }
 
-const get_dataset_fields_for_dataset = function (apiKey) {
+const get_dataset_fields_for_dataset = function (apiKey, dataset) {
   app_helpers.write_message(
     LOG_LEVEL_INFO,
     'START USGS datasetfields request for dataset',
@@ -129,12 +129,12 @@ const get_dataset_fields_for_dataset = function (apiKey) {
 
 }
 
-const process_search_response = function (search_response) {
+const process_search_response = function (dataset, search_response) {
   return search_response.results.forEach(scene_obj => {
     get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
       parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
-        var records = process_scene_metadata(metadata_as_json)
-        update_lsf_database.metadata_to_db(records)
+        var records = process_scene_metadata(dataset, metadata_as_json)
+        //update_lsf_database.metadata_to_db(records)
       })
     })
   })
@@ -151,7 +151,7 @@ const get_metadata_xml_for_scene = function (scene_obj) {
     })
 }
 
-const do_search_request = function (apiKey, dataset_fields) {
+const do_search_request = function (apiKey, dataset, dataset_fields) {
   app_helpers.write_message(
       LOG_LEVEL_INFO,
       'START USGS search request for dataset ',
@@ -238,21 +238,24 @@ const parse_scene_metadata_xml = function (metadata) {
   })
 }
 
-const process_scene_metadata = function (metadata_json) {
+const process_scene_metadata = function (dataset, metadata_json) {
   var records = []
   metadata_json.forEach( metadata => {
     const scene_metadata_fields = metadata.scene.metadataFields
     //get the image urls for thumbnails metadata from usgs xml
     const browse_json = metadata.scene.browseLinks
     scene_metadata_fields.forEach( metadata_field => {
-      process_metadata_field(metadata_field, browse_json, records)
+      var record = process_metadata_field(
+        dataset, metadata_field, browse_json, records
+      )
+      records.push(record)
     })
   })
   return records
 
 }
 
-const process_metadata_field = function (metadata_field, browse_json, records) {
+const process_metadata_field = function (dataset, metadata_field, browse_json) {
   const field_json = metadata_field.metadataField
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
@@ -297,7 +300,7 @@ const process_metadata_field = function (metadata_field, browse_json, records) {
 
     } //constant method
 
-    records.push(fieldSet)
+    return fieldSet
 
   })
 
@@ -516,6 +519,8 @@ var get_constant_fieldset = function(configFieldName, databaseFieldName){
 }
 
 main()
+
+
 
 module.exports = {
   main,

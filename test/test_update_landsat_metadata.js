@@ -24,14 +24,32 @@ var dataset = meta_yaml.metadata_datasets[0]
 describe('update_landsat_metadata.js', function () {
 
   describe('process_metadata_field', function () {
-    parse_xml.then(function (metadata_json) {
+    const expected = [
+      { name: 'scene_id', value: '\r\n  LE70330372017016EDC00' },
+      { name: 'sensor', value: 'OLI_TIRS' },
+      { name: 'acquisition_date', value: '\r\n2017/01/16' },
+      { name: 'browse_url',
+        value: '\r\nhttps://earthexplorer.usgs.gov/browse/etm/33/37/2017/LE70330372017016EDC00_REFL.jpg' },
+      { name: 'path', value: '\r\n 033' },
+      { name: 'row', value: '\r\n 037' },
+      { name: 'cc_full', value: '' },
+      { name: 'cc_quad_ul', value: 0 },
+      { name: 'cc_quad_ur', value: 0 },
+      { name: 'cc_quad_ll', value: 0 },
+      { name: 'cc_quad_lr', value: 0 },
+      { name: 'data_type_l1', value: 'ETM+' },
+      { name: 'l1_key', value: 999999 }
+    ]
+    var result = parse_xml.then(function (metadata_json) {
       const meta_field = metadata_json[0].scene.metadataFields[0]
       const browse_json = metadata_json[0].scene.browseLinks
-      const record = update_metadata.process_metadata_field(
-        dataset, meta_field, browse_json
+      var records = []
+      update_metadata.process_metadata_field(
+        dataset, meta_field, browse_json, records
       )
-      console.log(record)
+      return records
     })
+    expect(result).to.eventually.be.like(expected)
   })
 
   describe('parse_scene_metadata_xml', function () {

@@ -245,17 +245,16 @@ const process_scene_metadata = function (dataset, metadata_json) {
     //get the image urls for thumbnails metadata from usgs xml
     const browse_json = metadata.scene.browseLinks
     scene_metadata_fields.forEach( metadata_field => {
-      var record = process_metadata_field(
+      process_metadata_field(
         dataset, metadata_field, browse_json, records
       )
-      records.push(record)
     })
   })
   return records
 
 }
 
-const process_metadata_field = function (dataset, metadata_field, browse_json) {
+const process_metadata_field = function (dataset, metadata_field, browse_json, records) {
   const field_json = metadata_field.metadataField
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
@@ -300,7 +299,7 @@ const process_metadata_field = function (dataset, metadata_field, browse_json) {
 
     } //constant method
 
-    return fieldSet
+    records.push(fieldSet)
 
   })
 

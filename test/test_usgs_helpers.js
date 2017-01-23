@@ -29,7 +29,6 @@ describe('USGS Helpers TESTS', function() {
       var result = USGS_HELPER.create_url_action(teststr);
       assert.equal(result,'/'+teststr);
 
-
     })
 
   })

@@ -424,6 +424,7 @@ var get_browse_url_fieldset = function(browse_json, databaseFieldName, configFie
 
       //only interested in the human readable image or RGB image
       const id = url.data.id
+
       if(id === 'BROWSE_REFL_WMS_PATH'){
 
         //set the field value

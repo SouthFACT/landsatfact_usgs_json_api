@@ -516,3 +516,25 @@ var get_constant_fieldset = function(configFieldName, databaseFieldName){
 }
 
 main()
+
+module.exports = {
+  main,
+  process_metadata_by_dataset,
+  process_metadata_for_dataset,
+  get_dataset_fields_for_dataset,
+  process_search_response,
+  get_metadata_xml_for_scene,
+  do_search_request,
+  parse_scene_metadata_xml,
+  process_scene_metadata,
+  process_metadata_field,
+  limit_json,
+  make_child_filter,
+  make_additionalCriteria_filter,
+  get_start_date,
+  get_child_filters,
+  get_browse_url_fieldset,
+  fix_data_type_l1_vals,
+  get_api_fieldset,
+  get_constant_fieldset
+}

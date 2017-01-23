@@ -4,8 +4,9 @@
   "description": "test usgs api",
   "main": "index.js",
   "scripts": {
-    "test-api": "mocha -t 10000 ./test/usgs_api_calls.js",
-    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js"
+    "test-api": "mocha -t 10000 ./test/test_real_usgs_api.js",
+    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js",
+    "test-update-meta": "mocha ./test/test_update_landsat_metadata.js"
   },
   "author": "",
   "license": "ISC",

@@ -29,7 +29,7 @@ var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
 // Settings for USGS
-const CONFIG_YAML = yaml.load('./lib/usgs_api/config.yaml')
+const USGS_CONFIG = app_helpers.get_usgs_config()
 
 // Base URL for http promise library
 axios.defaults.baseURL = usgs_constants.USGS_URL
@@ -58,13 +58,13 @@ const last_days_scenes_query_text = "SELECT * FROM vw_last_days_scenes "
 const custom_request_query_template = ""
   + "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering = 'NO' "
-  + "AND scene_id in "
+  + "AND scene_id IN "
 
 // Constants for handling the USGS API
 const USGS_DL_RESPONSE_CODE = usgs_helpers.get_usgs_response_code('download')
 const CONCURRENT_DL_LIMIT = 10
 const USGS_DL_PRODUCTS = ['STANDARD']
-const DL_DIR = CONFIG_YAML.download_directory
+const DL_DIR = USGS_CONFIG.download_directory
 
 // The number of concurrent downloads in progress
 var active_downloads = 0
@@ -72,7 +72,7 @@ var active_downloads = 0
 ///////////////////////////////////////////////////////////////////////////////////
 
 const main = function() {
-  var query_text = make_initial_query()
+  var query_text = make_initial_query(process.argv.slice(2))
   var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
     if (query_result.rows && query_result.rows.length) {
@@ -93,10 +93,28 @@ const main = function() {
 
 }
 
-const make_initial_query = function () {
-  if (process.argv[2]) {
-    const scenes = process.argv.slice(2)
-    return custom_request_query_template + app_helpers.list_array_to_sql_list(scenes)
+/**
+ * Builds the initial select query for scenes to download.
+ *
+ * The argument to this script should be a list of all
+ * command-line arguments (scene ids). If there were none, the list is empty.
+ * If the list is empty, make the query the last days scenes view.
+ * 
+ */
+const make_initial_query = function (scenes) {
+  if (scenes.length) {
+    if (scenes.length > CONCURRENT_DL_LIMIT) {
+      throw new Error(
+        'Cannot support more than '
+        + parseInt(CONCURRENT_DL_LIMIT)
+        + ' commandline arguments'
+      )
+    }
+    var query = custom_request_query_template
+    query += app_helpers.list_array_to_sql_list(
+      scenes.slice(0, CONCURRENT_DL_LIMIT)
+    )
+    return query
   }
   else {
     return last_days_scenes_query_text
@@ -252,3 +270,16 @@ const make_filename = function (scene_id) {
 
 
 main()
+
+module.exports = {
+  main,
+  make_initial_query,
+  process_scenes_for_dataset,
+  process_scene,
+  start_download,
+  handle_response,
+  update_record,
+  make_filename,
+  CONCURRENT_DL_LIMIT
+}
+

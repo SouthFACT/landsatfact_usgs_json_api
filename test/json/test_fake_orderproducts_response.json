@@ -1,0 +1,110 @@
+[
+    {
+      "entityId": "LT50210351997077XXX01",
+      "orderingId": "LT50210351997077XXX01",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    },
+    {
+      "entityId": "LT50280401995105XXX01",
+      "orderingId": "LT50280401995105XXX01",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    },
+    {
+      "entityId": "LT50280391994118XXX02",
+      "orderingId": "LT50280391994118XXX02",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    },
+    {
+      "entityId": "LT50210351997125AAA02",
+      "orderingId": "LT50210351997125AAA02",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    },
+    {
+      "entityId": "LT50210352006278GNC01",
+      "orderingId": "LT50210352006278GNC01",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    },
+    {
+      "entityId": "LT50210351997109XXX01",
+      "orderingId": "LT50210351997109XXX01",
+      "availableProducts": [
+        {
+          "options": [
+            "None"
+          ],
+          "outputMedias": [
+            "DWNLD"
+          ],
+          "price": 0,
+          "productCode": "W012",
+          "productName": "L4-5 TM L1 WMS ON-DEMAND"
+        }
+      ],
+      "product": null
+    }
+  ]

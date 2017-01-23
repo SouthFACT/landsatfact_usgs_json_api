@@ -1,0 +1,154 @@
+var assert = require('assert')
+var chai = require('chai')
+var expect  = require("chai").expect
+var should = require('chai').should()
+var yaml = require('yamljs')
+chai.use(require('chai-fuzzy'))
+var chaiAsPromised = require("chai-as-promised")
+chai.use(chaiAsPromised)
+var fs = require('fs')
+
+const update_metadata = require('../update_landsat_metadata.js')
+const update_lsf_database = require("../lib/postgres/update_lsf_database.js")
+
+const meta_yaml = yaml.load('./config/metadata.yaml')
+
+const sample_metadata_xml = fs.readFileSync(
+  './test/sample-datasetfields-get.xml', 'utf8'
+)
+const sample_metadata = { 'data': sample_metadata_xml }
+var parse_xml = update_metadata.parse_scene_metadata_xml(sample_metadata)
+
+var dataset = meta_yaml.metadata_datasets[0]
+
+describe('update_landsat_metadata.js', function () {
+
+  describe('process_metadata_field', function () {
+    parse_xml.then(function (metadata_json) {
+      const meta_field = metadata_json[0].scene.metadataFields[0]
+      const browse_json = metadata_json[0].scene.browseLinks
+      const record = update_metadata.process_metadata_field(
+        dataset, meta_field, browse_json
+      )
+      console.log(record)
+    })
+  })
+
+  describe('parse_scene_metadata_xml', function () {
+    it('resolves with parsed xml when given good data', function () {
+      expect(parse_xml).to.be.fulfilled.and.eventually.be.an('array')
+    })
+  })
+
+  describe('process_scene_metadata', function () {
+    
+  })
+
+  describe('process_metadata_field', function () {
+    var records = []
+  })
+
+
+  // Helpers
+
+  const test_fields = meta_yaml.metadata_datasets[0].fields
+  const dataset_fields = require(
+    './json/test_usgs_api/test_datasetfields_request.json'
+  ).response
+  const test_child_filters = [
+    { filterType: 'between', fieldId: '10036',
+      firstValue: 13, secondValue: 33 },
+    { filterType: 'between', fieldId: '10038',
+      firstValue: 33, secondValue: 43 }
+  ]
+
+  describe('limit_json', function () {
+    it('limits json to relevant keys', function () {
+      const test_limit_keys = ['name']
+      const field_name = test_fields[0].fieldName
+      const result = update_metadata.limit_json(dataset_fields, test_limit_keys, field_name)
+      const expected = [
+        { fieldId: '10036',
+        name: 'WRS Path',
+        fieldLink: 'https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_path',
+        valueList: [] }
+      ]
+      expect(result).to.be.like(expected)
+    })
+
+  })
+
+  describe('make_child_filter', function () {
+    it('returns an object with expected properties', function () {
+      const filterType = 'and'
+      const fieldId = '10034'
+      const firstValue = 33
+      const secondValue = 43
+      const expected = {
+        filterType,
+        fieldId,
+        firstValue,
+        secondValue
+      }
+      const result = update_metadata.make_child_filter(
+        filterType, fieldId, firstValue, secondValue
+      )
+      expect(result).to.be.like(expected)
+    })
+  })
+
+  describe('make_additionalCriteria_filter', function () {
+    it('returns an object with expected properties', function () {
+      const filterType = 'and'
+      const expected = {
+        'filterType': 'and',
+        'childFilters': test_child_filters
+      }
+      const result = update_metadata.make_additionalCriteria_filter(
+        filterType,
+        test_child_filters
+      )
+      expect(result).to.be.like(expected)
+    })
+  })
+
+  describe('get_child_filters', function () {
+    const result = update_metadata.get_child_filters(test_fields, dataset_fields)
+    
+    it('builds a list of child filter objects', function () {
+      expect(result).to.be.like(test_child_filters)
+    })
+  })
+
+  describe('get_browse_url_fieldset', function () {
+
+  })
+
+  describe('fix_data_type_l1_vals', function () {
+
+  })
+
+  describe('get_api_fieldset', function () {
+
+  })
+
+  describe('get_constant_fieldset', function () {
+
+    it('returns an object with expected properties', function () {
+      const configFieldName = 'OLI_TIRS'
+      const databaseFieldName = 'sensor'
+      const expected = {
+        'name': databaseFieldName,
+        'value': configFieldName
+      }
+      const result = update_metadata.get_constant_fieldset(
+        configFieldName, databaseFieldName
+      )
+      expect(result).to.be.like(expected)
+    })
+  })
+
+  describe('get_api_fieldset', function () {
+
+  })
+})

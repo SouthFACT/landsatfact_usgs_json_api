@@ -58,8 +58,6 @@ var dataset
 
 /**
  * TODO
- * - fix parse string bit
- * - 
  * - documentation
  * - tests
  * - refactor process_search_response to use recursion/promise convention
@@ -135,9 +133,8 @@ const process_search_response = function (search_response) {
   return search_response.results.forEach(scene_obj => {
     get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
       parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
-        process_scene_metadata(metadata_as_json).then(records => {
-          update_lsf_database.metadata_to_db(records)
-        })
+        var records = process_scene_metadata(metadata_as_json)
+        update_lsf_database.metadata_to_db(records)
       })
     })
   })
@@ -145,6 +142,13 @@ const process_search_response = function (search_response) {
 
 const get_metadata_xml_for_scene = function (scene_obj) {
   return axios.get(scene_obj.metadataUrl)
+    .catch(function (err) {
+      app_helpers.write_message(
+        LOG_LEVEL_ERROR,
+        'ERROR retrieving metadata xml during axios request',
+        err.stack
+      )
+    })
 }
 
 const do_search_request = function (apiKey, dataset_fields) {
@@ -298,13 +302,6 @@ const process_metadata_field = function (metadata_field, browse_json, records) {
   })
 
 }
-
-
-
-
-
-
-
 
 
 
@@ -516,16 +513,6 @@ var get_constant_fieldset = function(configFieldName, databaseFieldName){
     name,
     value
   }
-}
-
-
-//create a json object of all the USGS metadata fieldnames and values
-//  for inserting into landsat FACT databaseFieldName
-var get_metadata_record_fieldset = function(record_set, field_set){
-   var new_array = record_set
-
-   new_array.push(field_set)
-   return new_array
 }
 
 main()

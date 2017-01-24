@@ -134,7 +134,7 @@ const process_search_response = function (dataset, search_response) {
     get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
       parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
         var records = process_scene_metadata(dataset, metadata_as_json)
-        //update_lsf_database.metadata_to_db(records)
+        update_lsf_database.metadata_to_db(records)
       })
     })
   })

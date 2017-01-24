@@ -8,10 +8,11 @@ var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 var fs = require('fs')
 
+const meta_yaml = yaml.load('./config/metadata.yaml')
+var dataset = meta_yaml.metadata_datasets[0]
+
 const update_metadata = require('../update_landsat_metadata.js')
 const update_lsf_database = require("../lib/postgres/update_lsf_database.js")
-
-const meta_yaml = yaml.load('./config/metadata.yaml')
 
 const sample_metadata_xml = fs.readFileSync(
   './test/sample-datasetfields-get.xml', 'utf8'
@@ -19,7 +20,6 @@ const sample_metadata_xml = fs.readFileSync(
 const sample_metadata = { 'data': sample_metadata_xml }
 var parse_xml = update_metadata.parse_scene_metadata_xml(sample_metadata)
 
-var dataset = meta_yaml.metadata_datasets[0]
 
 describe('update_landsat_metadata.js', function () {
 

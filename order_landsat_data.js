@@ -182,21 +182,24 @@ const get_order_products = function (dataset_name, scene_batch, apiKey) {
  *
  */
 const filter_order_products = function (response) {
-  return response.filter( scene => {
-    scene.availableProducts = scene.availableProducts.filter( order_product => {
-      return order_product.price === 0 &&
-        order_product.productCode.substring(0,1) !== 'W' &&
-        order_product.outputMedias[0] === "DWNLD"
-    })
-    if (scene.availableProducts.length > 1) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'Multiple level 1 products available for scene',
-        scene.entityId
-      )
-    }
-    return scene.availableProducts.length > 0
-  })
+  if (response && response.length) {
+    return response.filter( scene => {
+      scene.availableProducts = scene.availableProducts
+        .filter( order_product => {
+          return order_product.price === 0 &&
+                 order_product.productCode.substring(0,1) !== 'W' &&
+                 order_product.outputMedias[0] === "DWNLD"
+        })
+      if (scene.availableProducts.length > 1) {
+        app_helpers.write_message(
+          LOG_LEVEL_INFO,
+          'Multiple level 1 products available for scene',
+          scene.entityId
+        )
+      }
+      return scene.availableProducts.length > 0
+    })    
+  }
 }
 
 

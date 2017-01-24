@@ -134,7 +134,7 @@ const process_search_response = function (dataset, search_response) {
     get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
       parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
         var records = process_scene_metadata(dataset, metadata_as_json)
-        //update_lsf_database.metadata_to_db(records)
+        update_lsf_database.metadata_to_db(records)
       })
     })
   })
@@ -245,17 +245,16 @@ const process_scene_metadata = function (dataset, metadata_json) {
     //get the image urls for thumbnails metadata from usgs xml
     const browse_json = metadata.scene.browseLinks
     scene_metadata_fields.forEach( metadata_field => {
-      var record = process_metadata_field(
+      process_metadata_field(
         dataset, metadata_field, browse_json, records
       )
-      records.push(record)
     })
   })
   return records
 
 }
 
-const process_metadata_field = function (dataset, metadata_field, browse_json) {
+const process_metadata_field = function (dataset, metadata_field, browse_json, records) {
   const field_json = metadata_field.metadataField
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
@@ -300,7 +299,7 @@ const process_metadata_field = function (dataset, metadata_field, browse_json) {
 
     } //constant method
 
-    return fieldSet
+    records.push(fieldSet)
 
   })
 

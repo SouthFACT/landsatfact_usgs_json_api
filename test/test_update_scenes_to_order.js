@@ -6,8 +6,7 @@ chai.use(require('chai-fuzzy'))
 var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 
-var fake_options_data = require("../json/test_fake_dl_options_response.json")
-const to_order = require('../../update_scenes_to_order.js')
+const to_order = require('../update_scenes_to_order.js')
 
 describe('update_scenes_to_order.js', function() {
 
@@ -50,7 +49,9 @@ describe('update_scenes_to_order.js', function() {
 
     it("sorts dl options correctly, including only standard options",
       function (done) {
-
+        var fake_options_data = require(
+          "./json/test_fake_dl_options_response.json"
+        )
         var test_result = to_order.sort_options_by_avail(fake_options_data)
         var no_standard_option_scene = 'LT50280401995089XXX01'
         var expected_result = {

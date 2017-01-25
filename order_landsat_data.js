@@ -198,7 +198,7 @@ const filter_order_products = function (response) {
         )
       }
       return scene.availableProducts.length > 0
-    })    
+    })
   }
 }
 

@@ -475,7 +475,7 @@ var fix_data_type_l1_vals = function(databaseFieldName, fieldValue){
 //returns a field name and field value object for a metadata field
 //  this field set will be combined to create a metadata record for insertion
 //  into the Landsat Fact Database
-//    this function is for creating a the field set when the value is defined
+//    this function is for creating the field set when the value is defined
 //    by the USGS API
 var get_api_fieldset = function(field_json, configFieldName, databaseFieldName){
 

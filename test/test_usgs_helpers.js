@@ -6,7 +6,6 @@ chai.use(require('chai-fuzzy'));
 
 var USGS_HELPER = require("../lib/usgs_api/usgs_helpers.js");
 
-
 describe('USGS Helpers TESTS', function() {
   describe('create_PostBody', function() {
     it('should append a stringified object with a to jsonRequest=', function() {

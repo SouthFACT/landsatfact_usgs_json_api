@@ -8,16 +8,10 @@ var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 var fs = require('fs')
 
+const update_metadata = require('../update_landsat_metadata.js')
+const update_lsf_database = require("../lib/postgres/update_lsf_database.js")
 
-var dataset_fields = require(
-  '../json/test_real_usgs_api/test_datasetfields_request.json'
-).response
-// path is relative to root for yaml.load
 const meta_yaml = yaml.load('./config/metadata.yaml')
-var dataset = meta_yaml.metadata_datasets[0]
-
-const update_metadata = require('../../update_landsat_metadata.js')
-const update_lsf_database = require("../../lib/postgres/update_lsf_database.js")
 
 const sample_metadata_xml = fs.readFileSync(
   './test/sample-datasetfields-get.xml', 'utf8'
@@ -25,6 +19,7 @@ const sample_metadata_xml = fs.readFileSync(
 const sample_metadata = { 'data': sample_metadata_xml }
 var parse_xml = update_metadata.parse_scene_metadata_xml(sample_metadata)
 
+var dataset = meta_yaml.metadata_datasets[0]
 
 describe('update_landsat_metadata.js', function () {
 
@@ -64,14 +59,20 @@ describe('update_landsat_metadata.js', function () {
   })
 
   describe('process_scene_metadata', function () {
-    it('creates a list of records we expect', function () {
-
-    })
+    
   })
+
+  describe('process_metadata_field', function () {
+    var records = []
+  })
+
 
   // Helpers
 
   const test_fields = meta_yaml.metadata_datasets[0].fields
+  const dataset_fields = require(
+    './json/test_usgs_api/test_datasetfields_request.json'
+  ).response
   const test_child_filters = [
     { filterType: 'between', fieldId: '10036',
       firstValue: 13, secondValue: 33 },
@@ -83,9 +84,7 @@ describe('update_landsat_metadata.js', function () {
     it('limits json to relevant keys', function () {
       const test_limit_keys = ['name']
       const field_name = test_fields[0].fieldName
-      const result = update_metadata.limit_json(
-        dataset_fields, test_limit_keys, field_name
-      )
+      const result = update_metadata.limit_json(dataset_fields, test_limit_keys, field_name)
       const expected = [
         { fieldId: '10036',
         name: 'WRS Path',
@@ -139,48 +138,17 @@ describe('update_landsat_metadata.js', function () {
     })
   })
 
-  describe('fix_data_type_l1_vals', function () {
-
-  })
-
   describe('get_browse_url_fieldset', function () {
 
   })
 
-  describe('get_api_fieldset', function () {
-    it('returns an object with expected properties: value set to empty string',
-      function () {
-        const configFieldName = 'Scene Cloud Cover'
-        const databaseFieldName = 'cc_full'
-        const expected = { name: 'cc_full', value: '' }
-        var result = parse_xml.then(function(metadata) {
-          var meta_field = metadata[0].scene.metadataFields[0].metadataField
-          const fieldSet = update_metadata.get_api_fieldset(
-            meta_field, configFieldName, databaseFieldName
-          )
-          return fieldSet
-        })
-        expect(result).to.eventually.be.like(expected)
-
-      }
-    )
-
-    it('returns an object with expected properties', function () {
-      const configFieldName = 'Date Acquired'
-      const databaseFieldName = 'acquisition_date'
-      const expected = { name: 'acquisition_date', value: '\r\n2017/01/16' }
-      var result = parse_xml.then(function (metadata) {
-        var meta_field = metadata[0].scene.metadataFields[0].metadataField
-        const fieldSet = update_metadata.get_api_fieldset(
-          meta_field, configFieldName, databaseFieldName
-        )
-        return fieldSet
-      })
-      expect(result).to.eventually.be.like(expected)
-    })
+  describe('fix_data_type_l1_vals', function () {
 
   })
 
+  describe('get_api_fieldset', function () {
+
+  })
 
   describe('get_constant_fieldset', function () {
 
@@ -198,5 +166,7 @@ describe('update_landsat_metadata.js', function () {
     })
   })
 
+  describe('get_api_fieldset', function () {
 
+  })
 })

@@ -1,29 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <eemetadata:scene link="https://earthexplorer.usgs.gov/metadata/3373/LE70330372017016EDC00/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:eemetadata="http://earthexplorer.usgs.gov/eemetadata.xsd">
-
 <eemetadata:metadataFields>
-
 <eemetadata:metadataField name="Landsat Scene Identifier" link="https://lta.cr.usgs.gov/landsat_dictionary.html#entity_id">
   <eemetadata:metadataValue xsi:type="xsd:string">
   LE70330372017016EDC00</eemetadata:metadataValue>
 </eemetadata:metadataField>  
-
 <eemetadata:metadataField name="Sensor Mode" link="https://lta.cr.usgs.gov/landsat_dictionary.html#sensor_mode">
 <eemetadata:metadataValue xsi:type="xsd:string">
 BUMPER</eemetadata:metadataValue>
 </eemetadata:metadataField>
-
 <eemetadata:metadataField name="Station Identifier" link="https://lta.cr.usgs.gov/landsat_dictionary.html#distribution_site">
 <eemetadata:metadataValue xsi:type="xsd:string">
 EDC Sioux Falls, South Dakota, USA (aka LGS)</eemetadata:metadataValue>
 </eemetadata:metadataField>
-
 <eemetadata:metadataField name="Day/Night" link="https://lta.cr.usgs.gov/landsat_dictionary.html#day_or_night">
 <eemetadata:metadataValue xsi:type="xsd:string">
 DAY</eemetadata:metadataValue>
 </eemetadata:metadataField>
-
 <eemetadata:metadataField name="WRS Path" link="https://lta.cr.usgs.gov/landsat_dictionary.html#wrs_path">
 <eemetadata:metadataValue xsi:type="xsd:string">
  033</eemetadata:metadataValue>

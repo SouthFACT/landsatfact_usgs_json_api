@@ -66,9 +66,23 @@ const GET_ORDER_PRODUCTS_SCENE_BATCH_LIMIT = 100
 
 var scenes_ordered = []
 
+module.exports = {
+  main,
+  process_scenes_for_dataset,
+  process_scene_batch,
+  get_order_products,
+  filter_order_products,
+  update_order_scenes,
+  submit_order,
+  update_db
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 
-const main = function () {
+main()
+
+
+function main () {
   var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
   pg_handler.pool_query_db(pg_pool, query_text, [], function (query_result) {
     if (query_result.rows && query_result.rows.length) {
@@ -93,7 +107,7 @@ const main = function () {
  * @param scenes is a list of scene records from the metadata table.
  * 
  */
-const process_scenes_for_dataset = function (dataset_name, scenes) {
+function process_scenes_for_dataset (dataset_name, scenes) {
   if (scenes && scenes.length) {
     return api_key_promise.then(function (apiKey) {
       var scene_batch = scenes.slice(0, GET_ORDER_PRODUCTS_SCENE_BATCH_LIMIT)
@@ -119,7 +133,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
  * @param scene_batch is a list of 
  *
  */
-const process_scene_batch = function (dataset_name, scene_batch, apiKey) {
+function process_scene_batch (dataset_name, scene_batch, apiKey) {
   return get_order_products(
     dataset_name,
     scene_batch,
@@ -135,8 +149,7 @@ const process_scene_batch = function (dataset_name, scene_batch, apiKey) {
           update_db()
         })
       })
-    }
-    else {
+    } else {
       app_helpers.write_message(
         LOG_LEVEL_INFO,
         'No level 1 products available to order for scene batch in dataset',
@@ -150,7 +163,7 @@ const process_scene_batch = function (dataset_name, scene_batch, apiKey) {
  * Get orderable level 1 products for a batch of scenes.
  *
  */
-const get_order_products = function (dataset_name, scene_batch, apiKey) {
+function get_order_products (dataset_name, scene_batch, apiKey) {
   const request_body = usgs_functions.usgsapi_getorderproducts(
     apiKey,
     usgs_constants.NODE_EE,
@@ -181,22 +194,25 @@ const get_order_products = function (dataset_name, scene_batch, apiKey) {
  * @param response is a list of order products 
  *
  */
-const filter_order_products = function (response) {
-  return response.filter( scene => {
-    scene.availableProducts = scene.availableProducts.filter( order_product => {
-      return order_product.price === 0 &&
-        order_product.productCode.substring(0,1) !== 'W' &&
-        order_product.outputMedias[0] === "DWNLD"
+function filter_order_products (response) {
+  if (response && response.length) {
+    return response.filter( scene => {
+      scene.availableProducts = scene.availableProducts
+        .filter( order_product => {
+          return order_product.price === 0 &&
+                 order_product.productCode.substring(0,1) !== 'W' &&
+                 order_product.outputMedias[0] === "DWNLD"
+        })
+      if (scene.availableProducts.length > 1) {
+        app_helpers.write_message(
+          LOG_LEVEL_INFO,
+          'Multiple level 1 products available for scene',
+          scene.entityId
+        )
+      }
+      return scene.availableProducts.length > 0
     })
-    if (scene.availableProducts.length > 1) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'Multiple level 1 products available for scene',
-        scene.entityId
-      )
-    }
-    return scene.availableProducts.length > 0
-  })
+  }
 }
 
 
@@ -204,7 +220,7 @@ const filter_order_products = function (response) {
  * Update the order item basket with a batch of level 1 order products.
  *
  */
-const update_order_scenes = function (dataset_name, order_products, apiKey) {
+function update_order_scenes (dataset_name, order_products, apiKey) {
   if (order_products && order_products.length) {
     const scene_order = order_products.pop()
     const ordering_id = scene_order.orderingId
@@ -246,7 +262,7 @@ const update_order_scenes = function (dataset_name, order_products, apiKey) {
  * The order item basket is then cleared.
  *
  */
-const submit_order = function (apiKey) {
+function submit_order (apiKey) {
   const request_body = usgs_functions.usgsapi_submitorder(
     apiKey,
     usgs_constants.NODE_EE
@@ -261,8 +277,7 @@ const submit_order = function (apiKey) {
         'DONE Order submitted. Order number is',
         order_number
       )
-    }
-    else {
+    } else {
       app_helpers.write_message(
         LOG_LEVEL_ERROR,
         'ERROR Problem with order submission. No order number returned.'
@@ -277,7 +292,7 @@ const submit_order = function (apiKey) {
  * to reflect that they were successfully ordered.
  *
  */
-const update_db = function () {
+function update_db () {
   if (scenes_ordered.length) {
     const query_text = "UPDATE landsat_metadata "
       + "SET "
@@ -291,8 +306,7 @@ const update_db = function () {
         'DONE Database updated for ' + scenes_ordered.length + ' ordered scenes.'
       )
     })    
-  }
-  else {
+  } else {
     app_helpers.write_message(
       LOG_LEVEL_ERROR,
       'ERROR Database not updated. No scenes successfully ordered.'
@@ -300,16 +314,3 @@ const update_db = function () {
   }
 }
 
-
-main()
-
-module.exports = {
-  main,
-  process_scenes_for_dataset,
-  process_scene_batch,
-  get_order_products,
-  filter_order_products,
-  update_order_scenes,
-  submit_order,
-  update_db
-}

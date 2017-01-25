@@ -1,5 +1,5 @@
 //get modules
-const update_lsf_database = require("../lib/postgres/update_lsf_database.js");
+const update_lsf_database = require("../../lib/postgres/update_lsf_database.js");
 
 update_lsf_database.query_db("select * from landsat_metadata where scene_id = $1::text",['LC80290352016250LGN00']);
 

@@ -6,7 +6,7 @@ chai.use(require('chai-fuzzy'))
 var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 
-const download = require('../download_landsat_data.js')
+const download = require('../../download_landsat_data.js')
 
 describe('download_landsat_data.js', function () {
   describe('make_filename', function () {

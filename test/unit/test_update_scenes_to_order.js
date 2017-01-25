@@ -6,8 +6,8 @@ chai.use(require('chai-fuzzy'))
 var chaiAsPromised = require("chai-as-promised")
 chai.use(chaiAsPromised)
 
-var fake_options_data = require("./json/test_fake_dl_options_response.json")
-const to_order = require('../update_scenes_to_order.js')
+var fake_options_data = require("../json/test_fake_dl_options_response.json")
+const to_order = require('../../update_scenes_to_order.js')
 
 describe('update_scenes_to_order.js', function() {
 

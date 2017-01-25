@@ -52,22 +52,35 @@ const query_text = "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering IS null OR needs_ordering = 'YES'"
 
 
+module.exports = {
+  main,
+  process_scenes_for_dataset,
+  process_scene_batch,
+  get_dl_options_for_scene_batch,
+  process_usgs_dl_options_response,
+  handle_usgs_dl_options_response_error,
+  sort_options_by_avail,
+  update_records,
+  update_records_by_availability,
+  build_update_query
+}
+
 //////////////////////////////////////////////////////////////////////////////////
+
+main()
 
 /**
  * Main function. Pulls relevant records from the metadata table to be processed,
  * then initiates the processing logic for the query result.
  *
  */
-const main = function () {
-
+function main () {
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     if (query_result.rows && query_result.rows.length) {
       const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
       var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
       usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
-    }
-    else {
+    } else {
       app_helpers.write_message(
         LOG_LEVEL_INFO,
         'SELECT query returned no rows to process.'
@@ -85,7 +98,7 @@ const main = function () {
  * @param dataset_name is the name of the landsat dataset being processed
  *
  */
-const process_scenes_for_dataset = function (dataset_name, scenes) {
+function process_scenes_for_dataset (dataset_name, scenes) {
   return Promise.resolve().then(function () {
     if (scenes && scenes.length) {
       var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
@@ -95,8 +108,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
     if (scenes && scenes.length) {
       var scenes = scenes.slice(SCENE_BATCH_LIMIT)
       return process_scenes_for_dataset(scenes, dataset_name)
-    }
-    else {
+    } else {
       app_helpers.write_message(
         LOG_LEVEL_INFO,
         'COMPLETED processing dataset',
@@ -107,7 +119,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
 }
 
 
-const process_scene_batch = function (scenes, dataset_name) {
+function process_scene_batch (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
     if (response && response.length) {
       return sort_options_by_avail(response).then(function(scenes_by_avail) {
@@ -123,7 +135,7 @@ const process_scene_batch = function (scenes, dataset_name) {
  * 
  * @return the response of the DownloadOptions API call to USGS.
  */
-const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
+function get_dl_options_for_scene_batch (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
     app_helpers.write_message(
       LOG_LEVEL_INFO,
@@ -155,7 +167,7 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
  * Processes the response of a usgs downloadopotions request.
  *
  */
-const process_usgs_dl_options_response = function (response, dataset_name) {
+function process_usgs_dl_options_response (response, dataset_name) {
   if (response) {
     app_helpers.write_message(
       LOG_LEVEL_INFO,
@@ -164,16 +176,14 @@ const process_usgs_dl_options_response = function (response, dataset_name) {
     )
     if (response.length) {
       return response
-    }
-    else {
+    } else {
       app_helpers.write_message(
         LOG_LEVEL_INFO,
         'No download options returned for scene batch in dataset',
         dataset_name
       )
     }
-  }
-  else {
+  } else {
     app_helpers.write_message(
       LOG_LEVEL_ERROR,
       'No response data from downloadoptions request'
@@ -187,7 +197,7 @@ const process_usgs_dl_options_response = function (response, dataset_name) {
  * (up to a certain number of attempts)
  *
  */
-const handle_usgs_dl_options_response_error = function (err, scenes, dataset_name, num_attempts) {
+function handle_usgs_dl_options_response_error (err, scenes, dataset_name, num_attempts) {
   app_helpers.write_message(
     LOG_LEVEL_ERROR,
     'ERROR on downloadoptions request',
@@ -222,7 +232,7 @@ const handle_usgs_dl_options_response_error = function (err, scenes, dataset_nam
  * @return an object with two lists: available and unavailable sceneIds
  *
  */
-const sort_options_by_avail = function (response) {
+function sort_options_by_avail (response) {
 
   // Mark needs_ordering field as YES if available for download (available is true),
   //   NO if not available for download
@@ -237,8 +247,7 @@ const sort_options_by_avail = function (response) {
       if (standard_option.length) {
         if (standard_option[0].available) {
           avail.push(obj.entityId)
-        }
-        else {
+        } else {
           unavail.push(obj.entityId)
         }
       } else {
@@ -270,12 +279,12 @@ const sort_options_by_avail = function (response) {
  * @param scenes_by_avail an object with keys 'available' and 'unavailable'
  * with lists of scene ids for each field.
  */
-const update_records = function (scenes_by_avail) {
+function update_records (scenes_by_avail) {
   return update_records_by_availability(scenes_by_avail.available, 'NO').then(function () {
     return update_records_by_availability(scenes_by_avail.unavailable, 'YES')
   })
 }
-const update_records_by_availability = function (scenes, field_text) {
+function update_records_by_availability (scenes, field_text) {
   return Promise.resolve().then(function () {
     if (scenes.length) {
       var query_text = build_update_query(scenes, field_text)
@@ -296,7 +305,7 @@ const update_records_by_availability = function (scenes, field_text) {
  * Build a query to update the records for a batch of scenes.
  *
  */
-const build_update_query = function (scenes, needs_ordering_text) {
+function build_update_query (scenes, needs_ordering_text) {
   const sql_list = app_helpers.list_array_to_sql_list(scenes)
   const download_available_text = needs_ordering_text === 'NO' ? 'YES' : 'NO'
   return "UPDATE landsat_metadata SET needs_ordering = "
@@ -307,18 +316,3 @@ const build_update_query = function (scenes, needs_ordering_text) {
           + sql_list
 }
 
-
-main()
-
-module.exports = {
-  main,
-  process_scenes_for_dataset,
-  process_scene_batch,
-  get_dl_options_for_scene_batch,
-  process_usgs_dl_options_response,
-  handle_usgs_dl_options_response_error,
-  sort_options_by_avail,
-  update_records,
-  update_records_by_availability,
-  build_update_query
-}

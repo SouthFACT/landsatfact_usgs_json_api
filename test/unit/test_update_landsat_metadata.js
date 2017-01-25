@@ -10,13 +10,14 @@ var fs = require('fs')
 
 
 var dataset_fields = require(
-  './json/test_real_usgs_api/test_datasetfields_request.json'
+  '../json/test_real_usgs_api/test_datasetfields_request.json'
 ).response
+// path is relative to root for yaml.load
 const meta_yaml = yaml.load('./config/metadata.yaml')
 var dataset = meta_yaml.metadata_datasets[0]
 
-const update_metadata = require('../update_landsat_metadata.js')
-const update_lsf_database = require("../lib/postgres/update_lsf_database.js")
+const update_metadata = require('../../update_landsat_metadata.js')
+const update_lsf_database = require("../../lib/postgres/update_lsf_database.js")
 
 const sample_metadata_xml = fs.readFileSync(
   './test/sample-datasetfields-get.xml', 'utf8'

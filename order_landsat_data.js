@@ -14,6 +14,12 @@ var axios = require('axios')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
+// Logging
+const LOG_FILE = 'order_landsat_data'
+var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+// Set here so modules can see in require.main.exports
+module.exports.logger = logger
+
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
@@ -33,16 +39,6 @@ var api_key_promise = usgs_helpers.get_api_key()
 // Database connection
 const db_config = yaml.load("./lib/postgres/config.yaml")
 var pg_pool = pg_handler.pg_pool(db_config)
-
-// Logging
-const LOG_LEVEL_INFO = 'info'
-const LOG_LEVEL_ERROR = 'error'
-const LOG_FILE = 'order_landsat_data'
-
-app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
-app_helpers.set_logger_level('debug')
-app_helpers.set_logfile(LOG_FILE)
-app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // SQL queries
 const query_text = "SELECT * FROM landsat_metadata WHERE "
@@ -74,13 +70,15 @@ module.exports = {
   filter_order_products,
   update_order_scenes,
   submit_order,
-  update_db
+  update_db,
+  logger
 }
 
+// Run main function if script is run from commandline
+if (require.main === module) main()
+
+
 ///////////////////////////////////////////////////////////////////////////////////
-
-main()
-
 
 function main () {
   var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
@@ -113,8 +111,8 @@ function process_scenes_for_dataset (dataset_name, scenes) {
       var scene_batch = scenes.slice(0, GET_ORDER_PRODUCTS_SCENE_BATCH_LIMIT)
       return process_scene_batch(dataset_name, scene_batch, apiKey)
     }).catch(function (err) {
-      app_helpers.write_message(
-        LOG_LEVEL_ERROR,
+      logger.log(
+        logger.LEVEL_ERROR,
         'ERROR retrieving api key',
         err.stack
       )
@@ -150,8 +148,8 @@ function process_scene_batch (dataset_name, scene_batch, apiKey) {
         })
       })
     } else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'No level 1 products available to order for scene batch in dataset',
         dataset_name
       )
@@ -170,8 +168,8 @@ function get_order_products (dataset_name, scene_batch, apiKey) {
     dataset_name,
     scene_batch
   )
-  app_helpers.write_message(
-    LOG_LEVEL_INFO,
+  logger.log(
+    logger.LEVEL_INFO,
     'Getting order products for scene batch in dataset',
     dataset_name
   )
@@ -181,8 +179,8 @@ function get_order_products (dataset_name, scene_batch, apiKey) {
   ).then(function (response) {
     return filter_order_products(response)
   }).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       err.stack
     )
   })
@@ -204,8 +202,8 @@ function filter_order_products (response) {
                  order_product.outputMedias[0] === "DWNLD"
         })
       if (scene.availableProducts.length > 1) {
-        app_helpers.write_message(
-          LOG_LEVEL_INFO,
+        logger.log(
+          logger.LEVEL_INFO,
           'Multiple level 1 products available for scene',
           scene.entityId
         )
@@ -240,10 +238,10 @@ function update_order_scenes (dataset_name, order_products, apiKey) {
       USGS_UPDATE_ORDER_SCENE_CODE,
       request_body
     ).catch(function (err) {
-      app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
+      logger.log(logger.LEVEL_ERROR, err.stack)
     }).then(function (response) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'SUCCESS Added scene to order item basket',
         scene_order.entityId
       )
@@ -272,14 +270,14 @@ function submit_order (apiKey) {
     request_body
   ).then(function (order_number) {
     if (order_number) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'DONE Order submitted. Order number is',
         order_number
       )
     } else {
-      app_helpers.write_message(
-        LOG_LEVEL_ERROR,
+      logger.log(
+        logger.LEVEL_ERROR,
         'ERROR Problem with order submission. No order number returned.'
       )
     }
@@ -301,14 +299,14 @@ function update_db () {
       + "WHERE scene_id IN "
         + app_helpers.list_array_to_sql_list(scenes_ordered)
     pg_handler.pool_query_db(pg_pool, query_text, [], function () {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'DONE Database updated for ' + scenes_ordered.length + ' ordered scenes.'
       )
     })    
   } else {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'ERROR Database not updated. No scenes successfully ordered.'
     )
   }

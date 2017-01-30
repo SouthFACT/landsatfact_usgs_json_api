@@ -14,6 +14,11 @@ var fs = require('fs')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
+//Logging
+const LOG_FILE = 'write_downloaded'
+var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+module.exports.logger = logger
+
 //get modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
@@ -29,16 +34,6 @@ var pg_pool = pg_handler.pg_pool(db_config)
 var emailer = require('./lib/email/send_error_email.js')
 var error_email = emailer()
 
-
-//Logging
-const LOG_LEVEL_ERR = 'error'
-const LOG_LEVEL_INFO = 'info'
-const LOG_FILE = 'write_downloaded'
-app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
-app_helpers.set_logger_level('debug')
-app_helpers.set_logfile(LOG_FILE)
-app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
-
 //get fields for sql query - that gets scences that need ordering,
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 '
 
@@ -48,12 +43,13 @@ module.exports = {
   main,
   get_downloaded_scenes,
   write_downloaded_scenes,
+  logger
 }
 
+if (require.main === module) main()
+
+
 ////////////////////////////////////////////////////////////////////////////////
-
-main()
-
 
 /**
  * Main function. Pulls relevant records from the metadata table to be processed,
@@ -69,8 +65,8 @@ function main () {
       //write downloaded.txt file.  LCV uses this to process last days difference
       write_downloaded_scenes(downloaded_scenes)
     } else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'SELECT query returned no rows to process.'
       )
     }
@@ -131,7 +127,7 @@ function write_downloaded_scenes (records) {
     if (app_helpers.file_exists(dest)){
       msg_header = 'Writing ' + dest + ' to LCV file.'
       msg = dest
-      app_helpers.write_message(LOG_LEVEL_INFO, msg_header, msg)
+      logger.log(logger.LEVEL_INFO, msg_header, msg)
       downloaded_scenes.push(dest)
 
     //if file is not on disk do not write it to the LCV processing file.  this will cause
@@ -139,7 +135,7 @@ function write_downloaded_scenes (records) {
     } else {
       msg_header = 'The ' + dest + ' file does not exist on disk skipping writing to LCV file.'
       msg = dest
-      app_helpers.write_message(LOG_LEVEL_INFO, msg_header, msg)
+      logger.log(logger.LEVEL_INFO, msg_header, msg)
     }
   })
 

@@ -14,23 +14,18 @@ var stripPrefix = require('xml2js').processors.stripPrefix
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
+// Logging
+const LOG_FILE = 'update_landsat_metadata'
+var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+// Set here so modules can see in require.main.exports
+module.exports.logger = logger
+
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
 var usgs_helpers = require("./lib/usgs_api/usgs_helpers.js")
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 const update_lsf_database = require("./lib/postgres/update_lsf_database.js")
-
-// Logging
-const LOG_LEVEL_INFO = 'info'
-const LOG_LEVEL_ERROR = 'error'
-const LOG_FILE = 'update_landsat_metadata'
-
-app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
-update_lsf_database.delete_update_logs()
-app_helpers.set_logger_level('debug')
-app_helpers.set_logfile(LOG_FILE)
-app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // Base URL for axios
 axios.defaults.baseURL = usgs_constants.USGS_URL
@@ -49,10 +44,6 @@ const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers
       .get_usgs_response_code('datasetfields')
 const USGS_SEARCH_REQUEST_CODE = usgs_helpers
       .get_usgs_response_code('search')
-
-// dataset metadata object from metadata.yaml
-// declared here so we have access to it within the
-// processor function for the xml parser.
 
 
 module.exports = {
@@ -74,20 +65,16 @@ module.exports = {
   get_browse_url_fieldset,
   fix_data_type_l1_vals,
   get_api_fieldset,
-  get_constant_fieldset
+  get_constant_fieldset,
+  logger
 }
 
-/////////////////////////////////
 
-/**
- * TODO
- * - documentation
- * - tests
- * - refactor process_search_response to use recursion/promise convention
- */
+// Run main function if script is run from commandline
+if (require.main === module) main()
 
 
-main()
+//////////////////////////////////////////////////////////////////////
 
 function main () {
   process_metadata_by_dataset(datasets)
@@ -98,17 +85,17 @@ function process_metadata_by_dataset (datasets) {
     var dataset = datasets.pop()
     return process_metadata_for_dataset(apiKey, dataset)
   }).catch(function (err) {
-    app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
+    logger.log(logger.LEVEL_ERROR, err.stack)
   }).then(function () {
-    app_helpers.write_message(
-      LOG_LEVEL_INFO,
+    logger.log(
+      logger.LEVEL_INFO,
       'DONE updating metadata for dataset'
     )
     if (datasets.length) {
       return process_metadata_by_dataset(datasets)
     } else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'DONE updating metadata for all datasets'
       )
     }
@@ -124,8 +111,8 @@ function process_metadata_for_dataset (apiKey, dataset) {
 }
 
 function get_dataset_fields_for_dataset (apiKey, dataset) {
-  app_helpers.write_message(
-    LOG_LEVEL_INFO,
+  logger.log(
+    logger.LEVEL_INFO,
     'START USGS datasetfields request for dataset',
     dataset.datasetName
   )
@@ -136,16 +123,16 @@ function get_dataset_fields_for_dataset (apiKey, dataset) {
     USGS_DATASET_FIELDS_REQUEST_CODE,
     request_body
   ).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'ERROR during datasetfields USGS request',
       err.stack
     )
   }).then(function (response) {
     if (response) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'USGS datasetfields request completed successfully for dataset',
+      logger.log(
+        logger.LEVEL_INFO,
+        'DONE datasetfields request for dataset',
         dataset.datasetName
       )
     }
@@ -168,8 +155,8 @@ function process_search_response (dataset, search_response) {
 function get_metadata_xml_for_scene (scene_obj) {
   return axios.get(scene_obj.metadataUrl)
     .catch(function (err) {
-      app_helpers.write_message(
-        LOG_LEVEL_ERROR,
+      logger.log(
+        logger.LEVEL_ERROR,
         'ERROR retrieving metadata xml during axios request',
         err.stack
       )
@@ -177,8 +164,8 @@ function get_metadata_xml_for_scene (scene_obj) {
 }
 
 function do_search_request (apiKey, dataset, dataset_fields) {
-  app_helpers.write_message(
-      LOG_LEVEL_INFO,
+  logger.log(
+      logger.LEVEL_INFO,
       'START USGS search request for dataset ',
       dataset.datasetName
   )
@@ -211,16 +198,16 @@ function do_search_request (apiKey, dataset, dataset_fields) {
     USGS_SEARCH_REQUEST_CODE,
     search_body
   ).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'ERROR during USGS search request',
       err.stack
     )
   }).then(function (response) {
     if (response) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'USGS search request completed successfully for dataset',
+      logger.log(
+        logger.LEVEL_INFO,
+        'DONE search request for dataset',
         dataset.datasetName
       )
       return response
@@ -248,8 +235,8 @@ function parse_scene_metadata_xml (metadata) {
       },
       function (err, js) {
         if(err) {
-          app_helpers.write_message(
-            LOG_LEVEL_ERROR,
+          logger.log(
+            logger.LEVEL_ERROR,
             'ERROR parsing scene metadata xml',
             err.stack
           )

@@ -21,6 +21,12 @@ var request = require('request')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
+// Logging
+const LOG_FILE = 'download_landsat_data'
+var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+// Set here so modules can see in require.main.exports
+module.exports.logger = logger
+
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
@@ -40,16 +46,6 @@ var api_key_promise = usgs_helpers.get_api_key()
 // Database connection
 const db_config = yaml.load("./lib/postgres/config.yaml")
 var pg_pool = pg_handler.pg_pool(db_config)
-
-// Logging
-const LOG_LEVEL_INFO = 'info'
-const LOG_LEVEL_ERROR = 'error'
-const LOG_FILE = 'download_landsat_data'
-
-app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
-app_helpers.set_logger_level('debug')
-app_helpers.set_logfile(LOG_FILE)
-app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // SQL queries
 const last_days_scenes_query_text = "SELECT * FROM vw_last_days_scenes "
@@ -78,14 +74,16 @@ module.exports = {
   handle_response,
   update_record,
   make_filename,
-  CONCURRENT_DL_LIMIT
+  CONCURRENT_DL_LIMIT,
+  logger
 }
 
 
+// Run main function if script is run from commandline
+if (require.main === module) main()
+
+
 ///////////////////////////////////////////////////////////////////////////////////
-
-main()
-
 
 function main () {
   var query_text = make_initial_query(process.argv.slice(2))
@@ -100,8 +98,8 @@ function main () {
       )      
     }
     else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'SELECT query returned no rows to process.'
       )
     }
@@ -149,8 +147,8 @@ function process_scenes_for_dataset (dataset_name, scenes) {
       const scene_id = scenes.pop()
       return process_scene(dataset_name, scene_id, apiKey)
     }).catch(function (err) {
-      app_helpers.write_message(
-        LOG_LEVEL_ERROR,
+      logger.log(
+        logger.LEVEL_ERROR,
         'ERROR retrieving api key',
         err.stack
       )
@@ -159,8 +157,8 @@ function process_scenes_for_dataset (dataset_name, scenes) {
         return process_scenes_for_dataset(dataset_name, scenes)
       }
       else {
-        app_helpers.write_message(
-          LOG_LEVEL_INFO,
+        logger.log(
+          logger.LEVEL_INFO,
           'Rate limit for attempted downloads reached',
           CONCURRENT_DL_LIMIT
         )
@@ -185,11 +183,11 @@ function process_scene (dataset_name, scene_id, apiKey) {
     USGS_DL_RESPONSE_CODE,
     request_body
   ).catch(function (err) {
-    app_helpers.write_message(LOG_LEVEL_ERROR, err.stack)
+    logger.log(logger.LEVEL_ERROR, err.stack)
   }).then(function (response) {
     if (response && response.length) {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'START downloading ',
         scene_id + '.tar.gz'
       )
@@ -210,8 +208,8 @@ function start_download (scene_id, url) {
   const filename = make_filename(scene_id)
   const path = DL_DIR + filename
   if (fs.existsSync(path)) {
-    app_helpers.write_message(
-      LOG_LEVEL_INFO,
+    logger.log(
+      logger.LEVEL_INFO,
       'File already exists. Deleting old file.'
     )
     fs.unlinkSync(path)
@@ -220,7 +218,7 @@ function start_download (scene_id, url) {
   request
     .get(url)
     .on('error', function (err) {
-      app_helpers.write_message(LOG_LEVEL_ERROR, err)
+      logger.log(logger.LEVEL_ERROR, err)
     })
     .on('response', function (response) {
       handle_response(response, scene_id)
@@ -229,8 +227,8 @@ function start_download (scene_id, url) {
     .on('finish', function () {
       active_downloads -= 1
       update_record(scene_id)
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+      logger.log(
+        logger.LEVEL_INFO,
         'DONE downloading',
         filename
       )
@@ -249,8 +247,8 @@ function start_download (scene_id, url) {
  */
 function handle_response (response, scene_id) {
   if (response.statusCode > 200) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'USGS responded with status code '
       + response.statusCode
       + ' while attempting to download archive for '
@@ -273,8 +271,8 @@ function update_record (scene_id) {
       + "needs_processing = 'YES' "
       + "WHERE scene_id = '" + scene_id + "'"
   pg_handler.pool_query_db(pg_pool, query_text, [], function () {
-    app_helpers.write_message(
-      LOG_LEVEL_INFO,
+    logger.log(
+      logger.LEVEL_INFO,
       'Updated database record for scene ' + scene_id
     )
   })

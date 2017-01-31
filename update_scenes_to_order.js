@@ -13,6 +13,12 @@ var axios = require('axios')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
+// Logging
+const LOG_FILE = 'update_scenes_to_order'
+var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+// Set here so modules can see in require.main.exports
+module.exports.logger = logger
+
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
 var usgs_functions = require("./lib/usgs_api/usgs_functions.js")
@@ -34,22 +40,29 @@ axios.defaults.baseURL = usgs_constants.USGS_URL
 var get_api_key = usgs_helpers.get_api_key()
 
 // Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml")
+const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
-
-// Logging
-const TODAY_DATE = app_helpers.get_date_string()
-const LOG_LEVEL_INFO = 'info'
-const LOG_LEVEL_ERROR = 'error'
-const LOG_FILE = 'update_scenes_to_order'
-app_helpers.delete_old_files(LOG_FILE, 'logs/', '.log')
-app_helpers.set_logger_level('debug')
-app_helpers.set_logfile(LOG_FILE)
-app_helpers.write_message(LOG_LEVEL_INFO, 'START '+LOG_FILE, '')
 
 // Initial SELECT query
 const query_text = "SELECT * FROM landsat_metadata "
   + "WHERE needs_ordering IS null OR needs_ordering = 'YES'"
+
+module.exports = {
+  main,
+  process_scenes_for_dataset,
+  process_scene_batch,
+  get_dl_options_for_scene_batch,
+  process_usgs_dl_options_response,
+  handle_usgs_dl_options_response_error,
+  sort_options_by_avail,
+  update_records,
+  update_records_by_availability,
+  build_update_query,
+  logger
+}
+
+// Run main function if script is run from commandline
+if (require.main === module) main()
 
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -59,17 +72,16 @@ const query_text = "SELECT * FROM landsat_metadata "
  * then initiates the processing logic for the query result.
  *
  */
-const main = function () {
+function main () {
 
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     if (query_result.rows && query_result.rows.length) {
       const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
       var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
       usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
-    }
-    else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
+    } else {
+      logger.log(
+        logger.LEVEL_INFO,
         'SELECT query returned no rows to process.'
       )
     }
@@ -85,7 +97,7 @@ const main = function () {
  * @param dataset_name is the name of the landsat dataset being processed
  *
  */
-const process_scenes_for_dataset = function (dataset_name, scenes) {
+function process_scenes_for_dataset (dataset_name, scenes) {
   return Promise.resolve().then(function () {
     if (scenes && scenes.length) {
       var scene_batch = scenes.slice(0, SCENE_BATCH_LIMIT)
@@ -95,11 +107,10 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
     if (scenes && scenes.length) {
       var scenes = scenes.slice(SCENE_BATCH_LIMIT)
       return process_scenes_for_dataset(scenes, dataset_name)
-    }
-    else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'COMPLETED processing dataset',
+    } else {
+      logger.log(
+        logger.LEVEL_INFO,
+        'DONE processing dataset',
         dataset_name
       )
     }
@@ -107,7 +118,7 @@ const process_scenes_for_dataset = function (dataset_name, scenes) {
 }
 
 
-const process_scene_batch = function (scenes, dataset_name) {
+function process_scene_batch (scenes, dataset_name) {
   return get_dl_options_for_scene_batch(scenes, dataset_name).then(function (response) {
     if (response && response.length) {
       return sort_options_by_avail(response).then(function(scenes_by_avail) {
@@ -123,10 +134,10 @@ const process_scene_batch = function (scenes, dataset_name) {
  * 
  * @return the response of the DownloadOptions API call to USGS.
  */
-const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
+function get_dl_options_for_scene_batch (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
-    app_helpers.write_message(
-      LOG_LEVEL_INFO,
+    logger.log(
+      logger.LEVEL_INFO,
       'START processing scene batch of size '+scenes.length+' for dataset ',
       dataset_name
     )
@@ -142,8 +153,8 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
 
   })
   .catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'ERROR obtaining USGS API key',
       err.stack
     )
@@ -155,28 +166,26 @@ const get_dl_options_for_scene_batch = function (scenes, dataset_name) {
  * Processes the response of a usgs downloadopotions request.
  *
  */
-const process_usgs_dl_options_response = function (response, dataset_name) {
+function process_usgs_dl_options_response (response, dataset_name) {
   if (response) {
-    app_helpers.write_message(
-      LOG_LEVEL_INFO,
-      'COMPLETED get download options for scene batch of dataset',
+    logger.log(
+      logger.LEVEL_INFO,
+      'DONE get download options for scene batch of dataset',
       dataset_name
     )
     if (response.length) {
       return response
-    }
-    else {
-      app_helpers.write_message(
-        LOG_LEVEL_INFO,
-        'No download options returned for scene batch in dataset',
+    } else {
+      logger.log(
+        logger.LEVEL_INFO,
+        'INFO No download options returned for scene batch in dataset',
         dataset_name
       )
     }
-  }
-  else {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
-      'No response data from downloadoptions request'
+  } else {
+    logger.log(
+      logger.LEVEL_ERROR,
+      'ERROR No response data from downloadoptions request'
     )
   }
 }
@@ -187,9 +196,9 @@ const process_usgs_dl_options_response = function (response, dataset_name) {
  * (up to a certain number of attempts)
  *
  */
-const handle_usgs_dl_options_response_error = function (err, scenes, dataset_name, num_attempts) {
-  app_helpers.write_message(
-    LOG_LEVEL_ERROR,
+function handle_usgs_dl_options_response_error (err, scenes, dataset_name, num_attempts) {
+  logger.log(
+    logger.LEVEL_ERROR,
     'ERROR on downloadoptions request',
     err.stack
   )
@@ -222,7 +231,7 @@ const handle_usgs_dl_options_response_error = function (err, scenes, dataset_nam
  * @return an object with two lists: available and unavailable sceneIds
  *
  */
-const sort_options_by_avail = function (response) {
+function sort_options_by_avail (response) {
 
   // Mark needs_ordering field as YES if available for download (available is true),
   //   NO if not available for download
@@ -242,9 +251,9 @@ const sort_options_by_avail = function (response) {
           unavail.push(obj.entityId)
         }
       } else {
-        app_helpers.write_message(
-          LOG_LEVEL_INFO, 
-          'No standard download option for ',
+        logger.log(
+          logger.LEVEL_INFO, 
+          'INFO No standard download option for ',
           obj.entityId
         )
 
@@ -254,8 +263,8 @@ const sort_options_by_avail = function (response) {
     return { 'available': avail, 'unavailable': unavail }
   })
   .catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR,
+    logger.log(
+      logger.LEVEL_ERROR,
       'ERROR sorting downloadoptions response by download availability',
       err.stack
     )
@@ -270,20 +279,20 @@ const sort_options_by_avail = function (response) {
  * @param scenes_by_avail an object with keys 'available' and 'unavailable'
  * with lists of scene ids for each field.
  */
-const update_records = function (scenes_by_avail) {
+function update_records (scenes_by_avail) {
   return update_records_by_availability(scenes_by_avail.available, 'NO').then(function () {
     return update_records_by_availability(scenes_by_avail.unavailable, 'YES')
   })
 }
-const update_records_by_availability = function (scenes, field_text) {
+function update_records_by_availability (scenes, field_text) {
   return Promise.resolve().then(function () {
     if (scenes.length) {
       var query_text = build_update_query(scenes, field_text)
       pg_handler.pool_query_db(pg_pool, query_text, [])
     }
   }).catch(function (err) {
-    app_helpers.write_message(
-      LOG_LEVEL_ERROR, 
+    logger.log(
+      logger.LEVEL_ERROR, 
       'ERROR updating scene records',
       err.stack
     )
@@ -296,7 +305,7 @@ const update_records_by_availability = function (scenes, field_text) {
  * Build a query to update the records for a batch of scenes.
  *
  */
-const build_update_query = function (scenes, needs_ordering_text) {
+function build_update_query (scenes, needs_ordering_text) {
   const sql_list = app_helpers.list_array_to_sql_list(scenes)
   const download_available_text = needs_ordering_text === 'NO' ? 'YES' : 'NO'
   return "UPDATE landsat_metadata SET needs_ordering = "
@@ -305,20 +314,4 @@ const build_update_query = function (scenes, needs_ordering_text) {
           + "'"+download_available_text+"' "
           + "WHERE scene_id IN "
           + sql_list
-}
-
-
-main()
-
-module.exports = {
-  main,
-  process_scenes_for_dataset,
-  process_scene_batch,
-  get_dl_options_for_scene_batch,
-  process_usgs_dl_options_response,
-  handle_usgs_dl_options_response_error,
-  sort_options_by_avail,
-  update_records,
-  update_records_by_availability,
-  build_update_query
 }

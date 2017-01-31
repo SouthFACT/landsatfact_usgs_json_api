@@ -4,10 +4,10 @@
   "description": "test usgs api",
   "main": "index.js",
   "scripts": {
-    "test": "mocha ./test/unit/test_download_landsat_metadata.js ./test/unit/test_order_landsat_data.js ./test/unit/test_update_scenes_to_order.js ./test/unit/test_update_landsat_metadata.js",
-    "test-helpers": "mocha ./test/unit/usgs_helpers_test.js",
-    "test-update-meta": "mocha ./test/unit/test_update_landsat_metadata.js",
-    "test-usgs": "mocha -t 10000 ./test/unit/test_real_usgs_api.js"
+    "test": "mocha ./test/test_download_landsat_data.js ./test/test_order_landsat_data.js ./test/test_update_scenes_to_order.js ./test/test_update_landsat_metadata.js",
+    "test-helpers": "mocha -t 10000 ./test/usgs_helpers_test.js",
+    "test-update-meta": "mocha ./test/test_update_landsat_metadata.js",
+    "test-api": "mocha -t 10000 ./test/test_real_usgs_api.js"
   },
   "author": "",
   "license": "ISC",

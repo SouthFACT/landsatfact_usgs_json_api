@@ -37,7 +37,7 @@ axios.defaults.baseURL = usgs_constants.USGS_URL
 var api_key_promise = usgs_helpers.get_api_key()
 
 // Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml")
+const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
 
 // SQL queries
@@ -150,7 +150,7 @@ function process_scene_batch (dataset_name, scene_batch, apiKey) {
     } else {
       logger.log(
         logger.LEVEL_INFO,
-        'No level 1 products available to order for scene batch in dataset',
+        'INFO No level 1 products available to order for scene batch in dataset',
         dataset_name
       )
     }
@@ -170,7 +170,7 @@ function get_order_products (dataset_name, scene_batch, apiKey) {
   )
   logger.log(
     logger.LEVEL_INFO,
-    'Getting order products for scene batch in dataset',
+    'START get order products for scene batch in dataset',
     dataset_name
   )
   return usgs_helpers.get_usgsapi_response(
@@ -204,7 +204,7 @@ function filter_order_products (response) {
       if (scene.availableProducts.length > 1) {
         logger.log(
           logger.LEVEL_INFO,
-          'Multiple level 1 products available for scene',
+          'INFO Multiple level 1 products available for scene',
           scene.entityId
         )
       }
@@ -242,7 +242,7 @@ function update_order_scenes (dataset_name, order_products, apiKey) {
     }).then(function (response) {
       logger.log(
         logger.LEVEL_INFO,
-        'SUCCESS Added scene to order item basket',
+        'DONE Added scene to order item basket',
         scene_order.entityId
       )
       scenes_ordered.push(scene_order.entityId)
@@ -311,4 +311,3 @@ function update_db () {
     )
   }
 }
-

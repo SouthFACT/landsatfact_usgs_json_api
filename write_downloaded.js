@@ -27,7 +27,7 @@ var pg_handler = require('./lib/postgres/postgres_handlers.js')
 var app_helpers = require('./lib/helpers/app_helpers.js')()
 
 // Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml")
+const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
 
 //setup failure email
@@ -39,6 +39,15 @@ const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, ro
 
 const query_text = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE landsat_metadata.acquisition_date > ('now'::text::date - '3 days'::interval day) and needs_processing = 'YES' AND  downloaded = 'YES'"
 
+//config data
+const USGS_CONFIG = app_helpers.get_usgs_config()
+
+//config constants
+const DOWNLOAD_FILE_LCV_DIR = USGS_CONFIG.download_lcv_text
+const download_directory = USGS_CONFIG.download_directory
+const DOWNLOAD_DIR = download_directory
+
+
 module.exports = {
   main,
   get_downloaded_scenes,
@@ -48,7 +57,6 @@ module.exports = {
 
 if (require.main === module) main()
 
-
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -57,7 +65,6 @@ if (require.main === module) main()
  *
  */
 function main () {
-
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     if (query_result.rows && query_result.rows.length) {
       const downloaded_scenes = get_downloaded_scenes(query_result.rows)
@@ -67,7 +74,7 @@ function main () {
     } else {
       logger.log(
         logger.LEVEL_INFO,
-        'SELECT query returned no rows to process.'
+        'INFO select query returned no rows to process.'
       )
     }
   })
@@ -93,9 +100,6 @@ function get_downloaded_scenes (records) {
     })
     return downloaded_scenes
   }
-  else {
-    this.throw_error('No records supplied to sort by dataset')
-  }
 }
 
 /**
@@ -108,14 +112,6 @@ function get_downloaded_scenes (records) {
  *
  */
 function write_downloaded_scenes (records) {
-  //config data
-  const CONFIG_YAML = yaml.load("./lib/usgs_api/config.yaml")
-
-  //config constants
-  const DOWNLOAD_FILE_LCV_DIR = CONFIG_YAML.download_lcv_text
-  const download_directory = CONFIG_YAML.download_directory
-  const DOWNLOAD_DIR = download_directory
-
   var downloaded_scenes = []
 
   const lcv_file = DOWNLOAD_FILE_LCV_DIR + 'downloaded.txt'
@@ -133,7 +129,8 @@ function write_downloaded_scenes (records) {
     //if file is not on disk do not write it to the LCV processing file.  this will cause
     //  LCV to fail
     } else {
-      msg_header = 'The ' + dest + ' file does not exist on disk skipping writing to LCV file.'
+      msg_header = 'The ' + dest + ' file does not exist on disk '
+         + '-- skipping writing to LCV file.'
       msg = dest
       logger.log(logger.LEVEL_INFO, msg_header, msg)
     }

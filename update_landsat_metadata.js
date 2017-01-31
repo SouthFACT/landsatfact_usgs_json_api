@@ -45,7 +45,6 @@ const USGS_DATASET_FIELDS_REQUEST_CODE = usgs_helpers
 const USGS_SEARCH_REQUEST_CODE = usgs_helpers
       .get_usgs_response_code('search')
 
-
 module.exports = {
   main,
   process_metadata_by_dataset,
@@ -69,12 +68,8 @@ module.exports = {
   logger
 }
 
-
 // Run main function if script is run from commandline
 if (require.main === module) main()
-
-
-//////////////////////////////////////////////////////////////////////
 
 function main () {
   process_metadata_by_dataset(datasets)
@@ -166,7 +161,7 @@ function get_metadata_xml_for_scene (scene_obj) {
 function do_search_request (apiKey, dataset, dataset_fields) {
   logger.log(
       logger.LEVEL_INFO,
-      'START USGS search request for dataset ',
+      'START search request for dataset ',
       dataset.datasetName
   )
   // search request parameters
@@ -200,7 +195,7 @@ function do_search_request (apiKey, dataset, dataset_fields) {
   ).catch(function (err) {
     logger.log(
       logger.LEVEL_ERROR,
-      'ERROR during USGS search request',
+      'ERROR during search request',
       err.stack
     )
   }).then(function (response) {
@@ -345,7 +340,7 @@ function limit_json (json, limit_keys, limit_value){
 }
 
 //make child filter json object
-function make_child_filter (filterType, fieldId, firstValue, secondValue) {
+function make_child_filter (filterType, fieldId, firstValue, secondValue){
   return {
     filterType,
     fieldId,
@@ -355,7 +350,7 @@ function make_child_filter (filterType, fieldId, firstValue, secondValue) {
 }
 
 //make additionalCriteria filter json object
-function make_additionalCriteria_filter (filterType, childFilters) {
+function make_additionalCriteria_filter (filterType, childFilters){
   return {
     filterType,
     childFilters
@@ -363,7 +358,7 @@ function make_additionalCriteria_filter (filterType, childFilters) {
 }
 
 //get a date from n (days_ago) days
-function get_start_date (days_ago) {
+function get_start_date (days_ago){
   return new Date(new Date().setDate(new Date().getDate() - days_ago))
 }
 
@@ -371,7 +366,7 @@ function get_start_date (days_ago) {
 
 // needs an json object of fields to limit another json object of metadata fields returned from
 //  the USGS api
-function get_child_filters (fields_json, dataset_fields) {
+function get_child_filters (fields_json, dataset_fields){
 
   // instiate a blank array
   var array = []
@@ -419,7 +414,7 @@ function get_child_filters (fields_json, dataset_fields) {
 //    this function is for creating a the field set when the value is defined
 //    by the USGS API in the browse element.  this element holds all the thumbnail images
 //    of the scene
-function get_browse_url_fieldset (browse_json, databaseFieldName, configFieldName) {
+function get_browse_url_fieldset (browse_json, databaseFieldName, configFieldName){
 
   var fieldValue
   var name = databaseFieldName
@@ -460,7 +455,7 @@ function get_browse_url_fieldset (browse_json, databaseFieldName, configFieldNam
 //  characters will not fail to insert into the database so we strip out characters that are not needed.
 //  from visual inspeaction this happens when the + charater has text before it.  any charaters
 //    before the + character is not needed for our use case so we strip it out.
-function fix_data_type_l1_vals (databaseFieldName, fieldValue) {
+function fix_data_type_l1_vals (databaseFieldName, fieldValue){
 
   //PROCESSING REQUIRED is too long for field, this field is 5 chartacters in the db
   // so calling prreq
@@ -487,9 +482,9 @@ function fix_data_type_l1_vals (databaseFieldName, fieldValue) {
 //returns a field name and field value object for a metadata field
 //  this field set will be combined to create a metadata record for insertion
 //  into the Landsat Fact Database
-//    this function is for creating the field set when the value is defined
+//    this function is for creating a the field set when the value is defined
 //    by the USGS API
-function get_api_fieldset (field_json, configFieldName, databaseFieldName) {
+function get_api_fieldset (field_json, configFieldName, databaseFieldName){
 
   var name = databaseFieldName
 
@@ -518,7 +513,7 @@ function get_api_fieldset (field_json, configFieldName, databaseFieldName) {
 //  into the Landsat Fact Datbase
 //    this function is for creating a the field set when the value is a constant or
 //    needs be defined by the user rather then the USGS API or is a constant
-function get_constant_fieldset (configFieldName, databaseFieldName) {
+function get_constant_fieldset (configFieldName, databaseFieldName){
 
   //set the field value
   const value = configFieldName
@@ -529,4 +524,3 @@ function get_constant_fieldset (configFieldName, databaseFieldName) {
     value
   }
 }
-

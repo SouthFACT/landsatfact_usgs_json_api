@@ -28,19 +28,19 @@ axios.defaults.baseURL = USGS_CONSTANT.USGS_URL
 const api_key_promise = USGS_HELPER.get_api_key()
 
 const test_datasets_json = require(
-  './json/test_real_usgs_api/test_datasets_request.json')
+  './json/test_usgs_api/test_datasets_request.json')
 const test_datasetfields_json = require(
-  './json/test_real_usgs_api/test_datasetfields_request.json')
+  './json/test_usgs_api/test_datasetfields_request.json')
 const test_download_json = require(
-  './json/test_real_usgs_api/test_download_request.json')
+  './json/test_usgs_api/test_download_request.json')
 const test_downloadoptions_json = require(
-  './json/test_real_usgs_api/test_downloadoptions_request.json')
+  './json/test_usgs_api/test_downloadoptions_request.json')
 const test_metadata_json = require(
-  './json/test_real_usgs_api/test_metadata_request.json')
+  './json/test_usgs_api/test_metadata_request.json')
 const test_search_json = require(
-  './json/test_real_usgs_api/test_search_request.json')
+  './json/test_usgs_api/test_search_request.json')
 const test_getbulkdownloadproducts_json = require(
-  './json/test_real_usgs_api/test_getbulkdownloadproducts_request.json')
+  './json/test_usgs_api/test_getbulkdownloadproducts_request.json')
 
 const test_download_response_regexp = /.*tar.gz\?id=[a-zA-Z0-9]*&iid=LC80130282014100LGN00&did=[0-9]*&ver=production/
 

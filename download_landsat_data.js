@@ -25,7 +25,7 @@ Promise.longStackTraces()
 const LOG_FILE = 'download_landsat_data'
 var logger = require('./lib/helpers/logger.js')(LOG_FILE)
 // Set here so modules can see in require.main.exports
-module.exports.logger = logger
+module.exports.logger = logger  
 
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
@@ -44,7 +44,7 @@ axios.defaults.baseURL = usgs_constants.USGS_URL
 var api_key_promise = usgs_helpers.get_api_key()
 
 // Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml")
+const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
 
 // SQL queries
@@ -100,7 +100,7 @@ function main () {
     else {
       logger.log(
         logger.LEVEL_INFO,
-        'SELECT query returned no rows to process.'
+        'INFO select query returned no rows to process.'
       )
     }
   })
@@ -159,7 +159,7 @@ function process_scenes_for_dataset (dataset_name, scenes) {
       else {
         logger.log(
           logger.LEVEL_INFO,
-          'Rate limit for attempted downloads reached',
+          'ERROR Rate limit for attempted downloads reached',
           CONCURRENT_DL_LIMIT
         )
       }
@@ -210,7 +210,7 @@ function start_download (scene_id, url) {
   if (fs.existsSync(path)) {
     logger.log(
       logger.LEVEL_INFO,
-      'File already exists. Deleting old file.'
+      'INFO ' + filename + ' already exists. Deleting old file.'
     )
     fs.unlinkSync(path)
   }
@@ -249,7 +249,7 @@ function handle_response (response, scene_id) {
   if (response.statusCode > 200) {
     logger.log(
       logger.LEVEL_ERROR,
-      'USGS responded with status code '
+      'ERROR USGS responded with status code '
       + response.statusCode
       + ' while attempting to download archive for '
       + scene_id
@@ -273,7 +273,7 @@ function update_record (scene_id) {
   pg_handler.pool_query_db(pg_pool, query_text, [], function () {
     logger.log(
       logger.LEVEL_INFO,
-      'Updated database record for scene ' + scene_id
+      'DONE updating database record for scene ' + scene_id
     )
   })
 }
@@ -281,4 +281,3 @@ function update_record (scene_id) {
 function make_filename (scene_id) {
   return scene_id + '.tar.gz'
 }
-

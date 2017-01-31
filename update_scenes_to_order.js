@@ -40,7 +40,7 @@ axios.defaults.baseURL = usgs_constants.USGS_URL
 var get_api_key = usgs_helpers.get_api_key()
 
 // Database connection
-const db_config = yaml.load("./lib/postgres/config.yaml")
+const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
 
 // Initial SELECT query
@@ -67,13 +67,13 @@ if (require.main === module) main()
 
 //////////////////////////////////////////////////////////////////////////////////
 
-
 /**
  * Main function. Pulls relevant records from the metadata table to be processed,
  * then initiates the processing logic for the query result.
  *
  */
 function main () {
+
   pg_handler.pool_query_db(pg_pool, query_text, [], function(query_result) {
     if (query_result.rows && query_result.rows.length) {
       const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
@@ -110,7 +110,7 @@ function process_scenes_for_dataset (dataset_name, scenes) {
     } else {
       logger.log(
         logger.LEVEL_INFO,
-        'COMPLETED processing dataset',
+        'DONE processing dataset',
         dataset_name
       )
     }
@@ -170,7 +170,7 @@ function process_usgs_dl_options_response (response, dataset_name) {
   if (response) {
     logger.log(
       logger.LEVEL_INFO,
-      'COMPLETED get download options for scene batch of dataset',
+      'DONE get download options for scene batch of dataset',
       dataset_name
     )
     if (response.length) {
@@ -178,14 +178,14 @@ function process_usgs_dl_options_response (response, dataset_name) {
     } else {
       logger.log(
         logger.LEVEL_INFO,
-        'No download options returned for scene batch in dataset',
+        'INFO No download options returned for scene batch in dataset',
         dataset_name
       )
     }
   } else {
     logger.log(
       logger.LEVEL_ERROR,
-      'No response data from downloadoptions request'
+      'ERROR No response data from downloadoptions request'
     )
   }
 }
@@ -246,13 +246,14 @@ function sort_options_by_avail (response) {
       if (standard_option.length) {
         if (standard_option[0].available) {
           avail.push(obj.entityId)
-        } else {
+        }
+        else {
           unavail.push(obj.entityId)
         }
       } else {
         logger.log(
           logger.LEVEL_INFO, 
-          'No standard download option for ',
+          'INFO No standard download option for ',
           obj.entityId
         )
 
@@ -314,4 +315,3 @@ function build_update_query (scenes, needs_ordering_text) {
           + "WHERE scene_id IN "
           + sql_list
 }
-

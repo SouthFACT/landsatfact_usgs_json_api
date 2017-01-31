@@ -6,18 +6,18 @@ var axios = require('axios');
 
 
 //get modules
-var USGS_CONSTANT = require("../../lib/usgs_api/usgs_constants.js");
-var USGS_FUNCTION = require("../../lib/usgs_api/usgs_functions.js");
-var USGS_HELPER = require("../../lib/usgs_api/usgs_helpers.js");
-var PG_HANDLER = require('../../lib/postgres/postgres_handlers.js')
+var USGS_CONSTANT = require("./lib/usgs_api/usgs_constants.js");
+var USGS_FUNCTION = require("./lib/usgs_api/usgs_functions.js");
+var USGS_HELPER = require("./lib/usgs_api/usgs_helpers.js");
+var PG_HANDLER = require('./lib/postgres/postgres_handlers.js')
 
-var apphelpers = require('../../lib/helpers/app_helpers.js')
+var apphelpers = require('./lib/helpers/app_helpers.js')
 var APP_HELPERS = apphelpers();
 
-var emailer = require('../../lib/email/send_error_email.js');
+var emailer = require('./lib/email/send_error_email.js');
 var error_email = emailer()
 
-var download_counter = require('../../download_counter.js');
+var download_counter = require('./download_counter.js');
 var DownloadCounter = download_counter();
 
 const LOG_LEVEL_ERR = 'error';

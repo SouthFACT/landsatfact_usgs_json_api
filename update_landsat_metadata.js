@@ -230,22 +230,16 @@ function do_search_request (apiKey, dataset_config, meta_filter_fields) {
       if (response.results.length) {
         return response.results
       } else {
-        return Promise.reject(
-          new Error('INFO No results returned from search request')
-        )
+        return Promise.reject('INFO No results returned from search request')
       }
-    } else {
-      return Promise.reject(
-        new Error('INFO No response returned from search request')
-      )
     }
   })
 
 }
 
 /**
- * For some reason, scene metadata is stored as xml.
- * Returns a promise that resolves to json.
+ * Scene metadata is stored as xml. Parse it to json.
+ * Returns a promise that resolves to metadata as json.
  */
 function parse_scene_metadata_xml (metadata) {
   //get xml from USGS api
@@ -267,13 +261,13 @@ function parse_scene_metadata_xml (metadata) {
         if(err) {
           reject(err)
         }
-        const metadata_json = [js]
 
-        resolve(metadata_json)
+        resolve(js)
       }
     )
   })
 }
+
 
 /**
  * Build an object representing a record
@@ -281,76 +275,67 @@ function parse_scene_metadata_xml (metadata) {
  */
 function make_scene_record (dataset_config, scene_metadata) {
   var field_list = []
-  scene_metadata.forEach( metadata => {
-    const scene_metadata_fields = metadata.scene.metadataFields
-    //get the image urls for thumbnails metadata from usgs xml
-    const browse_json = metadata.scene.browseLinks
-    scene_metadata_fields.forEach( metadata_field => {
-      make_record_field(
-        dataset_config, metadata_field, browse_json, field_list
-      )
-    })
+  dataset_config.metadataFields.forEach((field_config) => {
+    var record_field = make_record_field(field_config, scene_metadata)
+    if (record_field) field_list.push(record_field)
   })
-  return record
-
+  return field_list
 }
+
 
 /**
  * Build an object representing a single field for a scene record.
  *
  */
-function make_record_field (dataset_config, metadata_field, browse_json) {
-  const field_json = metadata_field.metadataField
+function make_record_field (field_config, scene_metadata) {
+  var metadata_field = scene_metadata.scene.metadataFields
+    .filter((metadata_field) => {
+      const field_name = metadata_field.metadataField[0].data.name
+      return field_name === field_config.field[0].fieldName
+    })
+
+  if (!metadata_field.length) return
+
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
-  const metadata_fields = dataset_config.metadataFields
 
-  var field_list = []
+  //get the database field name from the CONFIG_YAML
+  databaseFieldName = field_config.field[0].databaseFieldName
+  configFieldName = field_config.field[0].fieldName
 
-  //walk each definition from the CONFIG_YAML
-  metadata_fields.forEach( meta => {
+  //get the method to use for the metadata 3 types
+  //  api use a field from the USGS metadata xml
+  //  api_browse use a field from the USGS metadata browse (thumbnails) xml
+  //  constant use a defined value.  the value to use will be in the fieldName
+  const method = field_config.field[0].method
+  var record_field
 
-    //get the database field name from the CONFIG_YAML
-    databaseFieldName = meta.field[0].databaseFieldName
-    configFieldName = meta.field[0].fieldName
+  //if the method is api_browse then get the thumbnail for
+  if( method === 'api_browse'){
+    record_field = get_browse_url_fieldset(
+      scene_metadata.scene.browseLinks,
+      databaseFieldName,
+      configFieldName
+    )
+  } // api_browse method
 
-    //get the method to use for the metadata 3 types
-    //  api use a field from the USGS metadata xml
-    //  api_browse use a field from the USGS metadata browse (thumbnails) xml
-    //  constant use a defined value.  the value to use will be in the fieldName
-    const method = meta.field[0].method
-    var fieldSet
+  if( method === 'api'){
 
-    //if the method is api_browse then get the thumbnail for
-    if( method === 'api_browse'){
-      fieldSet = get_browse_url_fieldset(
-        browse_json,
-        databaseFieldName,
-        configFieldName
-      )
-    } // api_browse method
+    record_field = get_api_fieldset(
+      metadata_field,
+      configFieldName,
+      databaseFieldName
+    )
 
-    if( method === 'api'){
+  } //api method
 
-      fieldSet = get_api_fieldset(
-        field_json,
-        configFieldName,
-        databaseFieldName
-      )
+  //method type constant
+  if( method === 'constant'){
+    record_field = get_constant_fieldset(configFieldName, databaseFieldName)
 
-    } //api method
+  } //constant method
 
-    //method type constant
-    if( method === 'constant'){
-      fieldSet = get_constant_fieldset(configFieldName, databaseFieldName)
-
-    } //constant method
-
-    field_list.push(fieldSet)
-
-  })
-
-  return field_list
+  return record_field
 
 }
 

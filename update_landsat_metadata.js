@@ -31,8 +31,8 @@ const update_lsf_database = require("./lib/postgres/update_lsf_database.js")
 axios.defaults.baseURL = usgs_constants.USGS_URL
 
 // Metadata for landsat datasets
-const METADATA_YAML = yaml.load("./config/metadata.yaml")
-const datasets = METADATA_YAML.metadata_datasets
+var METADATA_YAML = yaml.load("./config/metadata.yaml")
+var metadata_config = METADATA_YAML.metadata_datasets
 
 // Number of previous days to process metadata
 const metadata_from_days_ago = METADATA_YAML.metadata_from_days_ago
@@ -47,15 +47,17 @@ const USGS_SEARCH_REQUEST_CODE = usgs_helpers
 
 module.exports = {
   main,
-  process_metadata_by_dataset,
-  process_metadata_for_dataset,
-  get_dataset_fields_for_dataset,
-  process_search_response,
+  update_metadata_for_all_datasets,
+  update_metadata_for_dataset_scenes,
+  get_metadata_filter_fields_for_dataset,
+  make_records_from_search_response,
   get_metadata_xml_for_scene,
   do_search_request,
   parse_scene_metadata_xml,
-  process_scene_metadata,
-  process_metadata_field,
+  make_scene_record,
+  make_record_field,
+  update_db,
+  // helpers
   limit_json,
   make_child_filter,
   make_additionalCriteria_filter,
@@ -65,29 +67,37 @@ module.exports = {
   fix_data_type_l1_vals,
   get_api_fieldset,
   get_constant_fieldset,
+
   logger
 }
 
 // Run main function if script is run from commandline
 if (require.main === module) main()
 
+///////////////////////////////////////////////////////////////////////////////
+
 function main () {
-  process_metadata_by_dataset(datasets)
+  update_metadata_for_all_datasets(metadata_config)
 }
 
-function process_metadata_by_dataset (datasets) {
+/**
+ * Update metadata for each dataset's new scenes.
+ *
+ */
+function update_metadata_for_all_datasets (metadata_config) {
   return api_key.then(function (apiKey) {
-    var dataset = datasets.pop()
-    return process_metadata_for_dataset(apiKey, dataset)
+    var dataset_config = metadata_config.pop()
+    return update_metadata_for_dataset_scenes(apiKey, dataset_config)
   }).catch(function (err) {
-    logger.log(logger.LEVEL_ERROR, err.stack)
+    // all rejected promises should be caught here
+    logger.log(logger.LEVEL_ERROR, err.stack || err)
   }).then(function () {
     logger.log(
       logger.LEVEL_INFO,
       'DONE updating metadata for dataset'
     )
-    if (datasets.length) {
-      return process_metadata_by_dataset(datasets)
+    if (metadata_config.length) {
+      return update_metadata_for_all_datasets(metadata_config)
     } else {
       logger.log(
         logger.LEVEL_INFO,
@@ -97,38 +107,49 @@ function process_metadata_by_dataset (datasets) {
   })
 }
 
-function process_metadata_for_dataset (apiKey, dataset) {
-  return get_dataset_fields_for_dataset(apiKey, dataset).then( dataset_fields => {
-    return do_search_request(apiKey, dataset, dataset_fields).then(search_response => {
-      return process_search_response(dataset, search_response)
+function update_metadata_for_dataset_scenes (apiKey, dataset_config) {
+  return get_metadata_filter_fields_for_dataset(apiKey, dataset_config)
+    .then(meta_filter_fields => {
+      return do_search_request(apiKey, dataset_config, meta_filter_fields)
+        .then(results => {
+          return make_records_from_search_response(dataset_config, results)
+            .then(records => {
+              update_db(records)
+            })
+        })
     })
-  })
 }
 
-function get_dataset_fields_for_dataset (apiKey, dataset) {
+
+/**
+ * Do a 'datasetfields' request to get all the metadata filters for a dataset.
+ * These are used for additionalCriteria filters in a search request.
+ * 
+ * https://earthexplorer.usgs.gov/inventory/documentation/json-api#datasetfields
+ *
+ */
+function get_metadata_filter_fields_for_dataset (apiKey, dataset_config) {
   logger.log(
     logger.LEVEL_INFO,
     'START USGS datasetfields request for dataset',
-    dataset.datasetName
+    dataset_config.datasetName
   )
   const request_body = usgs_functions.usgsapi_datasetfields(
-    apiKey, usgs_constants.NODE_EE, dataset.datasetName
+    apiKey, usgs_constants.NODE_EE, dataset_config.datasetName
   )
   return usgs_helpers.get_usgsapi_response(
     USGS_DATASET_FIELDS_REQUEST_CODE,
     request_body
-  ).catch(function (err) {
-    logger.log(
-      logger.LEVEL_ERROR,
-      'ERROR during datasetfields USGS request',
-      err.stack
-    )
-  }).then(function (response) {
+  ).then(function (response) {
     if (response) {
       logger.log(
         logger.LEVEL_INFO,
         'DONE datasetfields request for dataset',
-        dataset.datasetName
+        dataset_config.datasetName
+      )
+    } else {
+      return Promise.reject(
+        new Error('ERROR No response from datasetfields request')
       )
     }
     return response
@@ -136,33 +157,40 @@ function get_dataset_fields_for_dataset (apiKey, dataset) {
 
 }
 
-function process_search_response (dataset, search_response) {
-  return search_response.results.forEach(scene_obj => {
-    get_metadata_xml_for_scene(scene_obj).then( metadata_xml => {
-      parse_scene_metadata_xml(metadata_xml).then( metadata_as_json => {
-        var records = process_scene_metadata(dataset, metadata_as_json)
-        update_lsf_database.metadata_to_db(records)
-      })
+/**
+ * Build a list of metadata records based on the results of a search request.
+ *
+ */
+function make_records_from_search_response (dataset_config, search_results, records) {
+  records = records || []
+  var scene_obj = search_results.pop()
+  return get_metadata_xml_for_scene(scene_obj).then(metadata_xml => {
+    return parse_scene_metadata_xml(metadata_xml).then(scene_metadata => {
+      return make_scene_record(dataset_config, scene_metadata)
     })
+  }).then(record => {
+    records.push(record)
+    if (search_results.length) {
+      return make_records_from_search_response(dataset_config, search_results, records)
+    }
+    return records
   })
 }
 
 function get_metadata_xml_for_scene (scene_obj) {
   return axios.get(scene_obj.metadataUrl)
-    .catch(function (err) {
-      logger.log(
-        logger.LEVEL_ERROR,
-        'ERROR retrieving metadata xml during axios request',
-        err.stack
-      )
-    })
 }
 
-function do_search_request (apiKey, dataset, dataset_fields) {
+/**
+ * Perform a USGS search request to check for any new scenes
+ * that are relevant to this app.
+ *
+ */
+function do_search_request (apiKey, dataset_config, meta_filter_fields) {
   logger.log(
       logger.LEVEL_INFO,
       'START search request for dataset ',
-      dataset.datasetName
+      dataset_config.datasetName
   )
   // search request parameters
   const startDate = get_start_date(metadata_from_days_ago)
@@ -172,8 +200,8 @@ function do_search_request (apiKey, dataset, dataset_fields) {
   var startingNumber = 1 
   var sortOrder = "ASC"
   // additional criteria filter
-  const fields = dataset.fields
-  const childFilters = get_child_filters(fields, dataset_fields)
+  const fields = dataset_config.fields
+  const childFilters = get_child_filters(fields, meta_filter_fields)
   const filterType = "and"
   var additionalCriteria = make_additionalCriteria_filter(
     filterType, childFilters
@@ -183,7 +211,7 @@ function do_search_request (apiKey, dataset, dataset_fields) {
       minCloudCover, maxCloudCover
   
   var search_body = usgs_functions.usgsapi_search(
-    apiKey, usgs_constants.NODE_EE, dataset.datasetName,
+    apiKey, usgs_constants.NODE_EE, dataset_config.datasetName,
     lowerLeft, upperRight, startDate, endDate, months,
     includeUnknownCloudCover, minCloudCover, maxCloudCover,
     additionalCriteria, maxResults, startingNumber, sortOrder
@@ -192,26 +220,33 @@ function do_search_request (apiKey, dataset, dataset_fields) {
   return usgs_helpers.get_usgsapi_response(
     USGS_SEARCH_REQUEST_CODE,
     search_body
-  ).catch(function (err) {
-    logger.log(
-      logger.LEVEL_ERROR,
-      'ERROR during search request',
-      err.stack
-    )
-  }).then(function (response) {
+  ).then(function (response) {
     if (response) {
       logger.log(
         logger.LEVEL_INFO,
         'DONE search request for dataset',
-        dataset.datasetName
+        dataset_config.datasetName
       )
-      return response
+      if (response.results.length) {
+        return response.results
+      } else {
+        return Promise.reject(
+          new Error('INFO No results returned from search request')
+        )
+      }
+    } else {
+      return Promise.reject(
+        new Error('INFO No response returned from search request')
+      )
     }
   })
 
 }
 
-
+/**
+ * For some reason, scene metadata is stored as xml.
+ * Returns a promise that resolves to json.
+ */
 function parse_scene_metadata_xml (metadata) {
   //get xml from USGS api
   const xml = metadata.data
@@ -230,11 +265,6 @@ function parse_scene_metadata_xml (metadata) {
       },
       function (err, js) {
         if(err) {
-          logger.log(
-            logger.LEVEL_ERROR,
-            'ERROR parsing scene metadata xml',
-            err.stack
-          )
           reject(err)
         }
         const metadata_json = [js]
@@ -245,27 +275,37 @@ function parse_scene_metadata_xml (metadata) {
   })
 }
 
-function process_scene_metadata (dataset, metadata_json) {
-  var records = []
-  metadata_json.forEach( metadata => {
+/**
+ * Build an object representing a record
+ * in the metadata table for a single scene.
+ */
+function make_scene_record (dataset_config, scene_metadata) {
+  var field_list = []
+  scene_metadata.forEach( metadata => {
     const scene_metadata_fields = metadata.scene.metadataFields
     //get the image urls for thumbnails metadata from usgs xml
     const browse_json = metadata.scene.browseLinks
     scene_metadata_fields.forEach( metadata_field => {
-      process_metadata_field(
-        dataset, metadata_field, browse_json, records
+      make_record_field(
+        dataset_config, metadata_field, browse_json, field_list
       )
     })
   })
-  return records
+  return record
 
 }
 
-function process_metadata_field (dataset, metadata_field, browse_json, records) {
+/**
+ * Build an object representing a single field for a scene record.
+ *
+ */
+function make_record_field (dataset_config, metadata_field, browse_json) {
   const field_json = metadata_field.metadataField
   // Instantiate so we can pass undefined variables for optional elements.
   var fieldValue, fieldName, databaseFieldName
-  const metadata_fields = dataset.metadataFields
+  const metadata_fields = dataset_config.metadataFields
+
+  var field_list = []
 
   //walk each definition from the CONFIG_YAML
   metadata_fields.forEach( meta => {
@@ -306,10 +346,22 @@ function process_metadata_field (dataset, metadata_field, browse_json, records) 
 
     } //constant method
 
-    records.push(fieldSet)
+    field_list.push(fieldSet)
 
   })
 
+  return field_list
+
+}
+
+/**
+ * Add the new scene records to the database.
+ *
+ */
+function update_db(records) {
+  records.forEach(record => {
+    update_lsf_database.metadata_to_db(record)
+  })
 }
 
 

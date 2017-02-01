@@ -16,7 +16,7 @@ const update_lsf_database = require("../lib/postgres/update_lsf_database.js")
 const meta_yaml = yaml.load('./config/metadata.yaml')
 
 const sample_metadata_xml = fs.readFileSync(
-  './test/metadata/LANDSAT_7_LE70330372017016EDC00.xml', 'utf8'
+  './test/metadata_xml/LANDSAT_7_LE70330372017016EDC00.xml', 'utf8'
 )
 const sample_metadata = { 'data': sample_metadata_xml }
 var parse_xml = update_metadata.parse_scene_metadata_xml(sample_metadata)

@@ -60,7 +60,7 @@ metadata_datasets:
       databaseFieldName: cc_quad_lr
       method: constant
   - field:
-    - fieldName: Data Type Level 1
+    - fieldName: Data Type Level1
       databaseFieldName: data_type_l1
       method: api
   - field:

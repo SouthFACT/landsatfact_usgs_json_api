@@ -53,7 +53,6 @@ module.exports = {
   process_scene_batch,
   get_dl_options_for_scene_batch,
   process_usgs_dl_options_response,
-  handle_usgs_dl_options_response_error,
   sort_options_by_avail,
   update_records,
   update_records_by_availability,
@@ -78,11 +77,13 @@ function main () {
     if (query_result.rows && query_result.rows.length) {
       const scenes_by_dataset = usgs_helpers.sort_scene_records_by_dataset(query_result.rows)
       var dataset_names = usgs_constants.LANDSAT_DATASETS.slice()
-      usgs_helpers.process_scenes_by_dataset(dataset_names, scenes_by_dataset, process_scenes_for_dataset)
+      usgs_helpers.process_scenes_by_dataset(
+        dataset_names, scenes_by_dataset, process_scenes_for_dataset
+      )
     } else {
       logger.log(
         logger.LEVEL_INFO,
-        'SELECT query returned no rows to process.'
+        'INFO select query returned no rows to process.'
       )
     }
   })
@@ -138,15 +139,11 @@ function get_dl_options_for_scene_batch (scenes, dataset_name) {
   return get_api_key.then(function (apiKey) {
     logger.log(
       logger.LEVEL_INFO,
-      'START processing scene batch of size '+scenes.length+' for dataset ',
+      'START processing '+scenes.length+' scenes for dataset ',
       dataset_name
     )
-
     const request_body = usgs_functions.usgsapi_downloadoptions(apiKey, usgs_constants.NODE_EE, dataset_name, scenes)
     return usgs_helpers.get_usgsapi_response(DL_OPTIONS_USGS_RESPONSE_CODE, request_body)
-      .catch(function(err) {
-        return handle_usgs_dl_options_response_error(err, scenes, dataset_name, num_attempts)
-      })
       .then(function(response) {
         return process_usgs_dl_options_response(response, dataset_name)
       })
@@ -188,20 +185,6 @@ function process_usgs_dl_options_response (response, dataset_name) {
       'ERROR No response data from downloadoptions request'
     )
   }
-}
-
-/**
- * Handle errors returned by a usgs downloadoptions request.
- * Initiates another request if we get a simultaenous requests error
- * (up to a certain number of attempts)
- *
- */
-function handle_usgs_dl_options_response_error (err, scenes, dataset_name, num_attempts) {
-  logger.log(
-    logger.LEVEL_ERROR,
-    'ERROR on downloadoptions request',
-    err.stack
-  )
 }
 
 

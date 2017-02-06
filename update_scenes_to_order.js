@@ -44,8 +44,17 @@ const db_config = app_helpers.get_db_config()
 var pg_pool = pg_handler.pg_pool(db_config)
 
 // Initial SELECT query
-const query_text = "SELECT * FROM landsat_metadata "
-  + "WHERE needs_ordering IS null OR needs_ordering = 'YES'"
+var query_text = "SELECT * FROM landsat_metadata "
+if (process.argv[2] !== 'weekly') {
+  query_text += ""
+    + "WHERE "
+      + "(needs_ordering IS null OR needs_ordering = 'YES') "
+      + "OR ("
+        + "needs_ordering = 'NO' AND "
+        + "ordered = 'YES' AND "
+        + "download_available = 'NO'"
+      + ")"
+}
 
 module.exports = {
   main,

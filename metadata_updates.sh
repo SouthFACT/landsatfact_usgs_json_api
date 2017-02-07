@@ -8,6 +8,7 @@ echo $DIRECTORY
 source $DIRECTORY/processes.sh 
 
 node_file=$1
+node_arg=$2
 
 is_running=false
 for process in "${usgs_api_processes[@]}"
@@ -25,5 +26,9 @@ if $is_running ; then
 else
  echo 'running ' $node_file
  cd $DIRECTORY
- node $node_file
+ if [ -z "$node_arg" ]; then
+     node $node_file
+ else
+   node $node_file $node_arg
+ fi
 fi 

@@ -35,9 +35,18 @@ var emailer = require('./lib/email/send_error_email.js')
 var error_email = emailer()
 
 //get fields for sql query - that gets scences that need ordering,
-const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 '
-
-const query_text = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE landsat_metadata.acquisition_date = ('now'::text::date - '2 days'::interval day) and needs_processing = 'YES' AND  downloaded = 'YES'"
+const query_text =" WITH level_1_metadata_fail AS (SELECT " +
+  "lsfm.scene_id, " +
+  "date_part('day', age(now(), lsfm.acquisition_date)) days_ago, " +
+  "'WRITE LEVEL1 METADATA'::text as process, " +
+  "CASE WHEN level1_metadata.level1_id IS null THEN  'False'  ELSE 'True' END AS process_status, " +
+  "CASE WHEN level1_metadata.level1_id IS null THEN 'FAILED! To write level 1 metadata' ELSE 'Level 1 metadata written' END AS process_message " +
+"FROM level1_metadata " +
+"  RIGHT JOIN (SELECT scene_id, acquisition_date, modified_date, l1_key " +
+"        FROM landsat_metadata " +
+"        WHERE landsat_metadata.acquisition_date >= ('now'::text::date - '3 days'::interval day) AND needs_processing = 'YES' AND  downloaded = 'YES') AS lsfm " +
+"   ON level1_metadata.level1_id = lsfm.l1_key) " +
+"SELECT * FROM level_1_metadata_fail WHERE process_status = 'False'"
 
 //config data
 const USGS_CONFIG = app_helpers.get_usgs_config()
@@ -114,26 +123,16 @@ function get_downloaded_scenes (records) {
 function write_downloaded_scenes (records) {
   var downloaded_scenes = []
 
-  const lcv_file = DOWNLOAD_FILE_LCV_DIR + 'downloaded.txt'
+  const lcv_file = DOWNLOAD_FILE_LCV_DIR + 'missing_l1.txt'
 
   records.forEach(function(row) {
     const dest = DOWNLOAD_DIR + row + '.tar.gz'
 
-    //make sure the fie is actually on disk
-    if (app_helpers.file_exists(dest)){
-      msg_header = 'Writing ' + dest + ' to LCV file.'
+      msg_header = 'Writing ' + dest + ' to L1 file.'
       msg = dest
       logger.log(logger.LEVEL_INFO, msg_header, msg)
       downloaded_scenes.push(dest)
 
-    //if file is not on disk do not write it to the LCV processing file.  this will cause
-    //  LCV to fail
-    } else {
-      msg_header = 'The ' + dest + ' file does not exist on disk '
-         + '-- skipping writing to LCV file.'
-      msg = dest
-      logger.log(logger.LEVEL_INFO, msg_header, msg)
-    }
   })
 
   app_helpers.write_file(lcv_file, downloaded_scenes, true)

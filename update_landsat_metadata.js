@@ -134,7 +134,7 @@ function update_metadata_for_dataset_scenes (apiKey, dataset_config) {
  * Do a 'datasetfields' request to get all the metadata filters for a dataset.
  *
  * These are used to create additionalCriteria filters in a 'search' request.
- * 
+ *
  * https://earthexplorer.usgs.gov/inventory/documentation/json-api#datasetfields
  *
  */
@@ -222,7 +222,7 @@ function do_search_request (apiKey, dataset_config, meta_filter_fields) {
   var endDate = new Date()
   // defaults will move to config yaml
   var maxResults = 5000
-  var startingNumber = 1 
+  var startingNumber = 1
   var sortOrder = "ASC"
   // additional criteria filter
   const fields = dataset_config.fields
@@ -234,14 +234,14 @@ function do_search_request (apiKey, dataset_config, meta_filter_fields) {
   // Instantiate so we can pass undefined variables for optional elements.
   var lowerLeft, upperRight, months, includeUnknownCloudCover,
       minCloudCover, maxCloudCover
-  
+
   var search_body = usgs_functions.usgsapi_search(
     apiKey, usgs_constants.NODE_EE, dataset_config.datasetName,
     lowerLeft, upperRight, startDate, endDate, months,
     includeUnknownCloudCover, minCloudCover, maxCloudCover,
     additionalCriteria, maxResults, startingNumber, sortOrder
   )
-  
+
   return usgs_helpers.get_usgsapi_response(
     USGS_SEARCH_REQUEST_CODE,
     search_body
@@ -273,7 +273,7 @@ function parse_scene_metadata_xml (dataset_config, metadata) {
 
   return new Promise(function (resolve, reject) {
     // parse xml to json, removing xml tag prefixes
-    // change the attribute key from '$' to 'data' 
+    // change the attribute key from '$' to 'data'
     // change the charkey from '_' to 'value'
     var parser = new xml2js.Parser()
     parseString(
@@ -606,5 +606,3 @@ function filter_scene_metadata (fields_config, scene_metadata) {
   scene_metadata.scene.metadataFields[0].metadataField = relevant_fields
   return scene_metadata
 }
-
-

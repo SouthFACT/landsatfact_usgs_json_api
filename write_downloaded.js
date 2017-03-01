@@ -14,9 +14,10 @@ var fs = require('fs')
 var Promise = require('bluebird')
 Promise.longStackTraces()
 
-//Logging
+// Logging
 const LOG_FILE = 'write_downloaded'
 var logger = require('./lib/helpers/logger.js')(LOG_FILE)
+// Set here so modules can see in require.main.exports
 module.exports.logger = logger
 
 //get modules
@@ -139,4 +140,3 @@ function write_downloaded_scenes (records) {
   app_helpers.write_file(lcv_file, downloaded_scenes, true)
 
 }
-

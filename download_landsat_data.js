@@ -25,7 +25,7 @@ Promise.longStackTraces()
 const LOG_FILE = 'download_landsat_data'
 var logger = require('./lib/helpers/logger.js')(LOG_FILE)
 // Set here so modules can see in require.main.exports
-module.exports.logger = logger  
+module.exports.logger = logger
 
 // Modules
 var usgs_constants = require("./lib/usgs_api/usgs_constants.js")
@@ -95,7 +95,7 @@ function main () {
         dataset_names,
         scenes_by_dataset,
         process_scenes_for_dataset
-      )      
+      )
     }
     else {
       logger.log(
@@ -113,7 +113,7 @@ function main () {
  * The argument to this script should be a list of all
  * command-line arguments (scene ids). If there were none, the list is empty.
  * If the list is empty, make the query the last days scenes view.
- * 
+ *
  */
 function make_initial_query (scenes) {
   if (scenes.length) {
@@ -172,6 +172,7 @@ function process_scenes_for_dataset (dataset_name, scenes) {
  *
  */
 function process_scene (dataset_name, scene_id, apiKey) {
+  console.log('process_scene', apiKey, scene_id)
   const request_body = usgs_functions.usgsapi_download(
     apiKey,
     usgs_constants.NODE_EE,
@@ -179,12 +180,15 @@ function process_scene (dataset_name, scene_id, apiKey) {
     USGS_DL_PRODUCTS,
     [scene_id]
   )
+  console.log('process_scene', request_body)
   return usgs_helpers.get_usgsapi_response(
     USGS_DL_RESPONSE_CODE,
     request_body
   ).catch(function (err) {
     logger.log(logger.LEVEL_ERROR, err.stack)
   }).then(function (response) {
+    console.log('process_scene', response)
+
     if (response && response.length) {
       logger.log(
         logger.LEVEL_INFO,

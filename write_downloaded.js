@@ -38,7 +38,7 @@ var error_email = emailer()
 //get fields for sql query - that gets scences that need ordering,
 const scenes_fields = ' scene_id, sensor, acquisition_date, browse_url, path, row, cc_full, cc_quad_ul, cc_quad_ur, cc_quad_ll, cc_quad_lr, data_type_l1 '
 
-const query_text = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE landsat_metadata.acquisition_date = ('now'::text::date - '14 days'::interval day) and needs_processing = 'YES' AND  downloaded = 'YES'"
+const query_text = "SELECT " + scenes_fields + " FROM landsat_metadata WHERE landsat_metadata.acquisition_date = ('now'::text::date - '1 days'::interval day) and needs_processing = 'YES' AND  downloaded = 'YES'"
 
 //config data
 const USGS_CONFIG = app_helpers.get_usgs_config()

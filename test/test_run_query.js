@@ -7,6 +7,7 @@ const sql = 'INSERT INTO landsat_metadata(scene_id, sensor, acquisition_date, br
                 'VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)'
 
 const parameters = [ 'LC80290352016250LGN00',
+                'LC08_L1TP_029035_20160430_20170501_01_RT',
                 'OLI_TIRS',
                 'Tue Sep 06 2016',
                 'http://earthexplorer.usgs.gov/browse/landsat_8/2016/029/035/LC80290352016250LGN00.jpg',
@@ -24,6 +25,7 @@ const parameters = [ 'LC80290352016250LGN00',
 // update_lsf_database.query_db(sql, parameters);
 
 const fieldset  = [ { name: 'scene_id', value: 'test' },
+   { name: 'landsat_product_id', value: 'test' },
   { name: 'sensor', value: 'OLI_TIRS' },
   { name: 'acquisition_date', value: '2016/08/30' },
   { name: 'browse_url', value: 'http://earthexplorer.usgs.gov/browse/landsat_8/2016/028/035/LC80280352016243LGN00.jpg' },

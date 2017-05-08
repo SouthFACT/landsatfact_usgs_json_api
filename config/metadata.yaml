@@ -162,6 +162,10 @@ metadata_datasets:
       databaseFieldName: scene_id
       method: api
   - field:
+    - fieldName: NA
+      databaseFieldName: landsat_product_id
+      method: constant
+  - field:
     - fieldName: OLI_TIRS
       databaseFieldName: sensor
       method: constant
@@ -228,6 +232,10 @@ metadata_datasets:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id
       method: api
+  - field:
+    - fieldName: NA
+      databaseFieldName: landsat_product_id
+      method: constant
   - field:
     - fieldName: LANDSAT_ETM
       databaseFieldName: sensor
@@ -296,6 +304,10 @@ metadata_datasets:
       databaseFieldName: scene_id
       method: api
   - field:
+    - fieldName: NA
+      databaseFieldName: landsat_product_id
+      method: constant
+  - field:
     - fieldName: LANDSAT_ETM_SLC_OFF
       databaseFieldName: sensor
       method: constant
@@ -362,6 +374,10 @@ metadata_datasets:
     - fieldName: Landsat Scene Identifier
       databaseFieldName: scene_id
       method: api
+  - field:
+    - fieldName: NA
+      databaseFieldName: landsat_product_id
+      method: constant
   - field:
     - fieldName: LANDSAT_TM
       databaseFieldName: sensor

@@ -1,7 +1,7 @@
 /**
  * Sets records in the metadata table to be 'ordered'
  * for download if they are not available for download from USGS.
- * 
+ *
  */
 
 // Libraries
@@ -102,7 +102,7 @@ function main () {
 
 /**
  * Process the scenes for a single landsat dataset.
- * 
+ *
  * @param scenes is a list of scene ids all from the same landsat dataset
  * @param dataset_name is the name of the landsat dataset being processed
  *
@@ -141,7 +141,7 @@ function process_scene_batch (scenes, dataset_name) {
 
 /**
  * Get the download availability for a batch of scenes.
- * 
+ *
  * @return the response of the DownloadOptions API call to USGS.
  */
 function get_dl_options_for_scene_batch (scenes, dataset_name) {
@@ -229,7 +229,7 @@ function sort_options_by_avail (response) {
   //   NO if not available for download
   return Promise.resolve().then(function () {
     var avail = []
-    var unavail = [] 
+    var unavail = []
 
     response.forEach((obj) => {
       var standard_option = obj['downloadOptions'].filter((option) => {
@@ -244,14 +244,14 @@ function sort_options_by_avail (response) {
         }
       } else {
         logger.log(
-          logger.LEVEL_INFO, 
+          logger.LEVEL_INFO,
           'INFO No standard download option for ',
           obj.entityId
         )
 
       }
     })
-    
+
     return { 'available': avail, 'unavailable': unavail }
   })
   .catch(function (err) {
@@ -267,7 +267,7 @@ function sort_options_by_avail (response) {
 
 /**
  * Update database records for scenes based on download availability
- * 
+ *
  * @param scenes_by_avail an object with keys 'available' and 'unavailable'
  * with lists of scene ids for each field.
  */
@@ -284,7 +284,7 @@ function update_records_by_availability (scenes, field_text) {
     }
   }).catch(function (err) {
     logger.log(
-      logger.LEVEL_ERROR, 
+      logger.LEVEL_ERROR,
       'ERROR updating scene records',
       err.stack
     )

@@ -95,7 +95,7 @@ metadata_datasets:
       databaseFieldName: landsat_product_id
       method: api
   - field:
-    - fieldName: LANDSAT_ETM_SLC_OFF
+    - fieldName: LANDSAT_7
       databaseFieldName: sensor
       method: constant
   - field:
@@ -142,7 +142,7 @@ metadata_datasets:
     - fieldName: 999999
       databaseFieldName: l1_key
       method: constant
-- datasetName: LANDSAT_8
+- datasetName: LANDSAT_TM_C1
   fieldId: fieldId
   datasetFilterType: and
   fields:
@@ -166,11 +166,11 @@ metadata_datasets:
       databaseFieldName: landsat_product_id
       method: constant
   - field:
-    - fieldName: OLI_TIRS
+    - fieldName: LANDSAT_4-5
       databaseFieldName: sensor
       method: constant
   - field:
-    - fieldName: Date Acquired
+    - fieldName: Acquisition Date
       databaseFieldName: acquisition_date
       method: api
   - field:
@@ -186,7 +186,7 @@ metadata_datasets:
       databaseFieldName: row
       method: api
   - field:
-    - fieldName: Scene Cloud Cover
+    - fieldName:  Scene Cloud Cover
       databaseFieldName: cc_full
       method: api
   - field:
@@ -206,220 +206,7 @@ metadata_datasets:
       databaseFieldName: cc_quad_lr
       method: constant
   - field:
-    - fieldName: Data Type Level1
-      databaseFieldName: data_type_l1
-      method: api
-  - field:
-    - fieldName: 999999
-      databaseFieldName: l1_key
-      method: constant
-- datasetName: LANDSAT_ETM
-  fieldId: fieldId
-  datasetFilterType: and
-  fields:
-  - fieldName: WRS Path
-    fieldFilterType: between
-    fieldValues:
-      - value: 13
-      - value: 33
-  - fieldName: WRS Row
-    fieldFilterType: between
-    fieldValues:
-      - value: 33
-      - value: 43
-  metadataFields:
-  - field:
-    - fieldName: Landsat Scene Identifier
-      databaseFieldName: scene_id
-      method: api
-  - field:
-    - fieldName: NA
-      databaseFieldName: landsat_product_id
-      method: constant
-  - field:
-    - fieldName: LANDSAT_ETM
-      databaseFieldName: sensor
-      method: constant
-  - field:
-    - fieldName: Date Acquired
-      databaseFieldName: acquisition_date
-      method: api
-  - field:
-    - fieldName: url
-      databaseFieldName: browse_url
-      method: api_browse
-  - field:
-    - fieldName: WRS Path
-      databaseFieldName: path
-      method: api
-  - field:
-    - fieldName: WRS Row
-      databaseFieldName: row
-      method: api
-  - field:
-    - fieldName: Cloud Cover
-      databaseFieldName: cc_full
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Left
-      databaseFieldName:  cc_quad_ul
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Right
-      databaseFieldName: cc_quad_ur
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Left
-      databaseFieldName: cc_quad_ll
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Right
-      databaseFieldName: cc_quad_lr
-      method: api
-  - field:
-    - fieldName: Data Type Level 1
-      databaseFieldName: data_type_l1
-      method: api
-  - field:
-    - fieldName: 999999
-      databaseFieldName: l1_key
-      method: constant
-- datasetName: LANDSAT_ETM_SLC_OFF
-  fieldId: fieldId
-  datasetFilterType: and
-  fields:
-  - fieldName: WRS Path
-    fieldFilterType: between
-    fieldValues:
-      - value: 13
-      - value: 33
-  - fieldName: WRS Row
-    fieldFilterType: between
-    fieldValues:
-      - value: 33
-      - value: 43
-  metadataFields:
-  - field:
-    - fieldName: Landsat Scene Identifier
-      databaseFieldName: scene_id
-      method: api
-  - field:
-    - fieldName: NA
-      databaseFieldName: landsat_product_id
-      method: constant
-  - field:
-    - fieldName: LANDSAT_ETM_SLC_OFF
-      databaseFieldName: sensor
-      method: constant
-  - field:
-    - fieldName: Date Acquired
-      databaseFieldName: acquisition_date
-      method: api
-  - field:
-    - fieldName: url
-      databaseFieldName: browse_url
-      method: api_browse
-  - field:
-    - fieldName: WRS Path
-      databaseFieldName: path
-      method: api
-  - field:
-    - fieldName: WRS Row
-      databaseFieldName: row
-      method: api
-  - field:
-    - fieldName: Cloud Cover
-      databaseFieldName: cc_full
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Left
-      databaseFieldName:  cc_quad_ul
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Right
-      databaseFieldName: cc_quad_ur
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Left
-      databaseFieldName: cc_quad_ll
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Right
-      databaseFieldName: cc_quad_lr
-      method: api
-  - field:
-    - fieldName: Data Type Level 1
-      databaseFieldName: data_type_l1
-      method: api
-  - field:
-    - fieldName: 999999
-      databaseFieldName: l1_key
-      method: constant
-- datasetName: LANDSAT_TM
-  fieldId: fieldId
-  datasetFilterType: and
-  fields:
-  - fieldName: WRS Path
-    fieldFilterType: between
-    fieldValues:
-      - value: 13
-      - value: 33
-  - fieldName: WRS Row
-    fieldFilterType: between
-    fieldValues:
-      - value: 33
-      - value: 43
-  metadataFields:
-  - field:
-    - fieldName: Landsat Scene Identifier
-      databaseFieldName: scene_id
-      method: api
-  - field:
-    - fieldName: NA
-      databaseFieldName: landsat_product_id
-      method: constant
-  - field:
-    - fieldName: LANDSAT_TM
-      databaseFieldName: sensor
-      method: constant
-  - field:
-    - fieldName: Date Acquired
-      databaseFieldName: acquisition_date
-      method: api
-  - field:
-    - fieldName: url
-      databaseFieldName: browse_url
-      method: api_browse
-  - field:
-    - fieldName: WRS Path
-      databaseFieldName: path
-      method: api
-  - field:
-    - fieldName: WRS Row
-      databaseFieldName: row
-      method: api
-  - field:
-    - fieldName: Cloud Cover
-      databaseFieldName: cc_full
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Left
-      databaseFieldName:  cc_quad_ul
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Upper Right
-      databaseFieldName: cc_quad_ur
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Left
-      databaseFieldName: cc_quad_ll
-      method: api
-  - field:
-    - fieldName: Cloud Cover Quad Lower Right
-      databaseFieldName: cc_quad_lr
-      method: api
-  - field:
-    - fieldName: Data Type Level 1
+    - fieldName: Data Type Level-1
       databaseFieldName: data_type_l1
       method: api
   - field:

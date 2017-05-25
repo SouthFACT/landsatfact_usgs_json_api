@@ -24,6 +24,10 @@ metadata_datasets:
       databaseFieldName: landsat_product_id
       method: api
   - field:
+    - fieldName: Collection Category
+      databaseFieldName: collection_category
+      method: api
+  - field:
     - fieldName: OLI_TIRS
       databaseFieldName: sensor
       method: constant
@@ -93,6 +97,10 @@ metadata_datasets:
   - field:
     - fieldName: Landsat Product Identifier
       databaseFieldName: landsat_product_id
+      method: api
+  - field:
+    - fieldName: Collection Category
+      databaseFieldName: collection_category
       method: api
   - field:
     - fieldName: LANDSAT_7
@@ -165,6 +173,10 @@ metadata_datasets:
     - fieldName: NA
       databaseFieldName: landsat_product_id
       method: constant
+  - field:
+    - fieldName: Collection Category
+      databaseFieldName: collection_category
+      method: api
   - field:
     - fieldName: LANDSAT_4-5
       databaseFieldName: sensor

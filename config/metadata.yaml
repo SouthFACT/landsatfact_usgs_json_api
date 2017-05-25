@@ -1,4 +1,4 @@
-metadata_from_days_ago: 60
+metadata_from_days_ago: 30
 metadata_datasets:
 - datasetName: LANDSAT_8_C1
   fieldId: fieldId

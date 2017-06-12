@@ -218,8 +218,9 @@ function do_search_request (apiKey, dataset_config, meta_filter_fields) {
       dataset_config.datasetName
   )
   // search request parameters
-  const startDate = get_start_date(metadata_from_days_ago)
-  var endDate = new Date()
+  const startDate = get_start_date(metadata_from_days_ago) //new Date("1999-11-18")
+  var endDate = new Date() //new Date("1999-11-18")
+
   // defaults will move to config yaml
   var maxResults = 5000
   var startingNumber = 1

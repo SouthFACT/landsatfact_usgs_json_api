@@ -170,9 +170,9 @@ metadata_datasets:
       databaseFieldName: scene_id
       method: api
   - field:
-    - fieldName: NA
+    - fieldName: Landsat Product Identifier
       databaseFieldName: landsat_product_id
-      method: constant
+      method: api
   - field:
     - fieldName: Collection Category
       databaseFieldName: collection_category
